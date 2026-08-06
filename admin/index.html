@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parley Slots — Dashboard Administrativo</title>
+
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Supabase JS Client (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg-dark: #090c10;
+      --bg-card: #131722;
+      --bg-card-hover: #1c2230;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent-gold: #f5c431;
+      --accent-gold-glow: rgba(245, 196, 49, 0.25);
+      --text-main: #f0f3f8;
+      --text-muted: #8b949e;
+      --success: #238636;
+      --success-glow: rgba(35, 134, 54, 0.3);
+      --danger: #da3633;
+      --danger-glow: rgba(218, 54, 51, 0.3);
+      --warning: #d29922;
+      --info: #388bfd;
+      --sidebar-width: 250px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── LOGIN CONTAINER ── */
+    #loginView {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #1a202c 0%, #090c10 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .login-card {
+      background: rgba(19, 23, 34, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      text-align: center;
+    }
+
+    .login-brand {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent-gold);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      background: #0d1117;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 0 3px var(--accent-gold-glow);
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #f5c431 0%, #e0aa14 100%);
+      color: #000;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .btn-gold:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 4px 15px var(--accent-gold-glow);
+    }
+
+    /* ── LAYOUT PRINCIPAL ── */
+    #mainApp {
+      display: none;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background: #0d1117;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-logo {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent-gold);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 16px 12px;
+      flex-grow: 1;
+    }
+
+    .menu-item {
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+      transition: all 0.2s;
+    }
+
+    .menu-item:hover, .menu-item.active {
+      color: var(--text-main);
+      background: var(--bg-card);
+    }
+
+    .menu-item.active {
+      color: var(--accent-gold);
+      border-left: 3px solid var(--accent-gold);
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .user-info {
+      font-size: 13px;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── CONTENIDO PRINCIPAL ── */
+    .content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 32px;
+      max-width: 1400px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .page-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    /* ── CARDS METRICAS (KPIs) ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent-gold);
+    }
+
+    .stat-card.success::before { background: var(--success); }
+    .stat-card.info::before { background: var(--info); }
+    .stat-card.warning::before { background: var(--warning); }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    /* ── TABLAS Y PANELES ── */
+    .card-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .search-filter-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: #0d1117;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    tr:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-block;
+      text-transform: uppercase;
+    }
+
+    .badge-active { background: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.3); }
+    .badge-inactive { background: rgba(218, 54, 51, 0.2); color: #f85149; border: 1px solid rgba(248, 81, 73, 0.3); }
+    .badge-hot { background: rgba(245, 196, 49, 0.2); color: #f5c431; border: 1px solid rgba(245, 196, 49, 0.3); }
+    .badge-new { background: rgba(56, 139, 253, 0.2); color: #58a6ff; border: 1px solid rgba(88, 166, 255, 0.3); }
+
+    /* TOGGLE SWITCH */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #21262d;
+      transition: .3s;
+      border-radius: 24px;
+      border: 1px solid var(--border-color);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider { background-color: var(--success); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* PAGINACION */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .page-btn {
+      background: #0d1117;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* SECCIONES OCULTAS */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* BANNERS PREVIEW */
+    .banner-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+
+    .banner-card {
+      background: #0d1117;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .banner-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      background: #161b22;
+    }
+
+    .banner-body {
+      padding: 16px;
+    }
+
+    /* TOAST NOTIFICATION BANNER */
+    .toast-notification {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: rgba(19, 23, 34, 0.96);
+      border: 1px solid var(--accent-gold);
+      color: var(--text-main);
+      padding: 14px 22px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast-notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .sidebar { width: 70px; }
+      .sidebar-logo span:last-child, .menu-item span:last-child, .user-info { display: none; }
+      .content { margin-left: 70px; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔑 VISTA 1: LOGIN -->
+  <div id="loginView">
+    <div class="login-card">
+      <div class="login-brand">🎰 PARLEY SLOTS</div>
+      <div class="login-subtitle">Dashboard Administrativo</div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Correo Electrónico</label>
+          <input type="email" id="loginEmail" class="form-control" placeholder="admin@parley.com.ve" required>
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" id="loginBtn" class="btn btn-gold">
+          Iniciar Sesión
+        </button>
+        <div id="loginError" style="color: var(--danger); font-size: 13px; margin-top: 12px; display: none;"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 🔔 CONTENEDOR TOAST NOTIFICACIONES -->
+  <div id="toastNotification" class="toast-notification"></div>
+
+  <!-- 📊 VISTA 2: APLICACIÓN PRINCIPAL (DASHBOARD) -->
+  <div id="mainApp">
+    <!-- BARRA LATERAL (SIDEBAR) -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <span>🎰</span> <span>Parley Admin</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-item active" onclick="switchTab('dashboard', this)">
+          <span>📊</span> <span>Panel Control</span>
+        </li>
+        <li class="menu-item" onclick="switchTab('slots', this)">
+          <span>🎰</span> <span>Gestion Slots</span>
+        </li>
+        <li class="menu-item" onclick="switchTab('providers', this)">
+          <span>🏢</span> <span>Proveedores</span>
+        </li>
+        <li class="menu-item" onclick="switchTab('banners', this)">
+          <span>🖼️</span> <span>Banners Carrusel</span>
+        </li>
+        <li class="menu-item" onclick="switchTab('config', this)">
+          <span>⚙️</span> <span>Configuracion</span>
+        </li>
+        <li class="menu-item" onclick="switchTab('pipeline', this)">
+          <span>🤖</span> <span>Pipeline Logs</span>
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <div class="user-info" id="userDisplay">admin@parley.com.ve</div>
+        <button onclick="handleLogout()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Cerrar sesión">🚪</button>
+      </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="content">
+
+      <!-- TAB 1: DASHBOARD / HOME -->
+      <section id="tab-dashboard" class="tab-content active">
+        <div class="page-header">
+          <h1 class="page-title">Panel de Control General</h1>
+          <div style="display:flex; gap:12px;">
+            <button id="reloadBtn" class="btn btn-gold" style="width:auto;" onclick="reloadAllData()">🔄 Actualizar Datos</button>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Slots en Catálogo</div>
+            <div class="stat-value" id="statTotalSlots">9,975</div>
+          </div>
+          <div class="stat-card success">
+            <div class="stat-label">Slots Activos</div>
+            <div class="stat-value" id="statActiveSlots">-</div>
+          </div>
+          <div class="stat-card info">
+            <div class="stat-label">Proveedores Registrados</div>
+            <div class="stat-value" id="statTotalProviders">51</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="stat-label">Último Pipeline Status</div>
+            <div class="stat-value" id="statPipelineStatus">SUCCESS</div>
+          </div>
+        </div>
+
+        <div class="card-panel">
+          <h3 style="margin-bottom:16px;">Top Proveedores con Más Slots</h3>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Proveedor</th>
+                  <th>Slots Totales</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="topProvidersTable">
+                <tr><td colspan="3" style="text-align:center;">Cargando proveedores...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: GESTIÓN DE SLOTS -->
+      <section id="tab-slots" class="tab-content">
+        <div class="page-header">
+          <h1 class="page-title">Gestión de Slots (9,975)</h1>
+        </div>
+
+        <div class="card-panel">
+          <div class="panel-header">
+            <div class="search-filter-bar">
+              <input type="text" id="slotSearchInput" class="form-control" placeholder="Buscar slot por nombre..." style="max-width: 300px;" oninput="debounceSlotsSearch()">
+              <select id="slotProviderFilter" class="form-control" style="max-width: 200px;" onchange="loadSlots(1)">
+                <option value="">Todos los Proveedores</option>
+              </select>
+              <select id="slotStatusFilter" class="form-control" style="max-width: 150px;" onchange="loadSlots(1)">
+                <option value="all">Todos los Estados</option>
+                <option value="active" selected>Solo Activos</option>
+                <option value="inactive">Solo Inactivos</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Portada</th>
+                  <th>Nombre del Slot</th>
+                  <th>Proveedor</th>
+                  <th>Badges</th>
+                  <th>Estado (Público)</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="slotsTableBody">
+                <tr><td colspan="7" style="text-align:center;">Cargando catálogo de slots...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <span id="paginationInfo">Mostrando 1 - 25 de 9,975</span>
+            <div>
+              <button class="page-btn" id="prevPageBtn" onclick="changeSlotsPage(-1)">← Anterior</button>
+              <button class="page-btn" id="nextPageBtn" onclick="changeSlotsPage(1)">Siguiente →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: PROVEEDORES -->
+      <section id="tab-providers" class="tab-content">
+        <div class="page-header">
+          <h1 class="page-title">Gestión de Proveedores (51)</h1>
+        </div>
+
+        <div class="card-panel">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre Proveedor</th>
+                  <th>Nombre Visible (Display)</th>
+                  <th>Slots Totales</th>
+                  <th>Estado Global (Activar/Desactivar)</th>
+                </tr>
+              </thead>
+              <tbody id="providersFullTable">
+                <tr><td colspan="4" style="text-align:center;">Cargando lista de proveedores...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: BANNERS -->
+      <section id="tab-banners" class="tab-content">
+        <div class="page-header">
+          <h1 class="page-title">Carrusel de Banners (3 Posiciones)</h1>
+        </div>
+
+        <div class="banner-grid" id="bannersContainer">
+          <!-- Banners se cargan dinámicamente -->
+        </div>
+      </section>
+
+      <!-- TAB 5: CONFIGURACIÓN -->
+      <section id="tab-config" class="tab-content">
+        <div class="page-header">
+          <h1 class="page-title">Configuración del Sitio</h1>
+        </div>
+        <div class="card-panel">
+          <form id="configForm" onsubmit="saveConfig(event)">
+            <div id="configFields">Cargando configuraciones...</div>
+            <button type="submit" class="btn btn-gold" style="width:auto; margin-top:20px;">💾 Guardar Cambios</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB 6: PIPELINE LOGS -->
+      <section id="tab-pipeline" class="tab-content">
+        <div class="page-header">
+          <h1 class="page-title">Historial de Ejecuciones del Pipeline</h1>
+        </div>
+        <div class="card-panel">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha/Hora</th>
+                  <th>Status</th>
+                  <th>Total Slots</th>
+                  <th>Nuevos</th>
+                  <th>Modificados</th>
+                  <th>Desactivados</th>
+                  <th>Duración</th>
+                  <th>Notas</th>
+                </tr>
+              </thead>
+              <tbody id="pipelineLogsTable">
+                <tr><td colspan="8" style="text-align:center;">Cargando historial de logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // ─── CREDENCIALES DE SUPABASE ───
+    const SUPABASE_URL = "https://zofknbvkoxwoqtrcwpas.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_EilryQ89HDbmfGDWmlKQ1A_Ch-aSEQC";
+
+    // Inicializar cliente Supabase JS
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Estado global de paginación de slots
+    let currentSlotsPage = 1;
+    const SLOTS_PER_PAGE = 25;
+    let slotsSearchTimeout = null;
+
+    // Verificar sesión al cargar
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        showMainApp(session.user);
+      } else {
+        document.getElementById('loginView').style.display = 'flex';
+      }
+    });
+
+    // Login Handler
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const errDiv = document.getElementById('loginError');
+      const btn = document.getElementById('loginBtn');
+
+      errDiv.style.display = 'none';
+      btn.innerText = 'Verificando...';
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        errDiv.innerText = error.message;
+        errDiv.style.display = 'block';
+        btn.innerText = 'Iniciar Sesión';
+      } else {
+        showMainApp(data.user);
+      }
+    }
+
+    async function handleLogout() {
+      await supabaseClient.auth.signOut();
+      window.location.reload();
+    }
+
+    function showMainApp(user) {
+      document.getElementById('loginView').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'flex';
+      document.getElementById('userDisplay').innerText = user.email;
+
+      // Cargar datos iniciales
+      reloadAllData();
+    }
+
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+      el.classList.add('active');
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+    }
+
+    // ─── NOTIFICACIÓN TOAST VISUAL ───
+    function showToast(message, type = 'info', duration = 3500) {
+      const toast = document.getElementById('toastNotification');
+      if (!toast) return;
+      let icon = 'ℹ️';
+      let borderColor = 'var(--accent-gold)';
+      if (type === 'success') { icon = '✅'; borderColor = 'var(--success)'; }
+      if (type === 'error')   { icon = '❌'; borderColor = 'var(--danger)'; }
+      if (type === 'loading') { icon = '⏳'; borderColor = 'var(--info)'; }
+
+      toast.style.borderColor = borderColor;
+      toast.innerHTML = `<span style="font-size:18px;">${icon}</span> <span>${message}</span>`;
+      toast.classList.add('show');
+
+      if (duration > 0) {
+        setTimeout(() => { toast.classList.remove('show'); }, duration);
+      }
+    }
+
+    async function reloadAllData() {
+      const btn = document.getElementById('reloadBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Actualizando...';
+      }
+      showToast('Actualizando métricas y tablas desde Supabase...', 'loading', 2500);
+
+      try {
+        await Promise.all([
+          loadStats(),
+          loadTopProviders(),
+          loadSlots(currentSlotsPage || 1),
+          loadProvidersList(),
+          loadBanners(),
+          loadConfig(),
+          loadPipelineLogs()
+        ]);
+        showToast('¡Panel y métricas actualizados con éxito!', 'success', 3500);
+      } catch (err) {
+        showToast('Error recargando panel: ' + err.message, 'error', 4000);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '🔄 Actualizar Datos';
+        }
+      }
+    }
+
+    // ─── CARGAR ESTADISTICAS (KPIs) ───
+    async function loadStats() {
+      const { count: totalCount } = await supabaseClient.from('slots').select('*', { count: 'exact', head: true });
+      const { count: activeCount } = await supabaseClient.from('slots').select('*', { count: 'exact', head: true }).eq('is_active', true);
+      const { count: provCount } = await supabaseClient.from('providers').select('*', { count: 'exact', head: true });
+
+      document.getElementById('statTotalSlots').innerText = totalCount ? totalCount.toLocaleString() : '9,975';
+      document.getElementById('statActiveSlots').innerText = activeCount ? activeCount.toLocaleString() : '-';
+      document.getElementById('statTotalProviders').innerText = provCount || '51';
+    }
+
+    // ─── CARGAR TOP PROVEEDORES ───
+    async function loadTopProviders() {
+      const { data } = await supabaseClient.from('providers').select('*').order('slot_count', { ascending: false }).limit(10);
+      const tbody = document.getElementById('topProvidersTable');
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Sin proveedores</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.map(p => `
+        <tr>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.slot_count || 0} slots</td>
+          <td><span class="badge ${p.is_active ? 'badge-active' : 'badge-inactive'}">${p.is_active ? 'Activo' : 'Inactivo'}</span></td>
+        </tr>
+      `).join('');
+
+      // Llenar select filtro de proveedores
+      const selectFilter = document.getElementById('slotProviderFilter');
+      selectFilter.innerHTML = '<option value="">Todos los Proveedores</option>' +
+        data.map(p => `<option value="${p.name}">${p.name} (${p.slot_count})</option>`).join('');
+    }
+
+    // ─── CARGAR SLOTS (PAGINADO + FILTROS) ───
+    async function loadSlots(page = 1) {
+      currentSlotsPage = page;
+      const tbody = document.getElementById('slotsTableBody');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Cargando slots...</td></tr>';
+
+      const searchVal = document.getElementById('slotSearchInput').value.trim();
+      const provVal = document.getElementById('slotProviderFilter').value;
+      const statusVal = document.getElementById('slotStatusFilter').value;
+
+      let query = supabaseClient.from('slots').select('*', { count: 'exact' });
+
+      if (searchVal) query = query.ilike('name', `%${searchVal}%`);
+      if (provVal) query = query.eq('provider', provVal);
+      if (statusVal === 'active') query = query.eq('is_active', true);
+      if (statusVal === 'inactive') query = query.eq('is_active', false);
+
+      const from = (page - 1) * SLOTS_PER_PAGE;
+      const to = from + SLOTS_PER_PAGE - 1;
+
+      const { data, count, error } = await query.order('total_clicks', { ascending: false }).range(from, to);
+
+      if (error || !data) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--danger);">Error: ${error?.message || 'No se pudieron cargar datos'}</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(s => `
+        <tr>
+          <td><small style="color:var(--text-muted);">${s.external_id}</small></td>
+          <td><img src="${s.image_url}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;" onerror="this.src='BANNER/public.avif'"></td>
+          <td><strong>${s.name}</strong></td>
+          <td>${s.provider}</td>
+          <td>
+            ${s.is_new ? '<span class="badge badge-new">✨ NUEVO</span>' : ''}
+            ${s.total_clicks > 30000 ? '<span class="badge badge-hot">🔥 HOT</span>' : ''}
+          </td>
+          <td>
+            <label class="switch">
+              <input type="checkbox" ${s.is_active ? 'checked' : ''} onchange="toggleSlotStatus('${s.external_id}', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </td>
+          <td>
+            <button class="btn" style="padding:4px 8px; font-size:12px; background:#21262d; color:#fff;" onclick="alert('Slot ID: ${s.external_id}\\nURL: ${s.slot_desktop_url}')">👁️ Ver</button>
+          </td>
+        </tr>
+      `).join('');
+
+      // Actualizar paginación
+      const totalPages = Math.ceil((count || 0) / SLOTS_PER_PAGE);
+      document.getElementById('paginationInfo').innerText = `Mostrando ${from + 1} - ${Math.min(to + 1, count || 0)} de ${(count || 0).toLocaleString()} slots`;
+      document.getElementById('prevPageBtn').disabled = page <= 1;
+      document.getElementById('nextPageBtn').disabled = page >= totalPages;
+    }
+
+    function changeSlotsPage(delta) {
+      loadSlots(currentSlotsPage + delta);
+    }
+
+    function debounceSlotsSearch() {
+      clearTimeout(slotsSearchTimeout);
+      slotsSearchTimeout = setTimeout(() => loadSlots(1), 300);
+    }
+
+    async function toggleSlotStatus(extId, isActive) {
+      showToast(`Actualizando estado de slot ${extId}...`, 'loading', 1500);
+      const { error } = await supabaseClient.from('slots').update({ is_active: isActive }).eq('external_id', extId);
+      if (error) {
+        showToast('Error al actualizar slot: ' + error.message, 'error');
+      } else {
+        showToast(`Slot ${extId} marcado como ${isActive ? 'ACTIVO' : 'INACTIVO'}`, 'success');
+      }
+    }
+
+    // ─── CARGAR LISTA COMPLETA PROVEEDORES ───
+    async function loadProvidersList() {
+      const { data } = await supabaseClient.from('providers').select('*').order('name', { ascending: true });
+      const tbody = document.getElementById('providersFullTable');
+
+      if (!data) return;
+
+      tbody.innerHTML = data.map(p => `
+        <tr>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.display_name || p.name}</td>
+          <td>${p.slot_count || 0}</td>
+          <td>
+            <label class="switch">
+              <input type="checkbox" ${p.is_active ? 'checked' : ''} onchange="toggleProviderStatus('${p.name}', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function toggleProviderStatus(provName, isActive) {
+      showToast(`Actualizando estado de proveedor ${provName}...`, 'loading', 1500);
+      const { error } = await supabaseClient.from('providers').update({ is_active: isActive }).eq('name', provName);
+      if (error) {
+        showToast('Error al actualizar proveedor: ' + error.message, 'error');
+      } else {
+        showToast(`Proveedor ${provName} marcado como ${isActive ? 'ACTIVO' : 'INACTIVO'}`, 'success');
+      }
+    }
+
+    // ─── CARGAR BANNERS ───
+    async function loadBanners() {
+      const { data } = await supabaseClient.from('banners').select('*').order('position', { ascending: true });
+      const container = document.getElementById('bannersContainer');
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div>No se encontraron banners configurados.</div>';
+        return;
+      }
+
+      container.innerHTML = data.map(b => `
+        <div class="banner-card">
+          <img src="${b.image_url}" class="banner-img" onerror="this.src='BANNER/public.avif'">
+          <div class="banner-body">
+            <h4 style="margin-bottom:8px;">Banner Posición #${b.position}</h4>
+            <div class="form-group">
+              <label>Título / Alt Text</label>
+              <input type="text" class="form-control" value="${b.title || ''}" id="bannerTitle_${b.position}">
+            </div>
+            <div class="form-group">
+              <label>URL Imagen</label>
+              <input type="text" class="form-control" value="${b.image_url || ''}" id="bannerUrl_${b.position}">
+            </div>
+            <button class="btn btn-gold" style="width:100%; font-size:12px;" onclick="saveBanner(${b.position})">💾 Guardar Banner #${b.position}</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function saveBanner(pos) {
+      const title = document.getElementById(`bannerTitle_${pos}`).value;
+      const image_url = document.getElementById(`bannerUrl_${pos}`).value;
+
+      showToast(`Guardando Banner #${pos}...`, 'loading', 1500);
+      const { error } = await supabaseClient.from('banners').update({ title, image_url }).eq('position', pos);
+      if (error) {
+        showToast('Error guardando banner: ' + error.message, 'error');
+      } else {
+        showToast(`✅ Banner #${pos} actualizado exitosamente`, 'success');
+      }
+    }
+
+    // ─── CARGAR CONFIGURACIÓN ───
+    async function loadConfig() {
+      const { data } = await supabaseClient.from('site_config').select('*');
+      const div = document.getElementById('configFields');
+
+      if (!data) return;
+
+      div.innerHTML = data.map(c => `
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>${c.description || c.key}</label>
+          <input type="text" class="form-control" value="${c.value || ''}" data-config-key="${c.key}">
+        </div>
+      `).join('');
+    }
+
+    async function saveConfig(e) {
+      e.preventDefault();
+      const inputs = document.querySelectorAll('[data-config-key]');
+      showToast('Guardando configuraciones del sitio...', 'loading', 1500);
+      for (const input of inputs) {
+        const key = input.getAttribute('data-config-key');
+        const value = input.value;
+        await supabaseClient.from('site_config').update({ value }).eq('key', key);
+      }
+      showToast('✅ Configuraciones del sitio guardadas', 'success');
+    }
+
+    // ─── CARGAR LOGS PIPELINE ───
+    async function loadPipelineLogs() {
+      const { data } = await supabaseClient.from('pipeline_logs').select('*').order('executed_at', { ascending: false }).limit(20);
+      const tbody = document.getElementById('pipelineLogsTable');
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Sin ejecuciones registradas</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.map(l => `
+        <tr>
+          <td><small>${new Date(l.executed_at).toLocaleString()}</small></td>
+          <td><span class="badge ${l.status === 'success' ? 'badge-active' : 'badge-inactive'}">${l.status}</span></td>
+          <td>${(l.slots_total || 0).toLocaleString()}</td>
+          <td>+${l.slots_added || 0}</td>
+          <td>${l.slots_modified || 0}</td>
+          <td>${l.slots_deactivated || 0}</td>
+          <td>${l.duration_seconds || 0}s</td>
+          <td><small>${l.notes || ''}</small></td>
+        </tr>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
