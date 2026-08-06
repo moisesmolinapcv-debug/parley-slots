@@ -119,13 +119,14 @@ const SlotsApp = (() => {
   const SUPABASE_API_URL = "https://zofknbvkoxwoqtrcwpas.supabase.co/rest/v1";
   const SUPABASE_PUBLIC_KEY = "sb_publishable_EilryQ89HDbmfGDWmlKQ1A_Ch-aSEQC";
 
-  /** ⚡ Consulta relámpago a Supabase (~100ms) para traer inactividades en tiempo real del Panel Admin */
+  /** ⚡ Consulta relámpago a Supabase (~100ms) para traer banderas y banners en tiempo real del Panel Admin */
   async function fetchLiveOverrides() {
     try {
       const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
-      const [resProv, resSlots] = await Promise.all([
+      const [resProv, resSlots, resBanners] = await Promise.all([
         fetch(`${SUPABASE_API_URL}/providers?is_active=eq.false&select=name,display_name`, { headers }).catch(() => null),
-        fetch(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=external_id`, { headers }).catch(() => null)
+        fetch(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=external_id`, { headers }).catch(() => null),
+        fetch(`${SUPABASE_API_URL}/banners?select=position,title,image_url&order=position.asc`, { headers }).catch(() => null)
       ]);
 
       const inactiveProvs = new Set();
@@ -145,10 +146,44 @@ const SlotsApp = (() => {
         });
       }
 
+      if (resBanners && resBanners.ok) {
+        const bannerData = await resBanners.json();
+        if (Array.isArray(bannerData) && bannerData.length > 0) {
+          renderDynamicBanners(bannerData);
+        }
+      }
+
       return { inactiveProvs, inactiveSlotIds };
     } catch (e) {
       return { inactiveProvs: new Set(), inactiveSlotIds: new Set() };
     }
+  }
+
+  /** Renderiza los banners dinámicos desde Supabase DB en la web pública */
+  function renderDynamicBanners(banners) {
+    const track = document.querySelector('.carousel-track');
+    const nav = document.getElementById('carouselNav');
+    if (!track) return;
+
+    let slidesHtml = '';
+    let dotsHtml = '';
+
+    banners.forEach((b, idx) => {
+      const imgUrl = b.image_url || 'BANNER/public.avif';
+      slidesHtml += `
+        <div class="carousel-slide">
+          <img class="carousel-banner-img"
+               src="${imgUrl}"
+               alt="${b.title || 'Banner Parley'}"
+               ${idx === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}
+               decoding="async"
+               onerror="this.src='BANNER/public.avif'">
+        </div>`;
+      dotsHtml += `<div class="carousel-dot ${idx === 0 ? 'active' : ''}" onclick="App.goSlide(${idx})"></div>`;
+    });
+
+    track.innerHTML = slidesHtml;
+    if (nav) nav.innerHTML = dotsHtml;
   }
 
   /**

@@ -1765,7 +1765,28 @@ const App=(()=>{
      ══════════════════════════════════════════════════════════════ */
   function clearAll(){searchInput.value='';searchQuery='';activeTheme=null;activeCategory=null;activeProviders.clear();activeTags.clear();sortMode='popular';syncTipoUI();syncTemaUI();syncProvUI();syncTagsUI();syncSortUI();applyFilters()}
   function syncToURL(){const p=new URLSearchParams;if(searchQuery)p.set('q',searchQuery);if(activeTheme)p.set('tema',activeTheme);if(activeCategory)p.set('tipo',activeCategory);if(activeProviders.size>0)p.set('prov',[...activeProviders].join(','));if(sortMode!=='popular')p.set('sort',sortMode);if(activeTags.size>0)p.set('tags',[...activeTags].join(','));const qs=p.toString();history.replaceState(null,'',qs?`?${qs}`:location.pathname)}
-  function restoreFromURL(){const p=new URLSearchParams(location.search);if(p.has('q')){searchQuery=p.get('q');searchInput.value=searchQuery}if(p.has('tema')){activeTheme=p.get('tema');syncTemaUI()}if(p.has('tipo')){activeCategory=p.get('tipo');syncTipoUI()}if(p.has('prov'))p.get('prov').split(',').forEach(v=>activeProviders.add(v));syncProvUI();if(p.has('sort')&&SORT_FNS[p.get('sort')]){sortMode=p.get('sort');syncSortUI()}if(p.has('tags'))p.get('tags').split(',').forEach(t=>{if(SPECIAL_TAGS.includes(t))activeTags.add(t)});syncTagsUI();if(searchQuery||activeTheme||activeCategory||activeProviders.size||activeTags.size||sortMode!=='popular')applyFilters()}
+  function restoreFromURL(){
+    const p=new URLSearchParams(location.search);
+    if(p.has('q')){searchQuery=p.get('q');searchInput.value=searchQuery}
+    if(p.has('tema')){activeTheme=p.get('tema');syncTemaUI()}
+    if(p.has('tipo')){activeCategory=p.get('tipo');syncTipoUI()}
+    if(p.has('prov')){
+      const activeProvSet = new Set(allSlots.map(s => s._providerDisplay ? s._providerDisplay.toLowerCase().trim() : ''));
+      p.get('prov').split(',').forEach(v => {
+        if (activeProvSet.has(v.toLowerCase().trim())) {
+          activeProviders.add(v);
+        }
+      });
+      if (activeProviders.size === 0) {
+        history.replaceState(null, '', location.pathname);
+      }
+    }
+    syncProvUI();
+    if(p.has('sort')&&SORT_FNS[p.get('sort')]){sortMode=p.get('sort');syncSortUI()}
+    if(p.has('tags'))p.get('tags').split(',').forEach(t=>{if(SPECIAL_TAGS.includes(t))activeTags.add(t)});
+    syncTagsUI();
+    if(searchQuery||activeTheme||activeCategory||activeProviders.size||activeTags.size||sortMode!=='popular')applyFilters();
+  }
 
   /* ── Boot ────────────────────────────────────────────────────── */
   init();

@@ -972,12 +972,19 @@
     }
 
     async function toggleProviderStatus(provName, isActive) {
-      showToast(`Actualizando estado de proveedor ${provName}...`, 'loading', 1500);
-      const { error } = await supabaseClient.from('providers').update({ is_active: isActive }).eq('name', provName);
-      if (error) {
-        showToast('Error al actualizar proveedor: ' + error.message, 'error');
+      showToast(`Actualizando estado global de proveedor ${provName} y sus slots...`, 'loading', 2500);
+      
+      const p1 = supabaseClient.from('providers').update({ is_active: isActive }).eq('name', provName);
+      const p2 = supabaseClient.from('slots').update({ is_active: isActive }).ilike('provider', provName);
+      const p3 = supabaseClient.from('slots').update({ is_active: isActive }).ilike('provider_display', provName);
+
+      const results = await Promise.all([p1, p2, p3]);
+      const hasError = results.some(r => r.error);
+
+      if (hasError) {
+        showToast('Error al actualizar proveedor: ' + (results.find(r => r.error)?.error?.message || 'Error en Supabase'), 'error');
       } else {
-        showToast(`Proveedor ${provName} marcado como ${isActive ? 'ACTIVO' : 'INACTIVO'}`, 'success');
+        showToast(`✅ Proveedor ${provName} y todos sus slots marcados como ${isActive ? 'ACTIVOS' : 'INACTIVOS'}`, 'success', 3000);
       }
     }
 
