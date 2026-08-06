@@ -116,6 +116,41 @@ const SlotsApp = (() => {
 
   // ─── Data Loading & Enrichment ───────────────────────────────────────
 
+  const SUPABASE_API_URL = "https://zofknbvkoxwoqtrcwpas.supabase.co/rest/v1";
+  const SUPABASE_PUBLIC_KEY = "sb_publishable_EilryQ89HDbmfGDWmlKQ1A_Ch-aSEQC";
+
+  /** ⚡ Consulta relámpago a Supabase (~100ms) para traer inactividades en tiempo real del Panel Admin */
+  async function fetchLiveOverrides() {
+    try {
+      const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
+      const [resProv, resSlots] = await Promise.all([
+        fetch(`${SUPABASE_API_URL}/providers?is_active=eq.false&select=name,display_name`, { headers }).catch(() => null),
+        fetch(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=external_id`, { headers }).catch(() => null)
+      ]);
+
+      const inactiveProvs = new Set();
+      if (resProv && resProv.ok) {
+        const provData = await resProv.json();
+        provData.forEach(p => {
+          if (p.name) inactiveProvs.add(p.name.toLowerCase().trim());
+          if (p.display_name) inactiveProvs.add(p.display_name.toLowerCase().trim());
+        });
+      }
+
+      const inactiveSlotIds = new Set();
+      if (resSlots && resSlots.ok) {
+        const slotData = await resSlots.json();
+        slotData.forEach(s => {
+          if (s.external_id) inactiveSlotIds.add(String(s.external_id));
+        });
+      }
+
+      return { inactiveProvs, inactiveSlotIds };
+    } catch (e) {
+      return { inactiveProvs: new Set(), inactiveSlotIds: new Set() };
+    }
+  }
+
   /**
    * Fetch slots.json, enrich each object with pre-computed fields,
    * and extract the unique categories/providers/tags.
@@ -123,9 +158,13 @@ const SlotsApp = (() => {
   async function loadData() {
     showLoading(true);
     try {
+      // ⚡ Obtenemos anulaciones en tiempo real desde Supabase DB en paralelo (~100ms)
+      const overridesPromise = fetchLiveOverrides();
+
       // ⚡ 1. Si SLOTS_INITIAL_DATA existe (Top 40 - 25 KB), inicializar INSTANTÁNEAMENTE en <100ms
       if (typeof window !== 'undefined' && window.SLOTS_INITIAL_DATA && Array.isArray(window.SLOTS_INITIAL_DATA)) {
-        allSlots = processRawSlots(window.SLOTS_INITIAL_DATA);
+        const overrides = await overridesPromise;
+        allSlots = processRawSlots(window.SLOTS_INITIAL_DATA, overrides);
         buildFilterUI();
         restoreFiltersFromURL();
         applyFilters();
@@ -144,7 +183,8 @@ const SlotsApp = (() => {
       }
 
       if (fullRaw && Array.isArray(fullRaw) && fullRaw.length > 0) {
-        allSlots = processRawSlots(fullRaw);
+        const overrides = await overridesPromise;
+        allSlots = processRawSlots(fullRaw, overrides);
         buildFilterUI();
         restoreFiltersFromURL();
         applyFilters();
@@ -156,26 +196,39 @@ const SlotsApp = (() => {
     }
   }
 
-  function processRawSlots(raw) {
-    return raw.map((s) => {
-      const parsed = parseGameUrl(s.game_url || s.game_url_raw);
-      const providerName = s.provider || PROVIDER_DISPLAY[s.provider_raw] || 'Otros';
-      const typeName = s.category || parsed.type || 'Video Slots';
-      const tagsList = (s.tags && Array.isArray(s.tags) && s.tags.length > 0) ? s.tags : parsed.tags;
-      const totalClicks = s.total_clicks !== undefined ? s.total_clicks : ((s.clicks_desktop || 0) + (s.clicks_mobile || 0));
+  function processRawSlots(raw, overrides = { inactiveProvs: new Set(), inactiveSlotIds: new Set() }) {
+    return raw
+      .filter((s) => {
+        // 🛡️ Filtro de Desactivación en Vivo desde Supabase DB (Zero Latency <100ms)
+        if (s.is_active === false) return false;
+        const slotIdStr = String(s.id || s.external_id);
+        if (overrides.inactiveSlotIds && overrides.inactiveSlotIds.has(slotIdStr)) return false;
 
-      return {
-        ...s,
-        provider: providerName,
-        _type: typeName,
-        _tags: tagsList,
-        _totalClicks: totalClicks,
-        _nameLower: s.name ? s.name.toLowerCase() : '',
-        _nameNorm: s.name ? normalize(s.name) : '',
-        _createdTs: s.created_at ? new Date(s.created_at).getTime() : 0,
-        _providerDisplay: providerName,
-      };
-    });
+        const provName = (s.provider || '').toLowerCase().trim();
+        const provDisp = (s.provider_display || '').toLowerCase().trim();
+        if (overrides.inactiveProvs && (overrides.inactiveProvs.has(provName) || overrides.inactiveProvs.has(provDisp))) return false;
+
+        return true;
+      })
+      .map((s) => {
+        const parsed = parseGameUrl(s.game_url || s.game_url_raw);
+        const providerName = s.provider || PROVIDER_DISPLAY[s.provider_raw] || 'Otros';
+        const typeName = s.category || parsed.type || 'Video Slots';
+        const tagsList = (s.tags && Array.isArray(s.tags) && s.tags.length > 0) ? s.tags : parsed.tags;
+        const totalClicks = s.total_clicks !== undefined ? s.total_clicks : ((s.clicks_desktop || 0) + (s.clicks_mobile || 0));
+
+        return {
+          ...s,
+          provider: providerName,
+          _type: typeName,
+          _tags: tagsList,
+          _totalClicks: totalClicks,
+          _nameLower: s.name ? s.name.toLowerCase() : '',
+          _nameNorm: s.name ? normalize(s.name) : '',
+          _createdTs: s.created_at ? new Date(s.created_at).getTime() : 0,
+          _providerDisplay: providerName,
+        };
+      });
   }
 
   // ─── Filter UI Construction ──────────────────────────────────────────
