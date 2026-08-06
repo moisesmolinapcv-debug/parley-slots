@@ -216,7 +216,7 @@ def step1_fetch_from_parley() -> tuple:
 
     while True:
         r = supabase_request("GET", "slots", params={
-            "select": "external_id,name,provider,image_url,slot_desktop_url,slot_mobile_url",
+            "select": "external_id,name,provider,image_url,slot_desktop_url,slot_mobile_url,is_active",
             "limit": PAGE_SIZE,
             "offset": offset
         })
@@ -259,6 +259,10 @@ def step2_deep_diff(raw_api_slots: list, existing_slots: list) -> dict:
         mobile_url  = slot.get("slot_url_movil") or slot.get("slot_mobile_url") or ""
         image_url   = slot.get("image_url") or ""
 
+        # 🛡️ PRESERVAR EL ESTADO DE IS_ACTIVE DEFINIDO POR EL PANEL ADMIN
+        existing_item = existing_map.get(ext_id)
+        current_is_active = existing_item.get("is_active", True) if existing_item else True
+
         normalized = {
             "external_id":      ext_id,
             "name":             name,
@@ -269,7 +273,7 @@ def step2_deep_diff(raw_api_slots: list, existing_slots: list) -> dict:
             "slot_mobile_url":  mobile_url,
             "slot_app_url":     slot.get("slot_url_app") or "",
             "raw_game_url":     slot.get("game_url") or slot.get("game_url_raw") or "",
-            "is_active":        True,
+            "is_active":        current_is_active,
             "updated_at":       datetime.now(timezone.utc).isoformat()
         }
         api_processed[ext_id] = normalized
