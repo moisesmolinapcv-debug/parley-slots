@@ -38,19 +38,19 @@ jobs:
           TELEGRAM_CHAT_ID:     ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python pipeline/parley_pipeline.py
 
-      # 5. Verificar si slots.json cambió
+      # 5. Verificar si slots.json o slots.js cambiaron
       - name: Check for changes
         id: check_changes
         run: |
-          git diff --quiet data/slots.json || echo "changed=true" >> $GITHUB_OUTPUT
+          git diff --quiet data/slots.json data/slots.js || echo "changed=true" >> $GITHUB_OUTPUT
 
       # 6. Commit y push si hay cambios
-      - name: Commit updated slots.json
+      - name: Commit updated slots data
         if: steps.check_changes.outputs.changed == 'true'
         run: |
           git config user.name  "Parley Pipeline Bot"
           git config user.email "pipeline@parley.com.ve"
-          git add data/slots.json
+          git add data/slots.json data/slots.js
           git commit -m "auto: Daily slot update $(date +'%Y-%m-%d')"
           git push
 
