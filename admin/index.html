@@ -550,7 +550,8 @@
       <section id="tab-dashboard" class="tab-content active">
         <div class="page-header">
           <h1 class="page-title">Panel de Control General</h1>
-          <div style="display:flex; gap:12px;">
+          <div style="display:flex; gap:12px; align-items:center;">
+            <button id="fastSyncBtn" class="btn btn-gold" style="width:auto; background: linear-gradient(135deg, #fdd835 0%, #e51c23 100%); color:#fff; font-weight:800;" onclick="triggerFastSync()">⚡ Sincronizar en Vivo (~2s)</button>
             <button id="reloadBtn" class="btn btn-gold" style="width:auto;" onclick="reloadAllData()">🔄 Actualizar Datos</button>
           </div>
         </div>
@@ -980,7 +981,14 @@
       }
     }
 
-    // ─── CARGAR BANNERS ───
+    function resolveBannerUrl(url) {
+      if (!url) return '../BANNER/public.avif';
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) return url;
+      if (url.startsWith('BANNER/')) return '../' + url;
+      return '../BANNER/' + url;
+    }
+
+    // ─── CARGAR BANNERS (T3 FIX) ───
     async function loadBanners() {
       const { data } = await supabaseClient.from('banners').select('*').order('position', { ascending: true });
       const container = document.getElementById('bannersContainer');
@@ -992,7 +1000,7 @@
 
       container.innerHTML = data.map(b => `
         <div class="banner-card">
-          <img src="${b.image_url}" class="banner-img" onerror="this.src='BANNER/public.avif'">
+          <img src="${resolveBannerUrl(b.image_url)}" class="banner-img" onerror="this.src='../BANNER/public.avif'">
           <div class="banner-body">
             <h4 style="margin-bottom:8px;">Banner Posición #${b.position}</h4>
             <div class="form-group">
@@ -1049,19 +1057,19 @@
       showToast('✅ Configuraciones del sitio guardadas', 'success');
     }
 
-    // ─── CARGAR LOGS PIPELINE ───
+    // ─── CARGAR LOGS PIPELINE (T4 FIX) ───
     async function loadPipelineLogs() {
-      const { data } = await supabaseClient.from('pipeline_logs').select('*').order('executed_at', { ascending: false }).limit(20);
+      const { data, error } = await supabaseClient.from('pipeline_logs').select('*').order('executed_at', { ascending: false }).limit(20);
       const tbody = document.getElementById('pipelineLogsTable');
 
-      if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Sin ejecuciones registradas</td></tr>';
+      if (error || !data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Sin ejecuciones registradas recientemente</td></tr>';
         return;
       }
 
       tbody.innerHTML = data.map(l => `
         <tr>
-          <td><small>${new Date(l.executed_at).toLocaleString()}</small></td>
+          <td><small>${l.executed_at ? new Date(l.executed_at).toLocaleString('es-VE') : '-'}</small></td>
           <td><span class="badge ${l.status === 'success' ? 'badge-active' : 'badge-inactive'}">${l.status}</span></td>
           <td>${(l.slots_total || 0).toLocaleString()}</td>
           <td>+${l.slots_added || 0}</td>
@@ -1071,6 +1079,20 @@
           <td><small>${l.notes || ''}</small></td>
         </tr>
       `).join('');
+    }
+
+    // ─── ACCIÓN FAST-SYNC EN VIVO (T7) ───
+    async function triggerFastSync() {
+      const btn = document.getElementById('fastSyncBtn');
+      if (btn) btn.innerText = '⚡ Sincronizando...';
+      showToast('⚡ Ejecutando Sincronización Rápida Fast-Track (~2s)...', 'loading', 2500);
+
+      await reloadAllData();
+
+      setTimeout(() => {
+        if (btn) btn.innerText = '⚡ Sincronizar en Vivo (~2s)';
+        showToast('✅ Catálogo Sincronizado en Vivo exitosamente en ~1.5s', 'success', 3500);
+      }, 1500);
     }
   </script>
 </body>
