@@ -10,8 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-  <!-- 🚀 OPTIMIZACIÓN PERF-1 & PERF-4: Pre-carga prioritaria de Banner Principal y scripts no bloqueantes -->
+  <!-- 🚀 OPTIMIZACIÓN PERF-1 & COLD-1: Pre-carga instantánea del Top 40 (~25 KB) + Carga progresiva del total -->
   <link rel="preload" as="image" href="BANNER/ChatGPT%20Image%206%20jul%202026%2C%2002_23_45%20p.m.png" fetchpriority="high">
+  <script src="data/slots_initial.js"></script>
   <script src="data/slots.js" defer></script>
 
   <style>
@@ -1772,6 +1773,13 @@ const App=(()=>{
   /* ── Public API ──────────────────────────────────────────────── */
   return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune};
 })();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
 </script>
 </body>
 </html>

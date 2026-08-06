@@ -123,43 +123,59 @@ const SlotsApp = (() => {
   async function loadData() {
     showLoading(true);
     try {
-      const res = await fetch(DATA_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const raw = await res.json();
+      // ⚡ 1. Si SLOTS_INITIAL_DATA existe (Top 40 - 25 KB), inicializar INSTANTÁNEAMENTE en <100ms
+      if (typeof window !== 'undefined' && window.SLOTS_INITIAL_DATA && Array.isArray(window.SLOTS_INITIAL_DATA)) {
+        allSlots = processRawSlots(window.SLOTS_INITIAL_DATA);
+        buildFilterUI();
+        restoreFiltersFromURL();
+        applyFilters();
+        showLoading(false);
+      }
 
-      // Enrich each slot once — avoids re-computation on every filter pass
-      allSlots = raw.map((s) => {
-        const parsed = parseGameUrl(s.game_url || s.game_url_raw);
-        const providerName = s.provider || PROVIDER_DISPLAY[s.provider_raw] || 'Otros';
-        const typeName = s.category || parsed.type || 'Video Slots';
-        const tagsList = (s.tags && Array.isArray(s.tags) && s.tags.length > 0) ? s.tags : parsed.tags;
-        const totalClicks = s.total_clicks !== undefined ? s.total_clicks : ((s.clicks_desktop || 0) + (s.clicks_mobile || 0));
+      // ⚡ 2. Cargar dataset completo en segundo plano sin interrumpir la vista inicial
+      let fullRaw = null;
+      if (typeof window !== 'undefined' && window.SLOTS_DATA && Array.isArray(window.SLOTS_DATA)) {
+        fullRaw = window.SLOTS_DATA;
+      } else {
+        const res = await fetch(DATA_URL).catch(() => null);
+        if (res && res.ok) {
+          fullRaw = await res.json();
+        }
+      }
 
-        return {
-          ...s,
-          provider: providerName,
-          _type: typeName,
-          _tags: tagsList,
-          _totalClicks: totalClicks,
-          _nameLower: s.name.toLowerCase(),
-          _nameNorm: normalize(s.name),
-          _createdTs: s.created_at ? new Date(s.created_at).getTime() : 0,
-          _providerDisplay: providerName,
-        };
-      });
-
-      buildFilterUI();
-      restoreFiltersFromURL();
-      applyFilters();
+      if (fullRaw && Array.isArray(fullRaw) && fullRaw.length > 0) {
+        allSlots = processRawSlots(fullRaw);
+        buildFilterUI();
+        restoreFiltersFromURL();
+        applyFilters();
+      }
     } catch (err) {
-      console.error('Error cargando datos:', err);
-      dom.slotsGrid.innerHTML = `
-        <div class="load-error">
-          <p>❌ No se pudieron cargar los juegos. Intenta recargar la página.</p>
-        </div>`;
+      console.error('Error en carga progresiva de datos:', err);
     } finally {
       showLoading(false);
     }
+  }
+
+  function processRawSlots(raw) {
+    return raw.map((s) => {
+      const parsed = parseGameUrl(s.game_url || s.game_url_raw);
+      const providerName = s.provider || PROVIDER_DISPLAY[s.provider_raw] || 'Otros';
+      const typeName = s.category || parsed.type || 'Video Slots';
+      const tagsList = (s.tags && Array.isArray(s.tags) && s.tags.length > 0) ? s.tags : parsed.tags;
+      const totalClicks = s.total_clicks !== undefined ? s.total_clicks : ((s.clicks_desktop || 0) + (s.clicks_mobile || 0));
+
+      return {
+        ...s,
+        provider: providerName,
+        _type: typeName,
+        _tags: tagsList,
+        _totalClicks: totalClicks,
+        _nameLower: s.name ? s.name.toLowerCase() : '',
+        _nameNorm: s.name ? normalize(s.name) : '',
+        _createdTs: s.created_at ? new Date(s.created_at).getTime() : 0,
+        _providerDisplay: providerName,
+      };
+    });
   }
 
   // ─── Filter UI Construction ──────────────────────────────────────────

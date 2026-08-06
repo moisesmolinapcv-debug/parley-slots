@@ -55,6 +55,7 @@ DELAY_BETWEEN_BATCHES = 65  # ⏱️ 65s de delay anti-rate-limit
 BASE_DIR              = Path(__file__).resolve().parent.parent
 OUTPUT_JSON_PATH      = BASE_DIR / "data" / "slots.json"
 OUTPUT_JS_PATH        = BASE_DIR / "data" / "slots.js"
+OUTPUT_INITIAL_JS_PATH = BASE_DIR / "data" / "slots_initial.js"
 
 BATCH_SIZE            = 200
 PAGE_SIZE             = 1000
@@ -407,6 +408,15 @@ def step4_regenerate_files() -> int:
         json.dump(all_slots, f, ensure_ascii=False, separators=(",", ":"))
         f.write(";\nif (typeof module !== 'undefined') module.exports = SLOTS_DATA;\n")
     print(f"     [OK] slots.js actualizado ordenado por popularidad ({len(all_slots):,} slots)")
+
+    # 3. Guardar slots_initial.js con Top 40 (~25 KB para carga instantanea en <100ms)
+    top_40 = all_slots[:40]
+    with open(OUTPUT_INITIAL_JS_PATH, "w", encoding="utf-8") as f:
+        f.write(js_header)
+        f.write("var SLOTS_INITIAL_DATA = ")
+        json.dump(top_40, f, ensure_ascii=False, separators=(",", ":"))
+        f.write(";\n")
+    print(f"     [OK] slots_initial.js actualizado con Top 40 slots ({len(top_40)} slots - ~25 KB)")
 
     pipeline_stats["slots_total"] = len(all_slots)
     return len(all_slots)
