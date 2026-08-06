@@ -10,8 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-  <!-- 📜 Carga estática síncrona del catálogo de slots (Respaldo instantáneo anti-CORS y GitHub Pages) -->
-  <script src="data/slots.js"></script>
+  <!-- 🚀 OPTIMIZACIÓN PERF-1 & PERF-4: Pre-carga prioritaria de Banner Principal y scripts no bloqueantes -->
+  <link rel="preload" as="image" href="BANNER/ChatGPT%20Image%206%20jul%202026%2C%2002_23_45%20p.m.png" fetchpriority="high">
+  <script src="data/slots.js" defer></script>
 
   <style>
 /* ══════════════════════════════════════════════════════════════
@@ -819,6 +820,8 @@ input,select{font:inherit;color:inherit}
              src="BANNER/ChatGPT%20Image%206%20jul%202026%2C%2002_23_45%20p.m.png"
              alt="Promociones Exclusivas Parley"
              loading="eager"
+             fetchpriority="high"
+             decoding="async"
              onerror="this.style.background='linear-gradient(135deg,#1a0e2e,#030611)'">
       </div>
 
@@ -828,6 +831,7 @@ input,select{font:inherit;color:inherit}
              src="BANNER/public.avif"
              alt="Casino Premium Parley"
              loading="lazy"
+             decoding="async"
              onerror="this.style.background='linear-gradient(135deg,#0d1426,#030611)'">
       </div>
 
@@ -837,6 +841,7 @@ input,select{font:inherit;color:inherit}
              src="BANNER/public%20(1).avif"
              alt="Slots Exclusivos Parley"
              loading="lazy"
+             decoding="async"
              onerror="this.style.background='linear-gradient(135deg,#1a0e2e,#0d1426)'">
       </div>
 

@@ -390,7 +390,7 @@ const SlotsApp = (() => {
             class="slot-card__img"
             data-src="${slot.image_url}"
             alt="${slot.name}"
-            loading="lazy"
+            decoding="async"
           />
           <div class="slot-card__img-placeholder">
             <span>${slot.name}</span>
@@ -533,7 +533,7 @@ const SlotsApp = (() => {
         }
       },
       {
-        rootMargin: '200px', // start loading 200px before visible
+        rootMargin: '800px', // start loading 800px before visible for ultra-smooth scroll
       }
     );
   }
