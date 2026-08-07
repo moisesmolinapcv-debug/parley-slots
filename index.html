@@ -1394,6 +1394,8 @@ input,select{font:inherit;color:inherit}
   const SUPABASE_API_URL = "https://zofknbvkoxwoqtrcwpas.supabase.co/rest/v1";
   const SUPABASE_PUBLIC_KEY = "sb_publishable_EilryQ89HDbmfGDWmlKQ1A_Ch-aSEQC";
 
+  let liveFeaturedSlotsOrder = null;
+
   /** ⚡ Consulta relámpago a Supabase DB con Inversión Lógica para activos y site_config */
   async function fetchLiveOverrides() {
     try {
@@ -1432,13 +1434,22 @@ input,select{font:inherit;color:inherit}
         }
       }
 
-      // ⚙️ Aplicar Configuraciones Dinámicas del Sitio desde Supabase DB
+      // ⚙️ Aplicar Configuraciones Dinámicas del Sitio desde Supabase DB (REST API)
       if (resConfig && resConfig.ok) {
         const configList = await resConfig.json();
         if (Array.isArray(configList)) {
           const configMap = {};
           configList.forEach(item => { if (item.key) configMap[item.key] = item.value; });
           applyLiveSiteConfig(configMap);
+          if (configMap.featured_slots_order) {
+            try {
+              liveFeaturedSlotsOrder = typeof configMap.featured_slots_order === 'string' ? JSON.parse(configMap.featured_slots_order) : configMap.featured_slots_order;
+              localStorage.setItem('parley_featured_slots_v3', JSON.stringify(liveFeaturedSlotsOrder));
+              if (typeof initFeaturedSlotsCarousel === 'function') {
+                initFeaturedSlotsCarousel();
+              }
+            } catch(e) {}
+          }
         }
       }
 
@@ -1495,6 +1506,13 @@ input,select{font:inherit;color:inherit}
 
     banners.forEach((b, idx) => {
       const imgUrl = b.image_url || 'BANNER/public.avif';
+      
+      /* 🚀 Precarga proactiva en memoria para 0 latencia */
+      if (imgUrl) {
+        const imgPreload = new Image();
+        imgPreload.src = imgUrl;
+      }
+
       slidesHtml += `
         <div class="carousel-slide">
           <img class="carousel-banner-img"
@@ -2035,18 +2053,26 @@ input,select{font:inherit;color:inherit}
   let isFeaturedSnapping = false;
 
   async function loadFeaturedSlotsConfig() {
-    let order = null;
-    try {
-      const stored = localStorage.getItem('parley_featured_slots_v3');
-      if (stored) order = JSON.parse(stored);
-    } catch(e) {}
+    let order = liveFeaturedSlotsOrder;
 
-    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+    if (!order || !Array.isArray(order) || order.length === 0) {
       try {
-        const { data } = await supabaseClient.from('site_config').select('value').eq('key', 'featured_slots_order').single();
-        if (data && data.value) {
-          order = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-          localStorage.setItem('parley_featured_slots_v3', JSON.stringify(order));
+        const stored = localStorage.getItem('parley_featured_slots_v3');
+        if (stored) order = JSON.parse(stored);
+      } catch(e) {}
+    }
+
+    /* Consulta directa via Supabase REST API HTTP sin depender del SDK */
+    if (!order || !Array.isArray(order) || order.length === 0) {
+      try {
+        const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
+        const res = await fetch(`${SUPABASE_API_URL}/site_config?key=eq.featured_slots_order&select=value`, { headers });
+        if (res && res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list) && list.length > 0 && list[0].value) {
+            order = typeof list[0].value === 'string' ? JSON.parse(list[0].value) : list[0].value;
+            localStorage.setItem('parley_featured_slots_v3', JSON.stringify(order));
+          }
         }
       } catch(e) {}
     }
