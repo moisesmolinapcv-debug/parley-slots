@@ -1030,8 +1030,8 @@ input,select{font:inherit;color:inherit}
 const App=(()=>{
   'use strict';
 
-  /* ── Constantes ────────────────────────────────────────────── */
-  const INITIAL_LOAD=24, BATCH_SIZE=24, DEBOUNCE_MS=280;
+  /* ── Constantes y Configuración Dinámica ────────────────────── */
+  let INITIAL_LOAD=24, BATCH_SIZE=24, DEBOUNCE_MS=280, HOT_THRESHOLD=30000;
   const SPECIAL_TAGS=['Drop&Win','Torneo','Navidad'];
   const PROV_NAMES={pragmaticplay:'Pragmatic Play',wazdan:'Wazdan',betsoft:'Betsoft','boominggames':'Booming Games','booming games':'Booming Games',spinomenal:'Spinomenal',caletagaming:'Caleta Gaming',caleta:'Caleta Gaming',netent:'NetEnt',playngo:"Play'n GO","play'n go":"Play'n GO",nolimit:'Nolimit City',nolimitcity:'Nolimit City','nolimit city':'Nolimit City',redtiger:'Red Tiger','red tiger':'Red Tiger',evolution:'Evolution',hacksaw:'Hacksaw Gaming','hacksaw gaming':'Hacksaw Gaming',relax:'Relax Gaming','push gaming':'Push Gaming',pushgaming:'Push Gaming',elk:'ELK Studios',yggdrasil:'Yggdrasil',thunderkick:'Thunderkick',isoftbet:'iSoftBet',quickspin:'Quickspin',btg:'Big Time Gaming','bigtimegaming':'Big Time Gaming','big time gaming':'Big Time Gaming','ka gaming':'KA Gaming',kagaming:'KA Gaming',playtech:'Playtech',evoplay:'Evoplay',habanero:'Habanero','tada gaming':'TaDa Gaming',tadagaming:'TaDa Gaming',spinoro:'Spinoro',endorphina:'Endorphina','red rake gaming':'Red Rake Gaming','ruby play':'Ruby Play',rubyplay:'Ruby Play',skywind:'Skywind','7777 gaming':'7777 Gaming','triple cherry':'Triple Cherry',playson:'Playson','mascot gaming':'Mascot Gaming',novomatic:'Novomatic',popok:'PopOk Gaming',belatra:'Belatra',mancala:'Mancala Gaming','gaming corps':'Gaming Corps','3 oaks gaming':'3 Oaks Gaming','felix gaming':'Felix Gaming',gamzix:'Gamzix',galaxsys:'Galaxsys',turbogames:'TurboGames','vibra gaming':'Vibra Gaming',gmw:'GMW',kalamba:'Kalamba Games','kalamba games':'Kalamba Games',spribe:'Spribe',aviatrix:'Aviatrix'};
 
@@ -1072,8 +1072,6 @@ const App=(()=>{
   function normalize(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
   function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
   const isMobile=/Mobi|Android/i.test(navigator.userAgent);
-
-  let INITIAL_LOAD=24, BATCH_SIZE=24, DEBOUNCE_MS=280, HOT_THRESHOLD=30000;
 
   const SUPABASE_API_URL = "https://zofknbvkoxwoqtrcwpas.supabase.co/rest/v1";
   const SUPABASE_PUBLIC_KEY = "sb_publishable_EilryQ89HDbmfGDWmlKQ1A_Ch-aSEQC";
