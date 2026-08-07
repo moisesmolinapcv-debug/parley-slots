@@ -1465,6 +1465,7 @@ input,select{font:inherit;color:inherit}
     slots.forEach((s,i)=>{
       const card=document.createElement('article');
       card.className='card';card.style.animationDelay=`${Math.min(i*30,400)}ms`;
+      const url = isMobile ? (s.slot_url_movil || s.slot_url_app || s.slot_desktop_movil || '#') : (s.slot_desktop_movil || '#');
       const hot = (s._totalClicks || 0) >= HOT_THRESHOLD;
       const newCutoffMs = NEW_THRESHOLD_DAYS * 86400000;
       const isNew = s._isNew || s.is_new || (s._createdTs && (Date.now() - s._createdTs <= newCutoffMs));
