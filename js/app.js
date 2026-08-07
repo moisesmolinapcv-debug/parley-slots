@@ -14,6 +14,8 @@ const SlotsApp = (() => {
 
   // ─── Constants & Dynamic Config ──────────────────────────────────────
   let SLOTS_PER_PAGE = 24;
+  let HOT_THRESHOLD = 30000;
+  let NEW_THRESHOLD_DAYS = 30;
   const DEBOUNCE_MS = 300;
   const DATA_URL = 'data/slots.json';
 
@@ -184,6 +186,12 @@ const SlotsApp = (() => {
       if (metaDesc) metaDesc.content = configMap.site_description;
       const subTitleEl = document.querySelector('.hero-subtitle') || document.querySelector('.tagline');
       if (subTitleEl) subTitleEl.textContent = configMap.site_description;
+    }
+    if (configMap.hot_threshold) {
+      HOT_THRESHOLD = parseInt(configMap.hot_threshold) || 30000;
+    }
+    if (configMap.new_threshold_days) {
+      NEW_THRESHOLD_DAYS = parseInt(configMap.new_threshold_days) || 30;
     }
     if (configMap.batch_size) {
       SLOTS_PER_PAGE = parseInt(configMap.batch_size) || 24;

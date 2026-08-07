@@ -1027,11 +1027,11 @@ input,select{font:inherit;color:inherit}
 /* ══════════════════════════════════════════════════════════════
    PARLEY SLOTS APP v2.2
    ══════════════════════════════════════════════════════════════ */
-const App=(()=>{
+  const App=(()=>{
   'use strict';
 
   /* ── Constantes y Configuración Dinámica ────────────────────── */
-  let INITIAL_LOAD=24, BATCH_SIZE=24, DEBOUNCE_MS=280, HOT_THRESHOLD=30000;
+  let INITIAL_LOAD=24, BATCH_SIZE=24, DEBOUNCE_MS=280, HOT_THRESHOLD=30000, NEW_THRESHOLD_DAYS=30;
   const SPECIAL_TAGS=['Drop&Win','Torneo','Navidad'];
   const PROV_NAMES={pragmaticplay:'Pragmatic Play',wazdan:'Wazdan',betsoft:'Betsoft','boominggames':'Booming Games','booming games':'Booming Games',spinomenal:'Spinomenal',caletagaming:'Caleta Gaming',caleta:'Caleta Gaming',netent:'NetEnt',playngo:"Play'n GO","play'n go":"Play'n GO",nolimit:'Nolimit City',nolimitcity:'Nolimit City','nolimit city':'Nolimit City',redtiger:'Red Tiger','red tiger':'Red Tiger',evolution:'Evolution',hacksaw:'Hacksaw Gaming','hacksaw gaming':'Hacksaw Gaming',relax:'Relax Gaming','push gaming':'Push Gaming',pushgaming:'Push Gaming',elk:'ELK Studios',yggdrasil:'Yggdrasil',thunderkick:'Thunderkick',isoftbet:'iSoftBet',quickspin:'Quickspin',btg:'Big Time Gaming','bigtimegaming':'Big Time Gaming','big time gaming':'Big Time Gaming','ka gaming':'KA Gaming',kagaming:'KA Gaming',playtech:'Playtech',evoplay:'Evoplay',habanero:'Habanero','tada gaming':'TaDa Gaming',tadagaming:'TaDa Gaming',spinoro:'Spinoro',endorphina:'Endorphina','red rake gaming':'Red Rake Gaming','ruby play':'Ruby Play',rubyplay:'Ruby Play',skywind:'Skywind','7777 gaming':'7777 Gaming','triple cherry':'Triple Cherry',playson:'Playson','mascot gaming':'Mascot Gaming',novomatic:'Novomatic',popok:'PopOk Gaming',belatra:'Belatra',mancala:'Mancala Gaming','gaming corps':'Gaming Corps','3 oaks gaming':'3 Oaks Gaming','felix gaming':'Felix Gaming',gamzix:'Gamzix',galaxsys:'Galaxsys',turbogames:'TurboGames','vibra gaming':'Vibra Gaming',gmw:'GMW',kalamba:'Kalamba Games','kalamba games':'Kalamba Games',spribe:'Spribe',aviatrix:'Aviatrix'};
 
@@ -1142,6 +1142,9 @@ const App=(()=>{
     }
     if (configMap.hot_threshold) {
       HOT_THRESHOLD = parseInt(configMap.hot_threshold) || 30000;
+    }
+    if (configMap.new_threshold_days) {
+      NEW_THRESHOLD_DAYS = parseInt(configMap.new_threshold_days) || 30;
     }
     if (configMap.batch_size) {
       BATCH_SIZE = parseInt(configMap.batch_size) || 24;
@@ -1462,10 +1465,10 @@ const App=(()=>{
     slots.forEach((s,i)=>{
       const card=document.createElement('article');
       card.className='card';card.style.animationDelay=`${Math.min(i*30,400)}ms`;
-      const url=isMobile?(s.slot_url_movil||s.slot_url_app||s.slot_desktop_movil||'#'):(s.slot_desktop_movil||'#');
-      const hot=s._totalClicks>30000;
-      const isNew=s._isNew;
-      const statusBadge=hot?'<span class="badge-hot">🔥 HOT</span>':(isNew?'<span class="badge-new">✨ NUEVO</span>':'');
+      const hot = (s._totalClicks || 0) >= HOT_THRESHOLD;
+      const newCutoffMs = NEW_THRESHOLD_DAYS * 86400000;
+      const isNew = s._isNew || s.is_new || (s._createdTs && (Date.now() - s._createdTs <= newCutoffMs));
+      const statusBadge = hot ? '<span class="badge-hot">🔥 HOT</span>' : (isNew ? '<span class="badge-new">✨ NUEVO</span>' : '');
       card.innerHTML=`
         ${statusBadge}
         <div class="card-img-wrap">
