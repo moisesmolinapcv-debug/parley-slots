@@ -119,14 +119,15 @@ const SlotsApp = (() => {
   const SUPABASE_API_URL = "https://zofknbvkoxwoqtrcwpas.supabase.co/rest/v1";
   const SUPABASE_PUBLIC_KEY = "sb_publishable_EilryQ89HDbmfGDWmlKQ1A_Ch-aSEQC";
 
-  /** ⚡ Consulta relámpago a Supabase (~100ms) con Inversión Lógica para activos */
+  /** ⚡ Consulta relámpago a Supabase (~100ms) con Inversión Lógica para activos y site_config */
   async function fetchLiveOverrides() {
     try {
       const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
-      const [resProvActive, resSlotsInactive, resBanners] = await Promise.all([
+      const [resProvActive, resSlotsInactive, resBanners, resConfig] = await Promise.all([
         fetch(`${SUPABASE_API_URL}/providers?is_active=eq.true&select=name,display_name`, { headers }).catch(() => null),
         fetch(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=id,external_id,name`, { headers }).catch(() => null),
-        fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url&order=position.asc`, { headers }).catch(() => null)
+        fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url&order=position.asc`, { headers }).catch(() => null),
+        fetch(`${SUPABASE_API_URL}/site_config?select=key,value`, { headers }).catch(() => null)
       ]);
 
       // ⚡ 1. Proveedores ACTIVOS devueltos por Supabase
@@ -158,9 +159,41 @@ const SlotsApp = (() => {
         }
       }
 
+      // ⚙️ 4. Configuraciones dinámicas de site_config
+      if (resConfig && resConfig.ok) {
+        const configList = await resConfig.json();
+        if (Array.isArray(configList)) {
+          const configMap = {};
+          configList.forEach(item => { if (item.key) configMap[item.key] = item.value; });
+          applyLiveSiteConfig(configMap);
+        }
+      }
+
       return { activeProvs, inactiveSlotIds };
     } catch (e) {
       return { activeProvs: null, inactiveSlotIds: new Set() };
+    }
+  }
+
+  function applyLiveSiteConfig(configMap) {
+    if (configMap.site_title) {
+      document.title = configMap.site_title;
+    }
+    if (configMap.site_description) {
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.content = configMap.site_description;
+      const subTitleEl = document.querySelector('.hero-subtitle') || document.querySelector('.tagline');
+      if (subTitleEl) subTitleEl.textContent = configMap.site_description;
+    }
+    if (configMap.maintenance_mode === 'true') {
+      const hero = document.getElementById('heroCarousel');
+      if (hero && !document.getElementById('maintenanceBanner')) {
+        const m = document.createElement('div');
+        m.id = 'maintenanceBanner';
+        m.style.cssText = 'background:linear-gradient(90deg, #e51c23, #ff9800); color:#fff; text-align:center; padding:12px; font-weight:800; border-radius:8px; margin-bottom:16px; font-size:14px;';
+        m.innerHTML = '⚠️ SITIO EN MANTENIMIENTO TEMPORAL — ALGUNOS JUEGOS PUEDEN NO ESTAR DISPONIBLES';
+        hero.parentNode.insertBefore(m, hero);
+      }
     }
   }
 
