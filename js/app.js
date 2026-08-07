@@ -187,16 +187,24 @@ const SlotsApp = (() => {
   }
 
   /**
-   * Fetch slots.json, enrich each object with pre-computed fields,
-   * and extract the unique categories/providers/tags.
+   * Fetch slots, banners and live overrides directly from Supabase DB,
+   * enrich each object, and extract unique categories/providers/tags.
    */
   async function loadData() {
     showLoading(true);
     try {
-      // ⚡ Obtenemos anulaciones en tiempo real desde Supabase DB en paralelo (~100ms)
+      const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
+
+      // ⚡ 1. Cargar Banners Dinámicos desde Supabase DB en tiempo real
+      fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url&order=position.asc`, { headers })
+        .then(r => r.ok ? r.json() : null)
+        .then(bData => { if (Array.isArray(bData) && bData.length > 0) renderDynamicBanners(bData); })
+        .catch(() => {});
+
+      // ⚡ 2. Cargar inactividades de Supabase DB en paralelo (~100ms)
       const overridesPromise = fetchLiveOverrides();
 
-      // ⚡ 1. Si SLOTS_INITIAL_DATA existe (Top 40 - 25 KB), inicializar INSTANTÁNEAMENTE en <100ms
+      // ⚡ 3. Si SLOTS_INITIAL_DATA existe (Top 40 - 25 KB), inicializar INSTANTÁNEAMENTE en <100ms
       if (typeof window !== 'undefined' && window.SLOTS_INITIAL_DATA && Array.isArray(window.SLOTS_INITIAL_DATA)) {
         const overrides = await overridesPromise;
         allSlots = processRawSlots(window.SLOTS_INITIAL_DATA, overrides);
@@ -206,7 +214,7 @@ const SlotsApp = (() => {
         showLoading(false);
       }
 
-      // ⚡ 2. Cargar dataset completo en segundo plano sin interrumpir la vista inicial
+      // ⚡ 4. Cargar dataset completo en segundo plano
       let fullRaw = null;
       if (typeof window !== 'undefined' && window.SLOTS_DATA && Array.isArray(window.SLOTS_DATA)) {
         fullRaw = window.SLOTS_DATA;
