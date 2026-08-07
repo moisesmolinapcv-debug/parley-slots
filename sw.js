@@ -1,8 +1,6 @@
-const CACHE_NAME = 'parley-slots-v2';
+const CACHE_NAME = 'parley-slots-v3';
 const ASSETS_TO_CACHE = [
   './',
-  './data/slots_initial.js',
-  './js/app.js',
   './ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png'
 ];
 
@@ -35,8 +33,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-First para HTML (garantiza siempre la última versión sin caché viejo)
-  if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
+  const url = event.request.url;
+  const isHtmlOrJs = url.endsWith('.html') || url.endsWith('.js') || url.includes('/admin/') || (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'));
+
+  // Network-First para HTML y JS (garantiza 100% la última versión sin caché viejo)
+  if (isHtmlOrJs) {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
@@ -53,7 +54,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-While-Revalidate para assets estáticos
+  // Stale-While-Revalidate para imágenes y fuentes
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
@@ -70,3 +71,4 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+

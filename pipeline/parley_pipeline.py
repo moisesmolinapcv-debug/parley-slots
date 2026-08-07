@@ -18,7 +18,7 @@ import time
 import requests
 import urllib.request
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -173,6 +173,31 @@ def send_telegram_report(stats: dict, elapsed: float):
     if stats["status"] != "success":
         msg += f"\n⚠️ <b>Error:</b> {stats.get('error_message', 'Desconocido')[:200]}"
     send_telegram(msg)
+
+def step3b_cleanup_expired_new_flags():
+    print("\n[3b/5] Verificando y limpiando marcas is_new expiradas en Supabase DB...")
+    try:
+        # 1. Leer new_threshold_days desde site_config
+        r_cfg = supabase_request("GET", "site_config?key=eq.new_threshold_days&select=value")
+        threshold_days = 30
+        if r_cfg and r_cfg.status_code == 200:
+            cfg_list = r_cfg.json()
+            if cfg_list and isinstance(cfg_list, list) and len(cfg_list) > 0:
+                threshold_days = int(cfg_list[0].get("value") or 30)
+        
+        print(f"     [CONFIG] Umbral de novedad activo: {threshold_days} días")
+
+        # 2. Desmarcar is_new = false para slots donde created_at tenga más de threshold_days
+        now_dt = datetime.now(timezone.utc)
+        cutoff_dt = now_dt - timedelta(days=threshold_days)
+        cutoff_iso = cutoff_dt.isoformat()
+
+        patch_query = f"slots?is_new=eq.true&created_at=lt.{cutoff_iso}"
+        r_patch = supabase_request("PATCH", patch_query, json_data={"is_new": False})
+        if r_patch and r_patch.status_code in [200, 204]:
+            print(f"     [OK CLEANUP] Limpieza automática de is_new para slots mayores a {threshold_days} días completada")
+    except Exception as e:
+        print(f"     [ADVERTENCIA] No se pudo ejecutar la limpieza automática de is_new: {e}")
 
 # ─── Paso 1: Extracción REAL con Delay 65s ───────────────────
 def step1_fetch_from_parley() -> tuple:
@@ -455,6 +480,7 @@ def main():
         raw_api_slots, existing_slots = step1_fetch_from_parley()
         diff                          = step2_deep_diff(raw_api_slots, existing_slots)
         step3_update_supabase(diff)
+        step3b_cleanup_expired_new_flags()
         total                         = step4_regenerate_files()
         elapsed                       = time.time() - t0
 
