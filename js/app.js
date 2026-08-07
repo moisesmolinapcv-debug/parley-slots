@@ -45,7 +45,13 @@ const SlotsApp = (() => {
     },
     recent: {
       label: 'Más recientes',
-      compare: (a, b) => b._createdTs - a._createdTs,
+      compare: (a, b) => {
+        const aNew = (a.is_new || a._isNew) ? 1 : 0;
+        const bNew = (b.is_new || b._isNew) ? 1 : 0;
+        if (bNew !== aNew) return bNew - aNew;
+        if ((b._createdTs || 0) !== (a._createdTs || 0)) return (b._createdTs || 0) - (a._createdTs || 0);
+        return (b.id || 0) - (a.id || 0);
+      },
     },
   };
 

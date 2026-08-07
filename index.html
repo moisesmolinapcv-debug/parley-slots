@@ -1053,7 +1053,18 @@ input,select{font:inherit;color:inherit}
     {id:'T13_Comida',  label:'🍬 Comida y Dulces'},
   ];
 
-  const SORT_FNS={popular:(a,b)=>b._totalClicks-a._totalClicks,az:(a,b)=>a._nameLower.localeCompare(b._nameLower,'es'),za:(a,b)=>b._nameLower.localeCompare(a._nameLower,'es'),recent:(a,b)=>b._createdTs-a._createdTs};
+  const SORT_FNS={
+    popular: (a,b) => (b._totalClicks || 0) - (a._totalClicks || 0),
+    az: (a,b) => a._nameLower.localeCompare(b._nameLower, 'es'),
+    za: (a,b) => b._nameLower.localeCompare(a._nameLower, 'es'),
+    recent: (a,b) => {
+      const aNew = (a.is_new || a._isNew) ? 1 : 0;
+      const bNew = (b.is_new || b._isNew) ? 1 : 0;
+      if (bNew !== aNew) return bNew - aNew;
+      if ((b._createdTs || 0) !== (a._createdTs || 0)) return (b._createdTs || 0) - (a._createdTs || 0);
+      return (b.id || 0) - (a.id || 0);
+    }
+  };
 
   /* ── State ──────────────────────────────────────────────────── */
   let allSlots=[],filtered=[],displayedCount=INITIAL_LOAD;
