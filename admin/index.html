@@ -1046,29 +1046,61 @@
 
     // ─── CARGAR CONFIGURACIÓN ───
     async function loadConfig() {
-      const { data } = await supabaseClient.from('site_config').select('*');
+      const { data, error } = await supabaseClient.from('site_config').select('*').order('key');
       const div = document.getElementById('configFields');
 
-      if (!data) return;
+      if (error || !data) {
+        div.innerHTML = '<div style="color:var(--danger);">Error al cargar configuraciones.</div>';
+        return;
+      }
 
-      div.innerHTML = data.map(c => `
-        <div class="form-group" style="margin-bottom:16px;">
-          <label>${c.description || c.key}</label>
-          <input type="text" class="form-control" value="${c.value || ''}" data-config-key="${c.key}">
-        </div>
-      `).join('');
+      const friendlyLabels = {
+        'initial_load_count': '🚀 Cantidad de Slots en Carga Inicial (Primer Render)',
+        'batch_size': '🔄 Cantidad de Slots por Scroll Infinito (Batch)',
+        'hot_threshold': '🔥 Umbral de Clics para Etiqueta HOT',
+        'new_threshold_days': '✨ Días de Antigüedad para Etiqueta NUEVO',
+        'site_title': '🌐 Título Principal del Sitio (Navegador)',
+        'site_description': '📝 Subtítulo / Descripción Principal del Sitio',
+        'maintenance_mode': '🚨 Modo Mantenimiento (true / false)',
+        'pipeline_schedule': '⏰ Hora de Ejecución del Pipeline Nocturno',
+        'pipeline_telegram_enabled': '📢 Notificaciones Telegram del Pipeline'
+      };
+
+      div.innerHTML = data.map(c => {
+        const labelText = friendlyLabels[c.key] || c.description || c.key;
+        const isNumber = c.key.includes('count') || c.key.includes('size') || c.key.includes('threshold') || c.key.includes('days');
+        return `
+          <div class="form-group" style="margin-bottom:20px; background:#161b22; padding:16px; border-radius:8px; border:1px solid #30363d;">
+            <label style="display:block; font-weight:700; margin-bottom:8px; color:#fdd835; font-size:14px;">
+              ${labelText}
+              <span style="color:var(--text-muted); font-weight:normal; font-size:12px; margin-left:8px;">[ Clave DB: <code>${c.key}</code> ]</span>
+            </label>
+            <input type="${isNumber ? 'number' : 'text'}" 
+                   class="form-control" 
+                   style="background:#0d1117; color:#fff; border:1px solid #30363d; padding:10px; border-radius:6px; width:100%; font-size:14px;" 
+                   value="${c.value || ''}" 
+                   data-config-key="${c.key}">
+            <small style="color:var(--text-muted); display:block; margin-top:4px; font-size:12px;">${c.description || ''}</small>
+          </div>
+        `;
+      }).join('');
     }
 
     async function saveConfig(e) {
       e.preventDefault();
       const inputs = document.querySelectorAll('[data-config-key]');
-      showToast('Guardando configuraciones del sitio...', 'loading', 1500);
+      showToast('Guardando configuraciones del sitio...', 'loading', 2000);
+      
+      let updatedCount = 0;
       for (const input of inputs) {
         const key = input.getAttribute('data-config-key');
-        const value = input.value;
-        await supabaseClient.from('site_config').update({ value }).eq('key', key);
+        const value = input.value.trim();
+        const { error } = await supabaseClient.from('site_config').update({ value }).eq('key', key);
+        if (!error) updatedCount++;
       }
-      showToast('✅ Configuraciones del sitio guardadas', 'success');
+      
+      showToast(`✅ ${updatedCount} configuraciones guardadas exitosamente`, 'success');
+      loadConfig();
     }
 
     // ─── CARGAR LOGS PIPELINE (T4 FIX) ───
