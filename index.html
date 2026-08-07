@@ -1241,7 +1241,7 @@ input,select{font:inherit;color:inherit}
       s._totalClicks = s.total_clicks || ((s.clicks_desktop||0)+(s.clicks_mobile||0));
       s._nameLower   = s._nameLower   || (s.name||'').toLowerCase();
       s._nameNorm    = normalize(s.name||'');
-      s._createdTs   = s._createdTs   || (s.created_at ? new Date(s.created_at).getTime() : Date.now());
+      s._createdTs   = (s.created_at ? new Date(s.created_at).getTime() : 0);
       /* Tipo de juego: del array game_types o del raw_game_url como fallback */
       s._gameType    = (s.game_types&&s.game_types.length>0) ? s.game_types[0] : ((s.raw_game_url||s.game_url||'').split(',')[0]||'Video Slots');
       /* Tags especiales del campo pre-procesado */
@@ -1468,7 +1468,7 @@ input,select{font:inherit;color:inherit}
       const url = isMobile ? (s.slot_url_movil || s.slot_url_app || s.slot_desktop_movil || '#') : (s.slot_desktop_movil || '#');
       const hot = (s._totalClicks || 0) >= HOT_THRESHOLD;
       const newCutoffMs = NEW_THRESHOLD_DAYS * 86400000;
-      const isNew = s._isNew || s.is_new || (s._createdTs && (Date.now() - s._createdTs <= newCutoffMs));
+      const isNew = (!hot) && (Boolean(s.is_new) || (s._createdTs > 0 && (Date.now() - s._createdTs <= newCutoffMs)));
       const statusBadge = hot ? '<span class="badge-hot">🔥 HOT</span>' : (isNew ? '<span class="badge-new">✨ NUEVO</span>' : '');
       card.innerHTML=`
         ${statusBadge}
