@@ -1,4 +1,4 @@
-const CACHE_NAME = 'parley-slots-v5';
+const CACHE_NAME = 'parley-slots-v6-2k-hd';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,12 +7,10 @@ const ASSETS_TO_CACHE = [
   './data/slots_initial.js',
   './ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png',
   './BANNER/public.avif',
-  './BANNER/banner_1_desktop.webp',
-  './BANNER/banner_1_mobile.webp',
-  './BANNER/banner_2_desktop.webp',
-  './BANNER/banner_2_mobile.webp',
-  './BANNER/banner_3_desktop.webp',
-  './BANNER/banner_3_mobile.webp'
+  './BANNER/banner_1_desktop_hd.webp',
+  './BANNER/banner_1_mobile_hd.webp',
+  './BANNER/banner_2_desktop_hd.webp',
+  './BANNER/banner_2_mobile_hd.webp'
 ];
 
 self.addEventListener('install', (event) => {

@@ -12,8 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
   <!-- 🚀 OPTIMIZACIÓN PERF-1 & COLD-1: Pre-carga instantánea del Top 40 (~25 KB) + Carga progresiva del total -->
   <link rel="preload" as="image" href="BANNER/ChatGPT%20Image%206%20jul%202026%2C%2002_23_45%20p.m.png" fetchpriority="high">
-  <script src="data/slots_initial.js"></script>
-  <script src="data/slots.js" defer></script>
+  <!-- 🚀 Precarga prioritaria en red para Banner 2K Ultra HD -->
+  <link rel="preload" as="image" href="BANNER/banner_1_desktop_hd.webp" media="(min-width: 601px)" fetchpriority="high">
+  <link rel="preload" as="image" href="BANNER/banner_1_mobile_hd.webp" media="(max-width: 600px)" fetchpriority="high">
 
   <style>
 /* ══════════════════════════════════════════════════════════════
@@ -1505,12 +1506,13 @@ input,select{font:inherit;color:inherit}
     let dotsHtml = '';
 
     banners.forEach((b, idx) => {
-      let deskUrl = b.image_url || `BANNER/banner_${(idx % 3) + 1}_desktop.webp`;
-      let mobUrl = b.image_url_movil || `BANNER/banner_${(idx % 3) + 1}_mobile.webp`;
+      const bannerNum = (idx % 2) + 1;
+      let deskUrl = b.image_url || `BANNER/banner_${bannerNum}_desktop_hd.webp`;
+      let mobUrl = b.image_url_movil || `BANNER/banner_${bannerNum}_mobile_hd.webp`;
 
-      if (deskUrl.includes('public.avif') || deskUrl.includes('ChatGPT')) {
-        deskUrl = `BANNER/banner_${(idx % 3) + 1}_desktop.webp`;
-        mobUrl = `BANNER/banner_${(idx % 3) + 1}_mobile.webp`;
+      if (deskUrl.includes('public.avif') || deskUrl.includes('ChatGPT') || deskUrl.includes('banner_1_desktop.webp')) {
+        deskUrl = `BANNER/banner_${bannerNum}_desktop_hd.webp`;
+        mobUrl = `BANNER/banner_${bannerNum}_mobile_hd.webp`;
       }
 
       /* 🚀 Precarga proactiva en memoria según dispositivo */
