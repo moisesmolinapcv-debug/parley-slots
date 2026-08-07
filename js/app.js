@@ -119,33 +119,36 @@ const SlotsApp = (() => {
   const SUPABASE_API_URL = "https://zofknbvkoxwoqtrcwpas.supabase.co/rest/v1";
   const SUPABASE_PUBLIC_KEY = "sb_publishable_EilryQ89HDbmfGDWmlKQ1A_Ch-aSEQC";
 
-  /** ⚡ Consulta relámpago a Supabase (~100ms) para traer banderas y banners en tiempo real del Panel Admin */
+  /** ⚡ Consulta relámpago a Supabase (~100ms) con Inversión Lógica para activos */
   async function fetchLiveOverrides() {
     try {
       const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
-      const [resProv, resSlots, resBanners] = await Promise.all([
-        fetch(`${SUPABASE_API_URL}/providers?is_active=eq.false&select=name,display_name`, { headers }).catch(() => null),
+      const [resProvActive, resSlotsInactive, resBanners] = await Promise.all([
+        fetch(`${SUPABASE_API_URL}/providers?is_active=eq.true&select=name,display_name`, { headers }).catch(() => null),
         fetch(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=external_id`, { headers }).catch(() => null),
-        fetch(`${SUPABASE_API_URL}/banners?select=position,title,image_url&order=position.asc`, { headers }).catch(() => null)
+        fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url&order=position.asc`, { headers }).catch(() => null)
       ]);
 
-      const inactiveProvs = new Set();
-      if (resProv && resProv.ok) {
-        const provData = await resProv.json();
+      // ⚡ 1. Proveedores ACTIVOS devueltos por Supabase
+      const activeProvs = new Set();
+      if (resProvActive && resProvActive.ok) {
+        const provData = await resProvActive.json();
         provData.forEach(p => {
-          if (p.name) inactiveProvs.add(p.name.toLowerCase().trim());
-          if (p.display_name) inactiveProvs.add(p.display_name.toLowerCase().trim());
+          if (p.name) activeProvs.add(p.name.toLowerCase().trim());
+          if (p.display_name) activeProvs.add(p.display_name.toLowerCase().trim());
         });
       }
 
+      // ⚡ 2. Slots INACTIVOS individuales
       const inactiveSlotIds = new Set();
-      if (resSlots && resSlots.ok) {
-        const slotData = await resSlots.json();
+      if (resSlotsInactive && resSlotsInactive.ok) {
+        const slotData = await resSlotsInactive.json();
         slotData.forEach(s => {
           if (s.external_id) inactiveSlotIds.add(String(s.external_id));
         });
       }
 
+      // ⚡ 3. Banners dinámicos
       if (resBanners && resBanners.ok) {
         const bannerData = await resBanners.json();
         if (Array.isArray(bannerData) && bannerData.length > 0) {
@@ -153,9 +156,9 @@ const SlotsApp = (() => {
         }
       }
 
-      return { inactiveProvs, inactiveSlotIds };
+      return { activeProvs, inactiveSlotIds };
     } catch (e) {
-      return { inactiveProvs: new Set(), inactiveSlotIds: new Set() };
+      return { activeProvs: null, inactiveSlotIds: new Set() };
     }
   }
 
@@ -239,17 +242,24 @@ const SlotsApp = (() => {
     }
   }
 
-  function processRawSlots(raw, overrides = { inactiveProvs: new Set(), inactiveSlotIds: new Set() }) {
+  function processRawSlots(raw, overrides = { activeProvs: null, inactiveSlotIds: new Set() }) {
     return raw
       .filter((s) => {
-        // 🛡️ Filtro de Desactivación en Vivo desde Supabase DB (Zero Latency <100ms)
+        // 1. Si el slot individual tiene is_active === false
         if (s.is_active === false) return false;
+        
+        // 2. Si el slot id está en la lista de slots inactivos de Supabase
         const slotIdStr = String(s.id || s.external_id);
         if (overrides.inactiveSlotIds && overrides.inactiveSlotIds.has(slotIdStr)) return false;
 
-        const provName = (s.provider || '').toLowerCase().trim();
-        const provDisp = (s.provider_display || '').toLowerCase().trim();
-        if (overrides.inactiveProvs && (overrides.inactiveProvs.has(provName) || overrides.inactiveProvs.has(provDisp))) return false;
+        // 3. ⚡ INVERSIÓN LÓGICA DE PROVEEDORES: Si se cargaron proveedores activos desde Supabase,
+        // el proveedor del slot DEBE pertenecer a esa lista activa. Si NO está, se descarta dinámicamente!
+        if (overrides.activeProvs && overrides.activeProvs.size > 0) {
+          const provName = (s.provider || '').toLowerCase().trim();
+          const provDisp = (s.provider_display || '').toLowerCase().trim();
+          const isProvActive = overrides.activeProvs.has(provName) || overrides.activeProvs.has(provDisp);
+          if (!isProvActive) return false;
+        }
 
         return true;
       })
