@@ -12,8 +12,8 @@
 
 const SlotsApp = (() => {
 
-  // ─── Constants ───────────────────────────────────────────────────────
-  const SLOTS_PER_PAGE = 48;
+  // ─── Constants & Dynamic Config ──────────────────────────────────────
+  let SLOTS_PER_PAGE = 24;
   const DEBOUNCE_MS = 300;
   const DATA_URL = 'data/slots.json';
 
@@ -184,6 +184,9 @@ const SlotsApp = (() => {
       if (metaDesc) metaDesc.content = configMap.site_description;
       const subTitleEl = document.querySelector('.hero-subtitle') || document.querySelector('.tagline');
       if (subTitleEl) subTitleEl.textContent = configMap.site_description;
+    }
+    if (configMap.initial_load_count) {
+      SLOTS_PER_PAGE = parseInt(configMap.initial_load_count) || 24;
     }
     if (configMap.maintenance_mode === 'true') {
       const hero = document.getElementById('heroCarousel');

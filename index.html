@@ -1145,6 +1145,7 @@ const App=(()=>{
     }
     if (configMap.initial_load_count) {
       INITIAL_LOAD = parseInt(configMap.initial_load_count) || 24;
+      displayedCount = INITIAL_LOAD;
     }
     if (configMap.batch_size) {
       BATCH_SIZE = parseInt(configMap.batch_size) || 24;
