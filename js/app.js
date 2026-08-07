@@ -125,7 +125,7 @@ const SlotsApp = (() => {
       const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
       const [resProvActive, resSlotsInactive, resBanners] = await Promise.all([
         fetch(`${SUPABASE_API_URL}/providers?is_active=eq.true&select=name,display_name`, { headers }).catch(() => null),
-        fetch(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=external_id`, { headers }).catch(() => null),
+        fetch(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=id,external_id,name`, { headers }).catch(() => null),
         fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url&order=position.asc`, { headers }).catch(() => null)
       ]);
 
@@ -139,12 +139,14 @@ const SlotsApp = (() => {
         });
       }
 
-      // ⚡ 2. Slots INACTIVOS individuales
+      // ⚡ 2. Coincidencia Triple Redundante (ID DB, External ID, Nombre) para Slots Inactivos
       const inactiveSlotIds = new Set();
       if (resSlotsInactive && resSlotsInactive.ok) {
         const slotData = await resSlotsInactive.json();
         slotData.forEach(s => {
+          if (s.id) inactiveSlotIds.add(String(s.id));
           if (s.external_id) inactiveSlotIds.add(String(s.external_id));
+          if (s.name) inactiveSlotIds.add(s.name.toLowerCase().trim());
         });
       }
 
@@ -248,9 +250,18 @@ const SlotsApp = (() => {
         // 1. Si el slot individual tiene is_active === false
         if (s.is_active === false) return false;
         
-        // 2. Si el slot id está en la lista de slots inactivos de Supabase
-        const slotIdStr = String(s.id || s.external_id);
-        if (overrides.inactiveSlotIds && overrides.inactiveSlotIds.has(slotIdStr)) return false;
+        // 2. 🛡️ Coincidencia de 3 Capas para Desactivación Individual de Slots (ID, ExtID, Nombre)
+        const slotId = String(s.id || '');
+        const extId = String(s.external_id || s.slot_product_id || '');
+        const slotName = (s.name || '').toLowerCase().trim();
+
+        if (overrides.inactiveSlotIds && (
+            (slotId && overrides.inactiveSlotIds.has(slotId)) ||
+            (extId && overrides.inactiveSlotIds.has(extId)) ||
+            (slotName && overrides.inactiveSlotIds.has(slotName))
+        )) {
+          return false;
+        }
 
         // 3. ⚡ INVERSIÓN LÓGICA DE PROVEEDORES: Si se cargaron proveedores activos desde Supabase,
         // el proveedor del slot DEBE pertenecer a esa lista activa. Si NO está, se descarta dinámicamente!

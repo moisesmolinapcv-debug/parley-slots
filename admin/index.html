@@ -913,12 +913,12 @@
           </td>
           <td>
             <label class="switch">
-              <input type="checkbox" ${s.is_active ? 'checked' : ''} onchange="toggleSlotStatus('${s.external_id}', this.checked)">
+              <input type="checkbox" ${s.is_active ? 'checked' : ''} onchange="toggleSlotStatus('${s.external_id || s.id}', this.checked, ${s.id})">
               <span class="slider"></span>
             </label>
           </td>
           <td>
-            <button class="btn" style="padding:4px 8px; font-size:12px; background:#21262d; color:#fff;" onclick="alert('Slot ID: ${s.external_id}\\nURL: ${s.slot_desktop_url}')">👁️ Ver</button>
+            <button class="btn" style="padding:4px 8px; font-size:12px; background:#21262d; color:#fff;" onclick="alert('Slot ID: ${s.external_id || s.id}\\nURL: ${s.slot_desktop_url}')">👁️ Ver</button>
           </td>
         </tr>
       `).join('');
@@ -939,9 +939,16 @@
       slotsSearchTimeout = setTimeout(() => loadSlots(1), 300);
     }
 
-    async function toggleSlotStatus(extId, isActive) {
+    async function toggleSlotStatus(extId, isActive, dbId = null) {
       showToast(`Actualizando estado de slot ${extId}...`, 'loading', 1500);
-      const { error } = await supabaseClient.from('slots').update({ is_active: isActive }).eq('external_id', extId);
+      let query = supabaseClient.from('slots').update({ is_active: isActive });
+      if (dbId) {
+        query = query.eq('id', dbId);
+      } else {
+        query = query.or(`external_id.eq.${extId},id.eq.${extId}`);
+      }
+
+      const { error } = await query;
       if (error) {
         showToast('Error al actualizar slot: ' + error.message, 'error');
       } else {
