@@ -185,8 +185,11 @@ const SlotsApp = (() => {
       const subTitleEl = document.querySelector('.hero-subtitle') || document.querySelector('.tagline');
       if (subTitleEl) subTitleEl.textContent = configMap.site_description;
     }
+    if (configMap.batch_size) {
+      SLOTS_PER_PAGE = parseInt(configMap.batch_size) || 24;
+    }
     if (configMap.initial_load_count) {
-      SLOTS_PER_PAGE = parseInt(configMap.initial_load_count) || 24;
+      SLOTS_PER_PAGE = parseInt(configMap.initial_load_count) || SLOTS_PER_PAGE || 24;
     }
     if (configMap.maintenance_mode === 'true') {
       const hero = document.getElementById('heroCarousel');

@@ -1143,13 +1143,15 @@ const App=(()=>{
     if (configMap.hot_threshold) {
       HOT_THRESHOLD = parseInt(configMap.hot_threshold) || 30000;
     }
-    if (configMap.initial_load_count) {
-      INITIAL_LOAD = parseInt(configMap.initial_load_count) || 24;
-      displayedCount = INITIAL_LOAD;
-    }
     if (configMap.batch_size) {
       BATCH_SIZE = parseInt(configMap.batch_size) || 24;
     }
+    if (configMap.initial_load_count) {
+      INITIAL_LOAD = parseInt(configMap.initial_load_count) || BATCH_SIZE || 24;
+    } else if (configMap.batch_size) {
+      INITIAL_LOAD = BATCH_SIZE;
+    }
+    displayedCount = INITIAL_LOAD;
     if (configMap.maintenance_mode === 'true') {
       const hero = document.getElementById('heroCarousel');
       if (hero && !document.getElementById('maintenanceBanner')) {
