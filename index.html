@@ -1073,14 +1073,107 @@ const App=(()=>{
   function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
   const isMobile=/Mobi|Android/i.test(navigator.userAgent);
 
-  /* ══════════════════════════════════════════════════════════════
-     DATA LOADING & ENRICHMENT
-     ══════════════════════════════════════════════════════════════ */
+  const SUPABASE_API_URL = "https://zofknbvkoxwoqtrcwpas.supabase.co/rest/v1";
+  const SUPABASE_PUBLIC_KEY = "sb_publishable_EilryQ89HDbmfGDWmlKQ1A_Ch-aSEQC";
+
+  /** ⚡ Consulta relámpago a Supabase DB con Inversión Lógica para activos */
+  async function fetchLiveOverrides() {
+    try {
+      const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
+      const [resProvActive, resSlotsInactive, resBanners] = await Promise.all([
+        fetch(`${SUPABASE_API_URL}/providers?is_active=eq.true&select=name,display_name`, { headers }).catch(() => null),
+        fetch(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=external_id`, { headers }).catch(() => null),
+        fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url&order=position.asc`, { headers }).catch(() => null)
+      ]);
+
+      const activeProvs = new Set();
+      if (resProvActive && resProvActive.ok) {
+        const provData = await resProvActive.json();
+        provData.forEach(p => {
+          if (p.name) activeProvs.add(p.name.toLowerCase().trim());
+          if (p.display_name) activeProvs.add(p.display_name.toLowerCase().trim());
+        });
+      }
+
+      const inactiveSlotIds = new Set();
+      if (resSlotsInactive && resSlotsInactive.ok) {
+        const slotData = await resSlotsInactive.json();
+        slotData.forEach(s => {
+          if (s.external_id) inactiveSlotIds.add(String(s.external_id));
+        });
+      }
+
+      if (resBanners && resBanners.ok) {
+        const bannerData = await resBanners.json();
+        if (Array.isArray(bannerData) && bannerData.length > 0) {
+          renderDynamicBanners(bannerData);
+        }
+      }
+
+      return { activeProvs, inactiveSlotIds };
+    } catch (e) {
+      return { activeProvs: null, inactiveSlotIds: new Set() };
+    }
+  }
+
+  function renderDynamicBanners(banners) {
+    const track = document.getElementById('carouselSlides');
+    const nav = document.getElementById('carouselNav');
+    if (!track) return;
+
+    let slidesHtml = '';
+    let dotsHtml = '';
+
+    banners.forEach((b, idx) => {
+      const imgUrl = b.image_url || 'BANNER/public.avif';
+      slidesHtml += `
+        <div class="carousel-slide">
+          <img class="carousel-banner-img"
+               src="${imgUrl}"
+               alt="${b.title || 'Banner Parley'}"
+               ${idx === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}
+               decoding="async"
+               onerror="this.src='BANNER/public.avif'">
+        </div>`;
+      dotsHtml += `<div class="carousel-dot ${idx === 0 ? 'active' : ''}" onclick="App.goSlide(${idx})"></div>`;
+    });
+
+    track.innerHTML = slidesHtml;
+    if (nav) nav.innerHTML = dotsHtml;
+  }
+
+  /* ── Bootstrapping con Inversión Lógica de Supabase DB ────────── */
   async function init(){
     showSkeletons();
+    const overrides = await fetchLiveOverrides();
+
     const localData = (typeof SLOTS_DATA !== 'undefined') ? SLOTS_DATA : (window.SLOTS_DATA || null);
-    if(localData && Array.isArray(localData) && localData.length > 0){allSlots = localData;}
-    else{try{const r=await fetch('data/slots.json');if(r.ok)allSlots=await r.json()}catch(e){try{const r=await fetch('https://parley.la/api/slots/general/data-slots');if(r.ok)allSlots=await r.json()}catch(e2){grid.innerHTML='<p style="text-align:center;padding:60px;color:rgba(248,250,252,0.5)">Error cargando el catálogo.</p>';return}}}
+    let rawData = localData;
+
+    if(!rawData || !Array.isArray(rawData) || rawData.length === 0){
+      try{const r=await fetch('data/slots.json');if(r.ok)rawData=await r.json()}catch(e){}
+    }
+
+    if (rawData && Array.isArray(rawData)) {
+      allSlots = rawData.filter(s => {
+        if (s.is_active === false) return false;
+        const slotIdStr = String(s.id || s.external_id);
+        if (overrides.inactiveSlotIds && overrides.inactiveSlotIds.has(slotIdStr)) return false;
+
+        // ⚡ INVERSIÓN LÓGICA DE PROVEEDORES ACTIVOS EN SUPABASE DB (<10ms)
+        if (overrides.activeProvs && overrides.activeProvs.size > 0) {
+          const provName = (s.provider || '').toLowerCase().trim();
+          const provDisp = (s.provider_display || '').toLowerCase().trim();
+          const isProvActive = overrides.activeProvs.has(provName) || overrides.activeProvs.has(provDisp);
+          if (!isProvActive) return false;
+        }
+
+        return true;
+      });
+    } else {
+      allSlots = [];
+    }
+
     allSlots.forEach(s=>{
       /* Usar campos pre-computados del JSON refinado cuando existen */
       s._totalClicks = s.total_clicks || ((s.clicks_desktop||0)+(s.clicks_mobile||0));
