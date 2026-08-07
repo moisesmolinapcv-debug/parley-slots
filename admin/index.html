@@ -521,6 +521,9 @@
         <li class="menu-item active" onclick="switchTab('dashboard', this)">
           <span>📊</span> <span>Panel Control</span>
         </li>
+        <li class="menu-item" onclick="switchTab('featured', this)">
+          <span>🌟</span> <span>Slots Destacados</span>
+        </li>
         <li class="menu-item" onclick="switchTab('slots', this)">
           <span>🎰</span> <span>Gestion Slots</span>
         </li>
@@ -590,6 +593,44 @@
                 <tr><td colspan="3" style="text-align:center;">Cargando proveedores...</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB DESTACADOS: GESTOR DE SLOTS DESTACADOS (MÁXIMO 8) -->
+      <section id="tab-featured" class="tab-content">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">🌟 Gestor de Slots Destacados (Máximo 8)</h1>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">
+              Selecciona y reordena los 8 slots destacados del carrusel 3D de la página principal.
+            </p>
+          </div>
+          <button class="btn btn-gold" style="width:auto; font-size:14px; padding:10px 24px;" onclick="saveFeaturedSlotsAdmin()">
+            💾 Guardar Slots Destacados
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:24px;">
+          <!-- COLUMNA 1: LISTA ORDENADA ACTUAL (1 A 8) -->
+          <div class="card-panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="color:#fdd835;">📋 Lista Ordenada de Destacados <span id="featuredCountBadge" style="background:#21262d; border-radius:999px; padding:2px 10px; font-size:12px; color:#fff;">[ 0 / 8 ]</span></h3>
+            </div>
+            <div id="featuredListAdmin" style="display:flex; flex-direction:column; gap:10px; min-height:200px;">
+              <div style="text-align:center; color:var(--text-muted); padding:30px;">Cargando slots destacados desde Supabase...</div>
+            </div>
+          </div>
+
+          <!-- COLUMNA 2: BUSCADOR Y SELECCIÓN DE SLOTS -->
+          <div class="card-panel">
+            <h3 style="margin-bottom:16px;">🔍 Buscar Slot para Añadir</h3>
+            <div class="form-group" style="margin-bottom:14px;">
+              <input type="text" id="featuredSearchInput" class="form-control" placeholder="Escribe el nombre del slot..." oninput="searchSlotsForFeatured(this.value)">
+            </div>
+            <div id="featuredSearchResults" style="display:flex; flex-direction:column; gap:8px; max-height:450px; overflow-y:auto;">
+              <div style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px;">Escribe un nombre para buscar en Supabase...</div>
+            </div>
           </div>
         </div>
       </section>
@@ -788,7 +829,12 @@
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
 
       el.classList.add('active');
-      document.getElementById(`tab-${tabId}`).classList.add('active');
+      const target = document.getElementById(`tab-${tabId}`);
+      if (target) target.classList.add('active');
+
+      if (tabId === 'featured') {
+        loadFeaturedSlotsAdmin();
+      }
     }
 
     // ─── NOTIFICACIÓN TOAST VISUAL ───
@@ -826,7 +872,8 @@
           loadProvidersList(),
           loadBanners(),
           loadConfig(),
-          loadPipelineLogs()
+          loadPipelineLogs(),
+          loadFeaturedSlotsAdmin()
         ]);
         showToast('¡Panel y métricas actualizados con éxito!', 'success', 3500);
       } catch (err) {
@@ -836,6 +883,171 @@
           btn.disabled = false;
           btn.innerHTML = '🔄 Actualizar Datos';
         }
+      }
+    }
+
+    // ─── GESTOR DE SLOTS DESTACADOS (HASTA 8 SLOTS) ───
+    let adminFeaturedSlots = [];
+
+    async function loadFeaturedSlotsAdmin() {
+      const container = document.getElementById('featuredListAdmin');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Cargando slots destacados desde Supabase...</div>';
+
+      try {
+        let order = null;
+        const { data } = await supabaseClient.from('site_config').select('value').eq('key', 'featured_slots_order').single();
+        if (data && data.value) {
+          order = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        } else {
+          const stored = localStorage.getItem('parley_featured_slots_v3');
+          if (stored) order = JSON.parse(stored);
+        }
+
+        if (Array.isArray(order) && order.length > 0) {
+          const { data: slotsData } = await supabaseClient.from('slots').select('*').in('external_id', order);
+          if (slotsData && slotsData.length > 0) {
+            const map = new Map();
+            slotsData.forEach(s => map.set(String(s.external_id || s.id), s));
+            adminFeaturedSlots = [];
+            order.forEach(id => {
+              if (map.has(String(id))) adminFeaturedSlots.push(map.get(String(id)));
+            });
+          }
+        }
+
+        if (adminFeaturedSlots.length === 0) {
+          const { data: topSlots } = await supabaseClient.from('slots').select('*').eq('is_active', true).order('total_clicks', { ascending: false }).limit(8);
+          adminFeaturedSlots = topSlots || [];
+        }
+
+        renderFeaturedSlotsAdmin();
+      } catch (err) {
+        showToast('Error cargando destacados: ' + err.message, 'error');
+      }
+    }
+
+    function renderFeaturedSlotsAdmin() {
+      const container = document.getElementById('featuredListAdmin');
+      const countBadge = document.getElementById('featuredCountBadge');
+      if (!container) return;
+
+      if (countBadge) countBadge.innerText = `[ ${adminFeaturedSlots.length} / 8 ]`;
+
+      if (adminFeaturedSlots.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px;">No hay slots destacados seleccionados. Usa el buscador para añadir hasta 8.</div>';
+        return;
+      }
+
+      container.innerHTML = adminFeaturedSlots.map((s, idx) => `
+        <div style="display:flex; align-items:center; justify-content:space-between; background:#161b22; border:1px solid #30363d; border-radius:10px; padding:10px 14px; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-weight:900; color:#fdd835; font-size:16px; min-width:28px;">#${idx + 1}</span>
+            <img src="${s.image_url}" style="width:42px; height:42px; border-radius:8px; object-fit:cover;" onerror="this.src='../BANNER/public.avif'">
+            <div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">${s.name}</div>
+              <div style="font-size:12px; color:var(--text-muted);">${s.provider || ''}</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button class="btn" style="padding:4px 8px; font-size:12px; background:#21262d; color:#fff;" onclick="moveFeaturedAdmin(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲ Subir</button>
+            <button class="btn" style="padding:4px 8px; font-size:12px; background:#21262d; color:#fff;" onclick="moveFeaturedAdmin(${idx}, 1)" ${idx === adminFeaturedSlots.length - 1 ? 'disabled' : ''}>▼ Bajar</button>
+            <button class="btn" style="padding:4px 8px; font-size:12px; background:var(--danger); color:#fff;" onclick="removeFeaturedAdmin(${idx})">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function moveFeaturedAdmin(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= adminFeaturedSlots.length) return;
+      const temp = adminFeaturedSlots[index];
+      adminFeaturedSlots[index] = adminFeaturedSlots[newIndex];
+      adminFeaturedSlots[newIndex] = temp;
+      renderFeaturedSlotsAdmin();
+    }
+
+    function removeFeaturedAdmin(index) {
+      adminFeaturedSlots.splice(index, 1);
+      renderFeaturedSlotsAdmin();
+    }
+
+    let featuredSearchTimeout = null;
+    function searchSlotsForFeatured(query) {
+      clearTimeout(featuredSearchTimeout);
+      featuredSearchTimeout = setTimeout(async () => {
+        const resultsDiv = document.getElementById('featuredSearchResults');
+        if (!query.trim()) {
+          resultsDiv.innerHTML = '<div style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px;">Escribe un nombre para buscar en Supabase...</div>';
+          return;
+        }
+
+        resultsDiv.innerHTML = '<div style="text-align:center; padding:10px;">Buscando slots...</div>';
+        const { data, error } = await supabaseClient.from('slots').select('*').ilike('name', `%${query.trim()}%`).limit(15);
+        
+        if (error || !data || data.length === 0) {
+          resultsDiv.innerHTML = '<div style="color:var(--danger); text-align:center; padding:10px;">No se encontraron slots.</div>';
+          return;
+        }
+
+        resultsDiv.innerHTML = data.map(s => {
+          const isAlreadyAdded = adminFeaturedSlots.some(f => (f.external_id || f.id) === (s.external_id || s.id));
+          return `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:#0d1117; border:1px solid var(--border-color); border-radius:8px; padding:8px 12px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <img src="${s.image_url}" style="width:36px; height:36px; border-radius:6px; object-fit:cover;" onerror="this.src='../BANNER/public.avif'">
+                <div>
+                  <div style="font-weight:600; font-size:13px; color:#fff;">${s.name}</div>
+                  <div style="font-size:11px; color:var(--text-muted);">${s.provider}</div>
+                </div>
+              </div>
+              <button class="btn btn-gold" style="padding:4px 10px; font-size:11px; width:auto;" 
+                      onclick="addFeaturedAdmin('${s.external_id || s.id}')" 
+                      ${isAlreadyAdded || adminFeaturedSlots.length >= 8 ? 'disabled' : ''}>
+                ${isAlreadyAdded ? '✓ Añadido' : (adminFeaturedSlots.length >= 8 ? 'Límite (8)' : '＋ Añadir')}
+              </button>
+            </div>
+          `;
+        }).join('');
+      }, 250);
+    }
+
+    async function addFeaturedAdmin(slotId) {
+      if (adminFeaturedSlots.length >= 8) {
+        showToast('Límite alcanzado: Máximo 8 slots destacados.', 'warning');
+        return;
+      }
+      showToast('Obteniendo información del slot...', 'loading', 1000);
+      const { data } = await supabaseClient.from('slots').select('*').or(`external_id.eq.${slotId},id.eq.${slotId}`).single();
+      if (data) {
+        if (!adminFeaturedSlots.some(f => (f.external_id || f.id) === (data.external_id || data.id))) {
+          adminFeaturedSlots.push(data);
+          renderFeaturedSlotsAdmin();
+          const searchInput = document.getElementById('featuredSearchInput');
+          if (searchInput) searchSlotsForFeatured(searchInput.value);
+          showToast(`✅ Slot "${data.name}" añadido a destacados`, 'success');
+        }
+      }
+    }
+
+    async function saveFeaturedSlotsAdmin() {
+      if (adminFeaturedSlots.length === 0) {
+        showToast('Debe haber al menos 1 slot destacado.', 'warning');
+        return;
+      }
+      
+      const ids = adminFeaturedSlots.map(s => s.external_id || s.id);
+      const jsonValue = JSON.stringify(ids);
+
+      showToast('Guardando slots destacados en Supabase...', 'loading', 2000);
+      localStorage.setItem('parley_featured_slots_v3', jsonValue);
+
+      const { error } = await supabaseClient.from('site_config').upsert({ key: 'featured_slots_order', value: jsonValue }, { onConflict: 'key' });
+
+      if (error) {
+        showToast('Error guardando en Supabase: ' + error.message, 'error');
+      } else {
+        showToast('✅ ¡Slots Destacados guardados en Supabase exitosamente!', 'success', 3500);
       }
     }
 

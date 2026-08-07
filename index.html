@@ -296,6 +296,294 @@ input,select{font:inherit;color:inherit}
 .carousel-arrow.prev{left:14px}
 .carousel-arrow.next{right:14px}
 
+/* ══════════════════════════════════════════════════════════════
+   CARRUSEL DE SLOTS DESTACADOS — SIMETRÍA CENTRAL 3D & BLUR v3.1
+   ══════════════════════════════════════════════════════════════ */
+.featured-slots-section {
+  width: 100%;
+  max-width: 100vw;
+  margin: 10px auto 14px;
+  padding: 0;
+  position: relative;
+  z-index: 85;
+  overflow: hidden;
+}
+
+.featured-slots-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.featured-badge-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(45,25,5,0.95) 0%, rgba(20,10,2,0.95) 100%);
+  border: 1.5px solid #fdd835;
+  box-shadow: 0 0 14px rgba(253,216,53,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: #fdd835;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(253,216,53,0.6);
+}
+
+.featured-carousel-stage {
+  position: relative;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
+  padding: 10px 0;
+  perspective: 1000px;
+  touch-action: pan-y;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.featured-carousel-track {
+  display: flex;
+  align-items: center;
+  transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
+  gap: 12px;
+  position: relative;
+  margin: 0;
+  left: 0;
+}
+
+/* TARJETAS 50% MÁS PEQUEÑAS (DESKTOP: 115px x 150px) */
+.featured-card {
+  flex: 0 0 115px;
+  width: 115px;
+  height: 150px;
+  border-radius: 12px;
+  background: rgba(13, 20, 38, 0.94);
+  border: 1.5px solid rgba(253, 216, 53, 0.25);
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+  transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1), filter 0.45s ease, opacity 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
+  will-change: transform, filter, opacity;
+  filter: blur(4px) opacity(0.40) grayscale(20%);
+  transform: scale(0.85) translateZ(-30px);
+  z-index: 2;
+}
+
+.featured-card.active-center {
+  filter: blur(0px) opacity(1) grayscale(0%);
+  transform: scale(1.08) translateZ(0);
+  z-index: 10;
+  border-color: #fdd835;
+  box-shadow: 0 0 25px var(--gold-glow), 0 10px 30px rgba(0,0,0,0.95);
+  cursor: default;
+}
+
+.featured-card-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 65%;
+  overflow: hidden;
+  background: #060913;
+}
+
+.featured-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.4s ease;
+}
+
+.featured-card.active-center:hover .featured-card-img {
+  transform: scale(1.06);
+}
+
+.featured-badge-star {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: linear-gradient(135deg, #fdd835 0%, #e51c23 100%);
+  color: #030611;
+  font-family: 'Cinzel', serif;
+  font-size: 0.45rem;
+  font-weight: 900;
+  padding: 1.5px 5px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  z-index: 5;
+  letter-spacing: 0.3px;
+}
+
+.featured-card-body {
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 35%;
+  background: linear-gradient(180deg, rgba(13,20,38,0.95) 0%, rgba(7,11,22,0.98) 100%);
+}
+
+.featured-card-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.featured-card.active-center .featured-card-title {
+  color: #fdd835;
+  text-shadow: 0 0 8px rgba(253,216,53,0.5);
+}
+
+.featured-card-prov {
+  font-size: 0.50rem;
+  color: var(--text-3);
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.featured-play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 4px 2px;
+  margin-top: 2px;
+  background: linear-gradient(135deg, #fdd835 0%, #c59b27 100%);
+  color: #030611;
+  border-radius: 999px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.52rem;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1;
+  box-shadow: 0 2px 8px var(--gold-glow);
+  transition: all 0.22s ease;
+}
+
+.featured-play-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 14px rgba(253,216,53,0.8);
+  background: linear-gradient(135deg, #fff59d 0%, #fdd835 100%);
+}
+
+.featured-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(8, 14, 28, 0.88);
+  border: 1.5px solid rgba(253, 216, 53, 0.5);
+  color: #fdd835;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
+}
+
+.featured-arrow:hover {
+  background: rgba(253, 216, 53, 0.25);
+  color: #fff;
+  border-color: #fdd835;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 0 14px var(--gold-glow);
+}
+
+.featured-arrow.prev { left: 6px; }
+.featured-arrow.next { right: 6px; }
+
+.featured-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 8px auto 0;
+  width: 100%;
+  text-align: center;
+}
+
+.featured-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.featured-dot.active {
+  width: 18px;
+  border-radius: 999px;
+  background: #fdd835;
+  box-shadow: 0 0 8px var(--gold-glow);
+}
+
+@media (max-width: 768px) {
+  .featured-card {
+    flex: 0 0 100px;
+    width: 100px;
+    height: 135px;
+  }
+  .featured-arrow {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .featured-card {
+    flex: 0 0 92px;
+    width: 92px;
+    height: 128px;
+  }
+  .featured-card-body {
+    padding: 3px 4px;
+  }
+  .featured-card-title {
+    font-size: 0.58rem;
+  }
+  .featured-card-prov {
+    font-size: 0.46rem;
+  }
+  .featured-play-btn {
+    font-size: 0.47rem;
+    padding: 3px 2px;
+    letter-spacing: 0px;
+    white-space: nowrap;
+  }
+}
+
+
 /* ── BUTTONS ──────────────────────────────────────────────── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 22px;border-radius:999px;font-size:0.88rem;font-weight:800;transition:0.25s ease;white-space:nowrap;text-transform:uppercase;letter-spacing:0.5px}
 .btn-primary{background:linear-gradient(135deg,#e51c23 0%,#b70911 100%);color:#fff;box-shadow:0 4px 20px var(--red-glow);border:1px solid rgba(255,255,255,0.25)}
@@ -750,6 +1038,23 @@ input,select{font:inherit;color:inherit}
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CARRUSEL DE SLOTS DESTACADOS — SIMETRÍA CENTRAL 3D & BLUR
+     ══════════════════════════════════════════════════════════════ -->
+<section class="featured-slots-section" id="featuredSlotsSection">
+  <div class="featured-slots-header">
+    <div class="featured-badge-title">★ SLOTS DESTACADOS ★</div>
+  </div>
+  <div class="featured-carousel-stage" id="featuredCarouselStage">
+    <button class="featured-arrow prev" id="featuredPrevBtn" aria-label="Anterior">❮</button>
+    <div class="featured-carousel-track" id="featuredTrack">
+      <!-- Tarjetas renderizadas dinámicamente en JS -->
+    </div>
+    <button class="featured-arrow next" id="featuredNextBtn" aria-label="Siguiente">❯</button>
+  </div>
+  <div class="featured-dots" id="featuredDots"></div>
+</section>
 
 <!-- ══════════════════════════════════════════════════════════════
      FILTER BAR — Estilo Casino Premium con Cinzel Dorado
@@ -1272,6 +1577,7 @@ input,select{font:inherit;color:inherit}
     initImgObserver();
     applyFilters();
     startCarousel();
+    initFeaturedSlotsCarousel();
     restoreFromURL();
     preloadFortuneImages();
   }
@@ -1716,6 +2022,258 @@ input,select{font:inherit;color:inherit}
       prevSlide();
     }
   }
+
+  /* ══════════════════════════════════════════════════════════════
+     FEATURED SLOTS 3D CAROUSEL LOGIC & SUPABASE INTEGRATION v3.2
+     [LOOP INFINITO CIRCULAR + SIN BADGE + BOTÓN PROPORCIONAL MOBILE]
+     ══════════════════════════════════════════════════════════════ */
+  let featuredSlotsData = [];
+  let featuredVirtualIdx = 0;
+  let featuredAutoplayTimer = null;
+  let featuredTouchStartX = 0;
+  let featuredTouchEndX = 0;
+  let isFeaturedSnapping = false;
+
+  async function loadFeaturedSlotsConfig() {
+    let order = null;
+    try {
+      const stored = localStorage.getItem('parley_featured_slots_v3');
+      if (stored) order = JSON.parse(stored);
+    } catch(e) {}
+
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+      try {
+        const { data } = await supabaseClient.from('site_config').select('value').eq('key', 'featured_slots_order').single();
+        if (data && data.value) {
+          order = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+          localStorage.setItem('parley_featured_slots_v3', JSON.stringify(order));
+        }
+      } catch(e) {}
+    }
+
+    if (Array.isArray(order) && order.length > 0) {
+      const map = new Map();
+      allSlots.forEach(s => {
+        if (s.id) map.set(String(s.id), s);
+        if (s.external_id) map.set(String(s.external_id), s);
+        if (s.name) map.set(s.name.toLowerCase().trim(), s);
+      });
+      const selected = [];
+      order.forEach(idKey => {
+        const keyStr = String(idKey).toLowerCase().trim();
+        if (map.has(keyStr) && selected.length < 8) {
+          selected.push(map.get(keyStr));
+        }
+      });
+      if (selected.length > 0) return selected;
+    }
+
+    /* Fallback: Top 8 active slots */
+    return [...allSlots]
+      .filter(s => s.is_active !== false)
+      .sort((a, b) => (b._totalClicks || 0) - (a._totalClicks || 0))
+      .slice(0, 8);
+  }
+
+  async function initFeaturedSlotsCarousel() {
+    featuredSlotsData = await loadFeaturedSlotsConfig();
+    if (!featuredSlotsData || featuredSlotsData.length === 0) return;
+
+    const N = featuredSlotsData.length;
+    renderFeaturedCards();
+    featuredVirtualIdx = N; // Empezar en el bloque central (bloque 2)
+    updateFeaturedPositions(featuredVirtualIdx, false);
+    startFeaturedAutoplay();
+    bindFeaturedEvents();
+  }
+
+  function renderFeaturedCards() {
+    const track = $('featuredTrack');
+    const dots = $('featuredDots');
+    if (!track) return;
+
+    /* Multiplicar x3 para loop infinito circular perfecto */
+    const triplePool = [...featuredSlotsData, ...featuredSlotsData, ...featuredSlotsData];
+
+    track.innerHTML = triplePool.map((s, idx) => {
+      const playUrl = isMobile ? (s.slot_url_movil || s.slot_desktop_movil || '#') : (s.slot_desktop_movil || '#');
+      return `
+        <div class="featured-card" data-virtual-idx="${idx}">
+          <div class="featured-card-img-wrap">
+            <img src="${s.image_url}" alt="${s.name}" class="featured-card-img" onerror="this.src='BANNER/public.avif'">
+          </div>
+          <div class="featured-card-body">
+            <div class="featured-card-title">${s.name}</div>
+            <div class="featured-card-prov">${s._providerDisplay || s.provider || 'Parley'}</div>
+            <a href="${playUrl}" class="featured-play-btn" onclick="event.stopPropagation()">▶ JUGAR AHORA</a>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (dots) {
+      dots.innerHTML = featuredSlotsData.map((_, idx) => `
+        <div class="featured-dot${idx === 0 ? ' active' : ''}" data-dot-idx="${idx}"></div>
+      `).join('');
+    }
+  }
+
+  function updateFeaturedPositions(targetVirtualIdx, animate = true) {
+    if (!featuredSlotsData || featuredSlotsData.length === 0) return;
+    const N = featuredSlotsData.length;
+    featuredVirtualIdx = targetVirtualIdx;
+
+    const realIdx = ((featuredVirtualIdx % N) + N) % N;
+    const cards = document.querySelectorAll('.featured-card');
+    const stage = $('featuredCarouselStage');
+    const track = $('featuredTrack');
+    if (!cards.length || !track || !stage) return;
+
+    if (!animate) {
+      track.style.transition = 'none';
+    } else {
+      track.style.transition = 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)';
+    }
+
+    cards.forEach((card, idx) => {
+      let diff = idx - featuredVirtualIdx;
+
+      card.classList.remove('active-center');
+
+      if (diff === 0) {
+        /* Tarjeta central enfocado */
+        card.classList.add('active-center');
+        card.style.filter = 'blur(0px) opacity(1) grayscale(0%)';
+        card.style.transform = 'scale(1.08) translateZ(0)';
+        card.style.zIndex = '10';
+      } else {
+        /* Tarjetas laterales difuminadas */
+        const absDiff = Math.abs(diff);
+        const blurAmt = Math.min(3 + absDiff * 1.5, 6);
+        const opacityAmt = Math.max(0.40 - absDiff * 0.08, 0.2);
+        const scaleAmt = Math.max(0.85 - absDiff * 0.08, 0.65);
+
+        card.style.filter = `blur(${blurAmt}px) opacity(${opacityAmt}) grayscale(20%)`;
+        card.style.transform = `scale(${scaleAmt}) translateZ(-${absDiff * 30}px)`;
+        card.style.zIndex = `${10 - absDiff}`;
+      }
+    });
+
+    /* 🎯 CÁLCULO DE CENTRADO SIMÉTRICO ABSOLUTO EN PANTALLA (MÓVIL, TABLET, ESCRITORIO) */
+    const stageWidth = stage.getBoundingClientRect().width;
+    const centerCard = cards[featuredVirtualIdx];
+    if (centerCard) {
+      const cardCenterInTrack = centerCard.offsetLeft + (centerCard.offsetWidth / 2);
+      const translateX = (stageWidth / 2) - cardCenterInTrack;
+      track.style.transform = `translateX(${translateX}px)`;
+    }
+
+    /* Actualizar dots (0 a N-1) */
+    document.querySelectorAll('.featured-dot').forEach((d, j) => {
+      d.classList.toggle('active', j === realIdx);
+    });
+
+    /* RE-RESET SILENCIOSO PARA LOOP INFINITO CIRCULAR SIN SALTOS */
+    if (animate && !isFeaturedSnapping) {
+      if (featuredVirtualIdx >= 2 * N || featuredVirtualIdx < N) {
+        isFeaturedSnapping = true;
+        setTimeout(() => {
+          const snappedIdx = N + realIdx;
+          updateFeaturedPositions(snappedIdx, false);
+          isFeaturedSnapping = false;
+        }, 450);
+      }
+    }
+  }
+
+  function nextFeatured() {
+    updateFeaturedPositions(featuredVirtualIdx + 1, true);
+  }
+
+  function prevFeatured() {
+    updateFeaturedPositions(featuredVirtualIdx - 1, true);
+  }
+
+  function startFeaturedAutoplay() {
+    stopFeaturedAutoplay();
+    featuredAutoplayTimer = setInterval(() => { nextFeatured(); }, 4000);
+  }
+
+  function stopFeaturedAutoplay() {
+    if (featuredAutoplayTimer) clearInterval(featuredAutoplayTimer);
+  }
+
+  function bindFeaturedEvents() {
+    const stage = $('featuredCarouselStage');
+    const track = $('featuredTrack');
+    const dots = $('featuredDots');
+    const prevBtn = $('featuredPrevBtn');
+    const nextBtn = $('featuredNextBtn');
+
+    if (prevBtn) prevBtn.onclick = () => { prevFeatured(); startFeaturedAutoplay(); };
+    if (nextBtn) nextBtn.onclick = () => { nextFeatured(); startFeaturedAutoplay(); };
+
+    if (track) {
+      track.addEventListener('click', (e) => {
+        const card = e.target.closest('.featured-card');
+        if (card && card.dataset.virtualIdx !== undefined) {
+          const idx = parseInt(card.dataset.virtualIdx, 10);
+          if (idx !== featuredVirtualIdx) {
+            updateFeaturedPositions(idx, true);
+            startFeaturedAutoplay();
+          }
+        }
+      });
+    }
+
+    if (dots) {
+      dots.addEventListener('click', (e) => {
+        const dot = e.target.closest('.featured-dot');
+        if (dot && dot.dataset.dotIdx !== undefined) {
+          const realIdx = parseInt(dot.dataset.dotIdx, 10);
+          const N = featuredSlotsData.length || 8;
+          updateFeaturedPositions(N + realIdx, true);
+          startFeaturedAutoplay();
+        }
+      });
+    }
+
+    if (stage) {
+      stage.addEventListener('mouseenter', stopFeaturedAutoplay);
+      stage.addEventListener('mouseleave', startFeaturedAutoplay);
+
+      /* Gestos swipe táctil */
+      stage.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches[0]) featuredTouchStartX = e.touches[0].clientX;
+        stopFeaturedAutoplay();
+      }, { passive: true });
+
+      stage.addEventListener('touchend', (e) => {
+        if (e.changedTouches && e.changedTouches[0]) {
+          featuredTouchEndX = e.changedTouches[0].clientX;
+          const diff = featuredTouchEndX - featuredTouchStartX;
+          if (diff < -35) nextFeatured();
+          else if (diff > 35) prevFeatured();
+        }
+        startFeaturedAutoplay();
+      }, { passive: true });
+
+      /* Rueda del ratón para desplazamiento horizontal */
+      stage.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaX) > 15 || Math.abs(e.deltaY) > 15) {
+          e.preventDefault();
+          if (e.deltaX > 0 || e.deltaY > 0) nextFeatured();
+          else prevFeatured();
+          startFeaturedAutoplay();
+        }
+      }, { passive: false });
+    }
+
+    window.addEventListener('resize', () => {
+      updateFeaturedPositions(featuredVirtualIdx, false);
+    });
+  }
+
   function filterByTag(t){activeTags.clear();activeTags.add(t);syncTagsUI();applyFilters();setTimeout(()=>grid.scrollIntoView({behavior:'smooth',block:'start'}),100)}
   function filterByPopular(){sortMode='popular';syncSortUI();applyFilters();setTimeout(()=>grid.scrollIntoView({behavior:'smooth',block:'start'}),100)}
 
