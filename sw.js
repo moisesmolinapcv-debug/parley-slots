@@ -1,4 +1,4 @@
-const CACHE_NAME = 'parley-slots-v4';
+const CACHE_NAME = 'parley-slots-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -6,7 +6,13 @@ const ASSETS_TO_CACHE = [
   './js/app.js',
   './data/slots_initial.js',
   './ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png',
-  './BANNER/public.avif'
+  './BANNER/public.avif',
+  './BANNER/banner_1_desktop.webp',
+  './BANNER/banner_1_mobile.webp',
+  './BANNER/banner_2_desktop.webp',
+  './BANNER/banner_2_mobile.webp',
+  './BANNER/banner_3_desktop.webp',
+  './BANNER/banner_3_mobile.webp'
 ];
 
 self.addEventListener('install', (event) => {
@@ -33,7 +39,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignorar peticiones no HTTP y no-GET
   if (!event.request.url.startsWith('http') || event.request.method !== 'GET') {
     return;
   }
@@ -88,7 +93,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ⚡ 2. IMÁGENES Y FUENTES ESTÁTICAS -> Stale-While-Revalidate instantáneo
+  // ⚡ 2. IMÁGENES Y FUENTES ESTÁTICAS -> Cache-First / Stale-While-Revalidate ultrarrápido
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request)

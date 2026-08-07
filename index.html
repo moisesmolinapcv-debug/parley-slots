@@ -1505,22 +1505,32 @@ input,select{font:inherit;color:inherit}
     let dotsHtml = '';
 
     banners.forEach((b, idx) => {
-      const imgUrl = b.image_url || 'BANNER/public.avif';
-      
-      /* 🚀 Precarga proactiva en memoria para 0 latencia */
-      if (imgUrl) {
+      let deskUrl = b.image_url || `BANNER/banner_${(idx % 3) + 1}_desktop.webp`;
+      let mobUrl = b.image_url_movil || `BANNER/banner_${(idx % 3) + 1}_mobile.webp`;
+
+      if (deskUrl.includes('public.avif') || deskUrl.includes('ChatGPT')) {
+        deskUrl = `BANNER/banner_${(idx % 3) + 1}_desktop.webp`;
+        mobUrl = `BANNER/banner_${(idx % 3) + 1}_mobile.webp`;
+      }
+
+      /* 🚀 Precarga proactiva en memoria según dispositivo */
+      const activePreloadUrl = isMobile ? mobUrl : deskUrl;
+      if (activePreloadUrl) {
         const imgPreload = new Image();
-        imgPreload.src = imgUrl;
+        imgPreload.src = activePreloadUrl;
       }
 
       slidesHtml += `
         <div class="carousel-slide">
-          <img class="carousel-banner-img"
-               src="${imgUrl}"
-               alt="${b.title || 'Banner Parley'}"
-               ${idx === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}
-               decoding="async"
-               onerror="this.src='BANNER/public.avif'">
+          <picture>
+            <source media="(max-width: 600px)" srcset="${mobUrl}" type="image/webp">
+            <img class="carousel-banner-img"
+                 src="${deskUrl}"
+                 alt="${b.title || 'Banner Parley'}"
+                 ${idx === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}
+                 decoding="async"
+                 onerror="this.src='BANNER/public.avif'">
+          </picture>
         </div>`;
       dotsHtml += `<div class="carousel-dot ${idx === 0 ? 'active' : ''}" onclick="App.goSlide(${idx})"></div>`;
     });
@@ -2107,7 +2117,7 @@ input,select{font:inherit;color:inherit}
 
     const N = featuredSlotsData.length;
     renderFeaturedCards();
-    featuredVirtualIdx = N; // Empezar en el bloque central (bloque 2)
+    featuredVirtualIdx = 2 * N; // Empezar en el Bloque 2 (rango principal central)
     updateFeaturedPositions(featuredVirtualIdx, false);
     startFeaturedAutoplay();
     bindFeaturedEvents();
@@ -2118,10 +2128,16 @@ input,select{font:inherit;color:inherit}
     const dots = $('featuredDots');
     if (!track) return;
 
-    /* Multiplicar x3 para loop infinito circular perfecto */
-    const triplePool = [...featuredSlotsData, ...featuredSlotsData, ...featuredSlotsData];
+    /* 🛡️ Pool de 5 Bloques (5 * N = 40 Tarjetas) para amortiguar el scroll circular sin saltos gráficos ni parpadeo */
+    const quintuplePool = [
+      ...featuredSlotsData, 
+      ...featuredSlotsData, 
+      ...featuredSlotsData, 
+      ...featuredSlotsData, 
+      ...featuredSlotsData
+    ];
 
-    track.innerHTML = triplePool.map((s, idx) => {
+    track.innerHTML = quintuplePool.map((s, idx) => {
       const playUrl = isMobile ? (s.slot_url_movil || s.slot_desktop_movil || '#') : (s.slot_desktop_movil || '#');
       return `
         <div class="featured-card" data-virtual-idx="${idx}">
@@ -2167,7 +2183,7 @@ input,select{font:inherit;color:inherit}
       card.classList.remove('active-center');
 
       if (diff === 0) {
-        /* Tarjeta central enfocado */
+        /* Tarjeta central enfocada */
         card.classList.add('active-center');
         card.style.filter = 'blur(0px) opacity(1) grayscale(0%)';
         card.style.transform = 'scale(1.08) translateZ(0)';
@@ -2185,7 +2201,7 @@ input,select{font:inherit;color:inherit}
       }
     });
 
-    /* 🎯 CÁLCULO DE CENTRADO SIMÉTRICO ABSOLUTO EN PANTALLA (MÓVIL, TABLET, ESCRITORIO) */
+    /* 🎯 CÁLCULO DE CENTRADO SIMÉTRICO ABSOLUTO EN PANTALLA */
     const stageWidth = stage.getBoundingClientRect().width;
     const centerCard = cards[featuredVirtualIdx];
     if (centerCard) {
@@ -2199,14 +2215,47 @@ input,select{font:inherit;color:inherit}
       d.classList.toggle('active', j === realIdx);
     });
 
-    /* RE-RESET SILENCIOSO PARA LOOP INFINITO CIRCULAR SIN SALTOS */
+    /* 🎯 RE-RESET SILENCIOSO INVISIBLE A 2 BLOQUES DE DISTANCIA (0 PARPADEO) */
     if (animate && !isFeaturedSnapping) {
-      if (featuredVirtualIdx >= 2 * N || featuredVirtualIdx < N) {
+      if (featuredVirtualIdx >= 4 * N || featuredVirtualIdx < N) {
         isFeaturedSnapping = true;
         setTimeout(() => {
-          const snappedIdx = N + realIdx;
-          updateFeaturedPositions(snappedIdx, false);
-          isFeaturedSnapping = false;
+          const snappedVirtualIdx = (2 * N) + realIdx;
+          featuredVirtualIdx = snappedVirtualIdx;
+          
+          /* Reflow síncrono sin animación para 0 parpadeos */
+          track.style.transition = 'none';
+          const snappedCenterCard = cards[snappedVirtualIdx];
+          if (snappedCenterCard) {
+            const snappedCenterInTrack = snappedCenterCard.offsetLeft + (snappedCenterCard.offsetWidth / 2);
+            const snappedTranslateX = (stageWidth / 2) - snappedCenterInTrack;
+            track.style.transform = `translateX(${snappedTranslateX}px)`;
+          }
+
+          cards.forEach((c, i) => {
+            let d = i - snappedVirtualIdx;
+            c.classList.toggle('active-center', d === 0);
+            if (d === 0) {
+              c.style.filter = 'blur(0px) opacity(1) grayscale(0%)';
+              c.style.transform = 'scale(1.08) translateZ(0)';
+              c.style.zIndex = '10';
+            } else {
+              const absD = Math.abs(d);
+              const bAmt = Math.min(3 + absD * 1.5, 6);
+              const oAmt = Math.max(0.40 - absD * 0.08, 0.2);
+              const sAmt = Math.max(0.85 - absD * 0.08, 0.65);
+              c.style.filter = `blur(${bAmt}px) opacity(${oAmt}) grayscale(20%)`;
+              c.style.transform = `scale(${sAmt}) translateZ(-${absD * 30}px)`;
+              c.style.zIndex = `${10 - absD}`;
+            }
+          });
+
+          void track.offsetHeight; // Forzar refresco de pintura síncrono
+
+          requestAnimationFrame(() => {
+            track.style.transition = 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)';
+            isFeaturedSnapping = false;
+          });
         }, 450);
       }
     }
@@ -2258,7 +2307,7 @@ input,select{font:inherit;color:inherit}
         if (dot && dot.dataset.dotIdx !== undefined) {
           const realIdx = parseInt(dot.dataset.dotIdx, 10);
           const N = featuredSlotsData.length || 8;
-          updateFeaturedPositions(N + realIdx, true);
+          updateFeaturedPositions((2 * N) + realIdx, true);
           startFeaturedAutoplay();
         }
       });
