@@ -356,6 +356,19 @@ def standardize_and_diff(raw_api_slots: list, existing_slots: list) -> dict:
         else:
             real_created_at = datetime.now(timezone.utc).isoformat()
 
+        # 🏷️ B3: CALCULAR IS_NEW SEGÚN ANTIGÜEDAD REAL (< 30 DÍAS)
+        now_dt = datetime.now(timezone.utc)
+        cutoff_dt = now_dt - timedelta(days=30)
+        dt_created = None
+        if real_created_at:
+            try:
+                dt_created = datetime.fromisoformat(real_created_at.replace("Z", "+00:00"))
+                if dt_created.tzinfo is None:
+                    dt_created = dt_created.replace(tzinfo=timezone.utc)
+            except Exception:
+                pass
+        is_new_calculated = (dt_created >= cutoff_dt) if dt_created else False
+
         normalized = {
             "external_id":      ext_id,
             "name":             name,
@@ -367,6 +380,7 @@ def standardize_and_diff(raw_api_slots: list, existing_slots: list) -> dict:
             "slot_app_url":     slot.get("slot_url_app") or "",
             "raw_game_url":     slot.get("game_url") or slot.get("game_url_raw") or "",
             "is_active":        current_is_active,
+            "is_new":           is_new_calculated,
             "created_at":       real_created_at,
             "updated_at":       datetime.now(timezone.utc).isoformat()
         }
@@ -384,8 +398,9 @@ def standardize_and_diff(raw_api_slots: list, existing_slots: list) -> dict:
             
             old_created_iso    = parse_endpoint_date(old_data.get("created_at")) if old_data.get("created_at") else ""
             created_at_changed = (old_created_iso != new_data.get("created_at"))
+            is_new_changed     = (bool(old_data.get("is_new")) != new_data.get("is_new"))
 
-            if name_changed or img_changed or desk_url_change or mob_url_change or created_at_changed:
+            if name_changed or img_changed or desk_url_change or mob_url_change or created_at_changed or is_new_changed:
                 modified.append(new_data)
                 if desk_url_change or mob_url_change:
                     url_changes += 1

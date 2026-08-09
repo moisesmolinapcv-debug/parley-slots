@@ -1970,7 +1970,16 @@ input,select{font:inherit;color:inherit}
     });
     $('ddTematica').addEventListener('click',e=>{const o=e.target.closest('.dd-option');if(!o)return;activeTheme=o.dataset.tema==='null'?null:o.dataset.tema;syncTemaUI();closeAllDropdowns();applyFilters()});
     $('ddProveedor').addEventListener('change',e=>{if(e.target.type!=='checkbox')return;e.target.checked?activeProviders.add(e.target.value):activeProviders.delete(e.target.value);syncProvUI();applyFilters()});
-    $('ddTags').addEventListener('change',e=>{if(e.target.type!=='checkbox')return;e.target.checked?activeTags.add(e.target.value):activeTags.delete(e.target.value);syncTagsUI();applyFilters()});
+    $('ddTags').addEventListener('change',e=>{
+      if(e.target.type!=='checkbox')return;
+      if(e.target.checked){
+        activeTags.add(e.target.value);
+        if(e.target.value==='✨ NUEVO'){ sortMode='recent'; syncSortUI(); }
+      } else {
+        activeTags.delete(e.target.value);
+      }
+      syncTagsUI();applyFilters();
+    });
     $('ddOrdenar').addEventListener('click',e=>{const o=e.target.closest('.dd-option');if(!o||!o.dataset.sort)return;sortMode=o.dataset.sort;syncSortUI();closeAllDropdowns();applyFilters()});
 
     $('fortuneModal').addEventListener('click',e=>{if(e.target===$('fortuneModal'))closeFortune()});
