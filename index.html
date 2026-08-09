@@ -1813,7 +1813,8 @@ input,select{font:inherit;color:inherit}
     emptyState.classList.remove('visible');
     if(reset)grid.innerHTML='';
     const frag=document.createDocumentFragment();
-    const slots=reset?page:filtered.slice(displayedCount-BATCH_SIZE,displayedCount);
+    const startIndex = reset ? 0 : grid.children.length;
+    const slots = filtered.slice(startIndex, displayedCount);
     slots.forEach((s,i)=>{
       const card=document.createElement('article');
       card.className='card';card.style.animationDelay=`${Math.min(i*30,400)}ms`;
