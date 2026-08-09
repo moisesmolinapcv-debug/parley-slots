@@ -23,6 +23,13 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import base64
 
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # ─── Carga Segura de Entorno / Secretos Fallback ───────────────────
 def load_env_fallback():
     env_path = Path(__file__).parent.parent / ".env"
