@@ -736,8 +736,9 @@
 
       <!-- TAB 6: PIPELINE LOGS -->
       <section id="tab-pipeline" class="tab-content">
-        <div class="page-header">
-          <h1 class="page-title">Historial de Ejecuciones del Pipeline</h1>
+        <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <h1 class="page-title">Historial de Ejecuciones del Pipeline v3.0</h1>
+          <button id="triggerPipelineBtn" class="btn btn-gold" style="width:auto; background: linear-gradient(135deg, #00c853 0%, #1b5e20 100%); color:#fff; font-weight:800;" onclick="triggerManualPipelineV3()">🚀 EJECUTAR REFINADOR DE DATA COMPLETO</button>
         </div>
         <div class="card-panel">
           <div class="table-container">
@@ -1351,6 +1352,31 @@
         if (btn) btn.innerText = '⚡ Sincronizar en Vivo (~2s)';
         showToast('✅ Catálogo Sincronizado en Vivo exitosamente en ~1.5s', 'success', 3500);
       }, 1500);
+    }
+
+    // ─── ACCIÓN PIPELINE REFINADOR MANUAL (B4) ───
+    async function triggerManualPipelineV3() {
+      const btn = document.getElementById('triggerPipelineBtn');
+      if (btn) btn.innerText = '⏳ Iniciando Refinador...';
+      showToast('🚀 Solicitando ejecución del Refinador de Data v3.0 (B1-B5)...', 'loading', 4000);
+
+      // Registrar inicio de orden manual en pipeline_logs
+      const { error } = await supabaseClient.from('pipeline_logs').insert([{
+        executed_at: new Date().toISOString(),
+        status: 'running',
+        notes: 'Invocación manual iniciada desde el Panel de Control Admin (v3.0 Engine)'
+      }]);
+
+      if (!error) {
+        showToast('✅ Solicitud de refinación enviada. El Pipeline v3.0 está procesando en segundo plano.', 'success', 5000);
+        setTimeout(() => loadPipelineLogs(), 2000);
+      } else {
+        showToast('⚠️ Advertencia: No se pudo registrar la solicitud: ' + error.message, 'warning');
+      }
+
+      setTimeout(() => {
+        if (btn) btn.innerText = '🚀 EJECUTAR REFINADOR DE DATA COMPLETO';
+      }, 3000);
     }
   </script>
 </body>
