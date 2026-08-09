@@ -1362,7 +1362,7 @@ input,select{font:inherit;color:inherit}
   ];
 
   const SORT_FNS={
-    popular: (a,b) => (b._totalClicks || 0) - (a._totalClicks || 0),
+    popular: (a,b) => (b._totalClicks || 0) - (a._totalClicks || 0) || a._nameLower.localeCompare(b._nameLower, 'es'),
     az: (a,b) => a._nameLower.localeCompare(b._nameLower, 'es'),
     za: (a,b) => b._nameLower.localeCompare(a._nameLower, 'es'),
     recent: (a,b) => {
@@ -1373,7 +1373,7 @@ input,select{font:inherit;color:inherit}
       if (tsDiff !== 0) return tsDiff;
       const clickDiff = (b._totalClicks || 0) - (a._totalClicks || 0);
       if (clickDiff !== 0) return clickDiff;
-      return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+      return a._nameLower.localeCompare(b._nameLower, 'es');
     }
   };
 
