@@ -377,12 +377,15 @@ def standardize_and_diff(raw_api_slots: list, existing_slots: list) -> dict:
             added.append(new_data)
         else:
             old_data = existing_map[ext_id]
-            name_changed    = (old_data.get("name") != new_data.get("name"))
-            img_changed     = (old_data.get("image_url") != new_data.get("image_url"))
-            desk_url_change = (old_data.get("slot_desktop_url") != new_data.get("slot_desktop_url"))
-            mob_url_change  = (old_data.get("slot_mobile_url") != new_data.get("slot_mobile_url"))
+            name_changed       = (old_data.get("name") != new_data.get("name"))
+            img_changed        = (old_data.get("image_url") != new_data.get("image_url"))
+            desk_url_change    = (old_data.get("slot_desktop_url") != new_data.get("slot_desktop_url"))
+            mob_url_change     = (old_data.get("slot_mobile_url") != new_data.get("slot_mobile_url"))
+            
+            old_created_iso    = parse_endpoint_date(old_data.get("created_at")) if old_data.get("created_at") else ""
+            created_at_changed = (old_created_iso != new_data.get("created_at"))
 
-            if name_changed or img_changed or desk_url_change or mob_url_change:
+            if name_changed or img_changed or desk_url_change or mob_url_change or created_at_changed:
                 modified.append(new_data)
                 if desk_url_change or mob_url_change:
                     url_changes += 1
