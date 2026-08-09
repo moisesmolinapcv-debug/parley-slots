@@ -1809,7 +1809,7 @@ input,select{font:inherit;color:inherit}
      ══════════════════════════════════════════════════════════════ */
   function renderCards(reset=false){
     const page=filtered.slice(0,displayedCount);
-    if(page.length===0){grid.innerHTML='';emptyState.classList.add('visible');hideSentinel();return}
+    if(page.length===0){grid.innerHTML='';emptyState.classList.add('visible');hideSentinel();renderResultCount();return}
     emptyState.classList.remove('visible');
     if(reset)grid.innerHTML='';
     const frag=document.createDocumentFragment();
@@ -1837,6 +1837,7 @@ input,select{font:inherit;color:inherit}
       frag.appendChild(card);
     });
     grid.appendChild(frag);observeImages();
+    renderResultCount();
     if(displayedCount>=filtered.length)hideSentinel();else showSentinel();
   }
   function hideSentinel(){if(sentinel)sentinel.style.display='none'}
@@ -1850,7 +1851,7 @@ input,select{font:inherit;color:inherit}
     },{rootMargin:'150px',threshold:0.1});
     if(sentinel)infiniteObserver.observe(sentinel);
   }
-  function loadMore(){isLoadingMore=true;scrollLoading.style.display='flex';setTimeout(()=>{displayedCount=Math.min(displayedCount+BATCH_SIZE,filtered.length);renderCards(false);scrollLoading.style.display='none';isLoadingMore=false},200)}
+  function loadMore(){isLoadingMore=true;scrollLoading.style.display='flex';setTimeout(()=>{displayedCount=Math.min(displayedCount+BATCH_SIZE,filtered.length);renderCards(false);scrollLoading.style.display='none';isLoadingMore=false},150)}
 
   /* ── Lazy Image Loading ─────────────────────────────────────── */
   let imgObserver=null;
@@ -1873,8 +1874,15 @@ input,select{font:inherit;color:inherit}
 
   /* ── Result Count ───────────────────────────────────────────── */
   function renderResultCount(){
-    const v=Math.min(displayedCount,filtered.length),t=filtered.length;
-    resultCount.innerHTML=t===0?'<strong>0</strong> resultados':`Mostrando <strong>${v.toLocaleString('es')}</strong> de <strong>${t.toLocaleString('es')}</strong> slots`;
+    if(!resultCount)return;
+    const total=filtered.length;
+    const visible=Math.min(displayedCount,total);
+    if(total===0){
+      resultCount.innerHTML='Mostrando <strong>0</strong> slots';
+      return;
+    }
+    const label=total===1?'slot':'slots';
+    resultCount.innerHTML=`Mostrando <strong>${visible.toLocaleString('es')}</strong> de <strong>${total.toLocaleString('es')}</strong> ${label}`;
   }
 
   /* ── Active Chips ───────────────────────────────────────────── */
