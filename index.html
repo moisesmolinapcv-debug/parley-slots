@@ -1369,8 +1369,11 @@ input,select{font:inherit;color:inherit}
       const aNew = (a.is_new || a._isNew) ? 1 : 0;
       const bNew = (b.is_new || b._isNew) ? 1 : 0;
       if (bNew !== aNew) return bNew - aNew;
-      if ((b._createdTs || 0) !== (a._createdTs || 0)) return (b._createdTs || 0) - (a._createdTs || 0);
-      return (b.id || 0) - (a.id || 0);
+      const tsDiff = (b._createdTs || 0) - (a._createdTs || 0);
+      if (tsDiff !== 0) return tsDiff;
+      const clickDiff = (b._totalClicks || 0) - (a._totalClicks || 0);
+      if (clickDiff !== 0) return clickDiff;
+      return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
     }
   };
 
