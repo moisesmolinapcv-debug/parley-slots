@@ -1013,7 +1013,7 @@ input,select{font:inherit;color:inherit}
   .spin-btn{padding:10px 0;font-size:0.9rem}
 }
 
-/* 🎵 Casino Ambient Sound Widget — Retractable Auto-Collapsing Circle Pill */
+/* 🎵 Casino Ambient Sound Widget — Retractable Auto-Collapsing Circle Pill (GPU Accelerated 60 FPS) */
 .ambient-sound-widget {
   position: fixed;
   top: 16px;
@@ -1036,6 +1036,9 @@ input,select{font:inherit;color:inherit}
   max-width: 34px; /* Reposo: Círculo de 34px estricto */
   height: 34px;
   box-sizing: border-box;
+  transform: translate3d(0,0,0);
+  will-change: transform, max-width;
+  contain: layout style paint;
   transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), width 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s, background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
@@ -1047,7 +1050,7 @@ input,select{font:inherit;color:inherit}
 }
 
 .ambient-sound-widget:hover {
-  transform: translateY(-1px);
+  transform: translate3d(0, -1px, 0);
   border-color: rgba(253, 216, 53, 0.8);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 20px rgba(253, 216, 53, 0.35);
 }
@@ -1115,13 +1118,14 @@ input,select{font:inherit;color:inherit}
   flex-direction: column;
   white-space: nowrap;
   opacity: 0;
-  transform: translateX(-5px);
+  transform: translate3d(-5px, 0, 0);
+  will-change: transform, opacity;
   transition: opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s;
 }
 
 .ambient-sound-widget.expanded .ambient-info {
   opacity: 1;
-  transform: translateX(0);
+  transform: translate3d(0, 0, 0);
 }
 
 .ambient-title {
@@ -1721,45 +1725,236 @@ input,select{font:inherit;color:inherit}
 
 <script>
 /* ══════════════════════════════════════════════════════════════
-   CANVAS BACKGROUND — Monedas 3D, Billetes, Polvo Dorado
+   CANVAS BACKGROUND — Monedas 3D, Billetes, Polvo Dorado Adaptativo (60 FPS GPU)
+   Gama Alta (>=55 FPS): 60 partículas | Gama Media (30-54 FPS): 25 | Gama Baja (<30 FPS): 12 ultra-ligeras + Freeze
    ══════════════════════════════════════════════════════════════ */
 (function setupCanvas(){
-  const canvas=document.getElementById('bgCanvas'),ctx=canvas.getContext('2d');
+  const canvas=document.getElementById('bgCanvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
   let width,height,items=[];
-  function resize(){width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight}
-  window.addEventListener('resize',resize);resize();
-  const N=window.innerWidth<=768?20:50;
-  for(let i=0;i<N;i++){
-    const t=Math.random();
-    if(t>0.4)items.push({type:'coin',x:Math.random()*width,y:Math.random()*height,radius:Math.random()*12+8,rotY:Math.random()*Math.PI*2,rotSpeed:Math.random()*0.05+0.02,speedY:-(Math.random()*0.4+0.15),speedX:(Math.random()-0.5)*0.3,alpha:Math.random()*0.5+0.3});
-    else if(t>0.15)items.push({type:'bill',x:Math.random()*width,y:Math.random()*height,w:Math.random()*26+18,h:Math.random()*14+10,angle:Math.random()*Math.PI*2,rotSpeed:(Math.random()-0.5)*0.03,speedY:Math.random()*0.4+0.15,speedX:Math.sin(Math.random()*Math.PI)*0.4,alpha:Math.random()*0.35+0.15});
-    else items.push({type:'dust',x:Math.random()*width,y:Math.random()*height,r:Math.random()*2.5+0.5,alpha:Math.random()*0.6+0.2,speedY:-(Math.random()*0.3+0.1),speedX:(Math.random()-0.5)*0.2});
+  let animFrameId=null;
+  let isCanvasVisible=true;
+  let isPageVisible=!document.hidden;
+  let isCanvasAnimating=false;
+
+  // Monitor Dinámico de FPS
+  let lastTime=performance.now();
+  let frameCount=0;
+  let currentFPS=60;
+  let currentTier='HIGH'; // 'HIGH' (>=55), 'MEDIUM' (30-54), 'LOW' (<30)
+  let targetParticleCount=60;
+
+  function resize(){
+    width=canvas.width=window.innerWidth;
+    height=canvas.height=window.innerHeight;
   }
-  function render(){
+  window.addEventListener('resize',resize,{passive:true});
+  resize();
+
+  function createParticle(typeOverride){
+    const t = typeOverride !== undefined ? typeOverride : Math.random();
+    if(t > 0.4) {
+      return {
+        type:'coin',
+        x:Math.random()*width,
+        y:Math.random()*height,
+        radius:Math.random()*12+8,
+        rotY:Math.random()*Math.PI*2,
+        rotSpeed:Math.random()*0.05+0.02,
+        speedY:-(Math.random()*0.4+0.15),
+        speedX:(Math.random()-0.5)*0.3,
+        alpha:Math.random()*0.5+0.3
+      };
+    } else if(t > 0.15) {
+      return {
+        type:'bill',
+        x:Math.random()*width,
+        y:Math.random()*height,
+        w:Math.random()*26+18,
+        h:Math.random()*14+10,
+        angle:Math.random()*Math.PI*2,
+        rotSpeed:(Math.random()-0.5)*0.03,
+        speedY:Math.random()*0.4+0.15,
+        speedX:Math.sin(Math.random()*Math.PI)*0.4,
+        alpha:Math.random()*0.35+0.15
+      };
+    } else {
+      return {
+        type:'dust',
+        x:Math.random()*width,
+        y:Math.random()*height,
+        r:Math.random()*2.5+0.5,
+        alpha:Math.random()*0.6+0.2,
+        speedY:-(Math.random()*0.3+0.1),
+        speedX:(Math.random()-0.5)*0.2
+      };
+    }
+  }
+
+  function adjustParticlePool(targetCount){
+    if(items.length < targetCount){
+      while(items.length < targetCount){
+        items.push(createParticle());
+      }
+    } else if(items.length > targetCount){
+      items.length = targetCount;
+    }
+  }
+
+  // Inicializar según ancho de pantalla inicial
+  adjustParticlePool(window.innerWidth <= 768 ? 25 : 60);
+
+  function updateFPSMonitor(now){
+    frameCount++;
+    const delta = now - lastTime;
+    if(delta >= 1000){
+      currentFPS = Math.round((frameCount * 1000) / delta);
+      frameCount = 0;
+      lastTime = now;
+
+      let newTier = currentTier;
+      if(currentFPS >= 55){
+        newTier = 'HIGH';
+        targetParticleCount = window.innerWidth <= 768 ? 30 : 60;
+      } else if(currentFPS >= 30){
+        newTier = 'MEDIUM';
+        targetParticleCount = 25;
+      } else {
+        newTier = 'LOW';
+        targetParticleCount = 12;
+      }
+
+      if(newTier !== currentTier){
+        currentTier = newTier;
+        adjustParticlePool(targetParticleCount);
+      }
+    }
+  }
+
+  function render(now){
+    if(!isCanvasVisible || !isPageVisible){
+      isCanvasAnimating = false;
+      return;
+    }
+    isCanvasAnimating = true;
+    updateFPSMonitor(now || performance.now());
+
     ctx.clearRect(0,0,width,height);
+    const isLowTier = (currentTier === 'LOW');
+
     items.forEach(it=>{
-      it.y+=it.speedY;it.x+=it.speedX;
-      if(it.y<-30)it.y=height+30;if(it.y>height+30)it.y=-30;
-      if(it.x<-30)it.x=width+30;if(it.x>width+30)it.x=-30;
-      ctx.save();ctx.globalAlpha=it.alpha;
+      it.y+=it.speedY; it.x+=it.speedX;
+      if(it.y<-30) it.y=height+30; if(it.y>height+30) it.y=-30;
+      if(it.x<-30) it.x=width+30; if(it.x>width+30) it.x=-30;
+
+      ctx.save();
+      ctx.globalAlpha=it.alpha;
+
       if(it.type==='coin'){
-        it.rotY+=it.rotSpeed;const sx=Math.cos(it.rotY);
-        ctx.translate(it.x,it.y);ctx.scale(Math.abs(sx)<0.08?0.08:sx,1);
+        it.rotY+=it.rotSpeed;
+        const sx=Math.cos(it.rotY);
+        ctx.translate(it.x,it.y);
+        ctx.scale(Math.abs(sx)<0.08?0.08:sx,1);
+
         const g=ctx.createRadialGradient(-it.radius*0.3,-it.radius*0.3,1,0,0,it.radius);
-        g.addColorStop(0,'#fff59d');g.addColorStop(0.3,'#fdd835');g.addColorStop(0.7,'#c59b27');g.addColorStop(1,'#7a580a');
-        ctx.beginPath();ctx.arc(0,0,it.radius,0,Math.PI*2);ctx.fillStyle=g;ctx.shadowBlur=10;ctx.shadowColor='rgba(253,216,53,0.6)';ctx.fill();
-        if(it.radius>9){ctx.fillStyle='#614605';ctx.font=`900 ${it.radius*0.9}px Outfit,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('$',0,1);}
-      }else if(it.type==='bill'){
-        it.angle+=it.rotSpeed;ctx.translate(it.x,it.y);ctx.rotate(it.angle);
-        ctx.fillStyle='rgba(34,197,94,0.85)';ctx.strokeStyle='#86efac';ctx.lineWidth=1;ctx.shadowBlur=8;ctx.shadowColor='rgba(34,197,94,0.5)';
-        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(-it.w/2,-it.h/2,it.w,it.h,3);else ctx.rect(-it.w/2,-it.h/2,it.w,it.h);
-        ctx.fill();ctx.stroke();ctx.fillStyle='#fff';ctx.font='800 10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('$',0,0);
-      }else{ctx.beginPath();ctx.arc(it.x,it.y,it.r,0,Math.PI*2);ctx.fillStyle=`rgba(253,216,53,${it.alpha})`;ctx.shadowBlur=8;ctx.shadowColor='#fdd835';ctx.fill();}
+        g.addColorStop(0,'#fff59d');
+        g.addColorStop(0.3,'#fdd835');
+        g.addColorStop(0.7,'#c59b27');
+        g.addColorStop(1,'#7a580a');
+
+        ctx.beginPath();
+        ctx.arc(0,0,it.radius,0,Math.PI*2);
+        ctx.fillStyle=g;
+        if(!isLowTier){
+          ctx.shadowBlur=10;
+          ctx.shadowColor='rgba(253,216,53,0.6)';
+        }
+        ctx.fill();
+
+        if(it.radius>9){
+          ctx.fillStyle='#614605';
+          ctx.font=`900 ${it.radius*0.9}px Outfit,sans-serif`;
+          ctx.textAlign='center';
+          ctx.textBaseline='middle';
+          ctx.fillText('$',0,1);
+        }
+      } else if(it.type==='bill'){
+        it.angle+=it.rotSpeed;
+        ctx.translate(it.x,it.y);
+        ctx.rotate(it.angle);
+        ctx.fillStyle='rgba(34,197,94,0.85)';
+        ctx.strokeStyle='#86efac';
+        ctx.lineWidth=1;
+        if(!isLowTier){
+          ctx.shadowBlur=8;
+          ctx.shadowColor='rgba(34,197,94,0.5)';
+        }
+        ctx.beginPath();
+        if(ctx.roundRect) ctx.roundRect(-it.w/2,-it.h/2,it.w,it.h,3);
+        else ctx.rect(-it.w/2,-it.h/2,it.w,it.h);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle='#fff';
+        ctx.font='800 10px sans-serif';
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        ctx.fillText('$',0,0);
+      } else {
+        ctx.beginPath();
+        ctx.arc(it.x,it.y,it.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(253,216,53,${it.alpha})`;
+        if(!isLowTier){
+          ctx.shadowBlur=8;
+          ctx.shadowColor='#fdd835';
+        }
+        ctx.fill();
+      }
       ctx.restore();
     });
-    requestAnimationFrame(render);
+
+    animFrameId = requestAnimationFrame(render);
   }
-  render();
+
+  function startAnimation(){
+    if(!isCanvasAnimating && isCanvasVisible && isPageVisible){
+      lastTime = performance.now();
+      animFrameId = requestAnimationFrame(render);
+    }
+  }
+
+  function stopAnimation(){
+    if(animFrameId){
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+    isCanvasAnimating = false;
+  }
+
+  if('IntersectionObserver' in window){
+    const canvasObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(entry => {
+        isCanvasVisible = entry.isIntersecting;
+        if(isCanvasVisible){
+          startAnimation();
+        } else {
+          stopAnimation();
+        }
+      });
+    }, {threshold: 0.01});
+    canvasObserver.observe(canvas);
+  }
+
+  document.addEventListener('visibilitychange', ()=>{
+    isPageVisible = !document.hidden;
+    if(isPageVisible){
+      startAnimation();
+    } else {
+      stopAnimation();
+    }
+  });
+
+  startAnimation();
 })();
 
 /* ══════════════════════════════════════════════════════════════
@@ -2042,7 +2237,7 @@ input,select{font:inherit;color:inherit}
     startCarousel();
     initFeaturedSlotsCarousel();
     restoreFromURL();
-    preloadFortuneImages();
+    preloadCatalogAndImages();
     initAmbientPlayer();
   }
 
@@ -2506,15 +2701,35 @@ input,select{font:inherit;color:inherit}
   }
 
   /* ══════════════════════════════════════════════════════════════
-     FEATURED SLOTS 3D CAROUSEL LOGIC & SUPABASE INTEGRATION v3.2
-     [LOOP INFINITO CIRCULAR + SIN BADGE + BOTÓN PROPORCIONAL MOBILE]
+     FEATURED SLOTS 3D CAROUSEL LOGIC & MÁQUINA DE ESTADOS SÓLIDA v4.0
+     [PREVENCIÓN DE COLISIONES: AUTO-SLIDE + TOUCH SWIPE + TAB VISIBILITY]
      ══════════════════════════════════════════════════════════════ */
+  const CarouselState = {
+    IDLE: 'IDLE',
+    AUTOPLAY: 'AUTOPLAY',
+    TOUCHING: 'TOUCHING',
+    TRANSITIONING: 'TRANSITIONING',
+    HIDDEN: 'HIDDEN'
+  };
+
+  let featuredState = CarouselState.IDLE;
   let featuredSlotsData = [];
   let featuredVirtualIdx = 0;
   let featuredAutoplayTimer = null;
   let featuredTouchStartX = 0;
   let featuredTouchEndX = 0;
   let isFeaturedSnapping = false;
+
+  function setFeaturedState(newState) {
+    featuredState = newState;
+    if (newState === CarouselState.HIDDEN || newState === CarouselState.TOUCHING) {
+      stopFeaturedAutoplay();
+    } else if (newState === CarouselState.AUTOPLAY) {
+      if (!document.hidden) {
+        startFeaturedAutoplay();
+      }
+    }
+  }
 
   async function loadFeaturedSlotsConfig() {
     let order = liveFeaturedSlotsOrder;
@@ -2526,7 +2741,6 @@ input,select{font:inherit;color:inherit}
       } catch(e) {}
     }
 
-    /* Consulta directa via Supabase REST API HTTP sin depender del SDK */
     if (!order || !Array.isArray(order) || order.length === 0) {
       try {
         const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
@@ -2558,7 +2772,6 @@ input,select{font:inherit;color:inherit}
       if (selected.length > 0) return selected;
     }
 
-    /* Fallback: Top 8 active slots */
     return [...allSlots]
       .filter(s => s.is_active !== false)
       .sort((a, b) => (b._totalClicks || 0) - (a._totalClicks || 0))
@@ -2571,9 +2784,9 @@ input,select{font:inherit;color:inherit}
 
     const N = featuredSlotsData.length;
     renderFeaturedCards();
-    featuredVirtualIdx = 2 * N; // Empezar en el Bloque 2 (rango principal central)
+    featuredVirtualIdx = 2 * N;
     updateFeaturedPositions(featuredVirtualIdx, false);
-    startFeaturedAutoplay();
+    setFeaturedState(CarouselState.AUTOPLAY);
     bindFeaturedEvents();
   }
 
@@ -2582,7 +2795,6 @@ input,select{font:inherit;color:inherit}
     const dots = $('featuredDots');
     if (!track) return;
 
-    /* 🛡️ Pool de 5 Bloques (5 * N = 40 Tarjetas) para amortiguar el scroll circular sin saltos gráficos ni parpadeo */
     const quintuplePool = [
       ...featuredSlotsData, 
       ...featuredSlotsData, 
@@ -2633,17 +2845,14 @@ input,select{font:inherit;color:inherit}
 
     cards.forEach((card, idx) => {
       let diff = idx - featuredVirtualIdx;
-
       card.classList.remove('active-center');
 
       if (diff === 0) {
-        /* Tarjeta central enfocada */
         card.classList.add('active-center');
         card.style.filter = 'blur(0px) opacity(1) grayscale(0%)';
         card.style.transform = 'scale(1.08) translateZ(0)';
         card.style.zIndex = '10';
       } else {
-        /* Tarjetas laterales difuminadas */
         const absDiff = Math.abs(diff);
         const blurAmt = Math.min(3 + absDiff * 1.5, 6);
         const opacityAmt = Math.max(0.40 - absDiff * 0.08, 0.2);
@@ -2655,7 +2864,6 @@ input,select{font:inherit;color:inherit}
       }
     });
 
-    /* 🎯 CÁLCULO DE CENTRADO SIMÉTRICO ABSOLUTO EN PANTALLA */
     const stageWidth = stage.getBoundingClientRect().width;
     const centerCard = cards[featuredVirtualIdx];
     if (centerCard) {
@@ -2664,12 +2872,10 @@ input,select{font:inherit;color:inherit}
       track.style.transform = `translateX(${translateX}px)`;
     }
 
-    /* Actualizar dots (0 a N-1) */
     document.querySelectorAll('.featured-dot').forEach((d, j) => {
       d.classList.toggle('active', j === realIdx);
     });
 
-    /* 🎯 RE-RESET SILENCIOSO INVISIBLE A 2 BLOQUES DE DISTANCIA (0 PARPADEO) */
     if (animate && !isFeaturedSnapping) {
       if (featuredVirtualIdx >= 4 * N || featuredVirtualIdx < N) {
         isFeaturedSnapping = true;
@@ -2677,7 +2883,6 @@ input,select{font:inherit;color:inherit}
           const snappedVirtualIdx = (2 * N) + realIdx;
           featuredVirtualIdx = snappedVirtualIdx;
           
-          /* Reflow síncrono sin animación para 0 parpadeos */
           track.style.transition = 'none';
           const snappedCenterCard = cards[snappedVirtualIdx];
           if (snappedCenterCard) {
@@ -2704,7 +2909,7 @@ input,select{font:inherit;color:inherit}
             }
           });
 
-          void track.offsetHeight; // Forzar refresco de pintura síncrono
+          void track.offsetHeight;
 
           requestAnimationFrame(() => {
             track.style.transition = 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)';
@@ -2716,20 +2921,26 @@ input,select{font:inherit;color:inherit}
   }
 
   function nextFeatured() {
+    if (featuredState === CarouselState.HIDDEN) return;
     updateFeaturedPositions(featuredVirtualIdx + 1, true);
   }
 
   function prevFeatured() {
+    if (featuredState === CarouselState.HIDDEN) return;
     updateFeaturedPositions(featuredVirtualIdx - 1, true);
   }
 
   function startFeaturedAutoplay() {
     stopFeaturedAutoplay();
+    if (document.hidden) return;
     featuredAutoplayTimer = setInterval(() => { nextFeatured(); }, 4000);
   }
 
   function stopFeaturedAutoplay() {
-    if (featuredAutoplayTimer) clearInterval(featuredAutoplayTimer);
+    if (featuredAutoplayTimer) {
+      clearInterval(featuredAutoplayTimer);
+      featuredAutoplayTimer = null;
+    }
   }
 
   function bindFeaturedEvents() {
@@ -2739,8 +2950,8 @@ input,select{font:inherit;color:inherit}
     const prevBtn = $('featuredPrevBtn');
     const nextBtn = $('featuredNextBtn');
 
-    if (prevBtn) prevBtn.onclick = () => { prevFeatured(); startFeaturedAutoplay(); };
-    if (nextBtn) nextBtn.onclick = () => { nextFeatured(); startFeaturedAutoplay(); };
+    if (prevBtn) prevBtn.onclick = () => { prevFeatured(); setFeaturedState(CarouselState.AUTOPLAY); };
+    if (nextBtn) nextBtn.onclick = () => { nextFeatured(); setFeaturedState(CarouselState.AUTOPLAY); };
 
     if (track) {
       track.addEventListener('click', (e) => {
@@ -2749,7 +2960,7 @@ input,select{font:inherit;color:inherit}
           const idx = parseInt(card.dataset.virtualIdx, 10);
           if (idx !== featuredVirtualIdx) {
             updateFeaturedPositions(idx, true);
-            startFeaturedAutoplay();
+            setFeaturedState(CarouselState.AUTOPLAY);
           }
         }
       });
@@ -2762,19 +2973,18 @@ input,select{font:inherit;color:inherit}
           const realIdx = parseInt(dot.dataset.dotIdx, 10);
           const N = featuredSlotsData.length || 8;
           updateFeaturedPositions((2 * N) + realIdx, true);
-          startFeaturedAutoplay();
+          setFeaturedState(CarouselState.AUTOPLAY);
         }
       });
     }
 
     if (stage) {
-      stage.addEventListener('mouseenter', stopFeaturedAutoplay);
-      stage.addEventListener('mouseleave', startFeaturedAutoplay);
+      stage.addEventListener('mouseenter', () => setFeaturedState(CarouselState.TOUCHING));
+      stage.addEventListener('mouseleave', () => setFeaturedState(CarouselState.AUTOPLAY));
 
-      /* Gestos swipe táctil */
       stage.addEventListener('touchstart', (e) => {
+        setFeaturedState(CarouselState.TOUCHING);
         if (e.touches && e.touches[0]) featuredTouchStartX = e.touches[0].clientX;
-        stopFeaturedAutoplay();
       }, { passive: true });
 
       stage.addEventListener('touchend', (e) => {
@@ -2784,16 +2994,16 @@ input,select{font:inherit;color:inherit}
           if (diff < -35) nextFeatured();
           else if (diff > 35) prevFeatured();
         }
-        startFeaturedAutoplay();
+        setFeaturedState(CarouselState.AUTOPLAY);
       }, { passive: true });
 
-      /* Rueda del ratón para desplazamiento horizontal */
       stage.addEventListener('wheel', (e) => {
         if (Math.abs(e.deltaX) > 15 || Math.abs(e.deltaY) > 15) {
           e.preventDefault();
+          setFeaturedState(CarouselState.TOUCHING);
           if (e.deltaX > 0 || e.deltaY > 0) nextFeatured();
           else prevFeatured();
-          startFeaturedAutoplay();
+          setFeaturedState(CarouselState.AUTOPLAY);
         }
       }, { passive: false });
     }
@@ -2841,6 +3051,62 @@ input,select{font:inherit;color:inherit}
     }
   }
 
+  /* 🚀 DESAFÍO 1: Estación de Carga Silenciosa — Registro global de imágenes validadas en RAM */
+  const validatedImageMap = new Map();
+
+  async function preloadCatalogAndImages() {
+    if (!allSlots || allSlots.length === 0) return;
+
+    /* Precargar silenciosamente en RAM las imágenes del Top 40 tragamonedas */
+    const top40 = [...allSlots]
+      .sort((a, b) => (b._totalClicks || 0) - (a._totalClicks || 0))
+      .slice(0, 40);
+
+    for (const slot of top40) {
+      if (slot.image_url) {
+        await new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            if (img.complete && img.naturalWidth > 0) {
+              slot._imgValidated = true;
+              slot._loadedImage = img;
+              validatedImageMap.set(slot.image_url, img);
+            }
+            resolve();
+          };
+          img.onerror = () => {
+            slot._imgValidated = false;
+            resolve();
+          };
+          img.src = slot.image_url;
+          setTimeout(resolve, 1800);
+        });
+        /* No bloquear el hilo principal durante la precarga */
+        await new Promise(r => setTimeout(r, 4));
+      }
+    }
+  }
+
+  /* 🎰 DESAFÍO 4.A: Helper para validar que la imagen de la tragamonedas esté 100% en RAM */
+  function isSlotImageValid(slot) {
+    if (!slot || !slot.image_url) return false;
+    if (slot._loadedImage && slot._loadedImage.complete && slot._loadedImage.naturalWidth > 0) {
+      return true;
+    }
+    if (validatedImageMap.has(slot.image_url)) {
+      const img = validatedImageMap.get(slot.image_url);
+      if (img && img.complete && img.naturalWidth > 0) return true;
+    }
+    const testImg = new Image();
+    testImg.src = slot.image_url;
+    if (testImg.complete && testImg.naturalWidth > 0) {
+      slot._loadedImage = testImg;
+      validatedImageMap.set(slot.image_url, testImg);
+      return true;
+    }
+    return false;
+  }
+
   /* ── Construir el tambor con portadas reales y placeholders ─ */
   function buildFortuneReel(){
     const pool=filtered.length>0?filtered:allSlots;
@@ -2848,8 +3114,12 @@ input,select{font:inherit;color:inherit}
     const shuffled=[...pool].sort(()=>Math.random()-0.5).slice(0,Math.min(40,pool.length));
     if(shuffled.length===0)return;
 
-    /* Multiplicar x10 para tener 400 elementos en la lista y evitar pantallas negras al desplazar */
-    const reelData=[...shuffled,...shuffled,...shuffled,...shuffled,...shuffled,...shuffled,...shuffled,...shuffled,...shuffled,...shuffled];
+    /* Multiplicar repeticiones x15 para alojar 10 revoluciones continuas sin pantallas negras */
+    const reelData = [];
+    for (let i = 0; i < 15; i++) {
+      reelData.push(...shuffled);
+    }
+
     const track=$('fortuneReelTrack');
     track.innerHTML=reelData.map(s=>`
       <div class="reel-symbol">
@@ -2863,27 +3133,13 @@ input,select{font:inherit;color:inherit}
     `).join('');
 
     const symH=getSymbolHeight();
-    /* Iniciar en el centro exacto del track (bloque 4) */
-    const initialIndex=shuffled.length*4;
+    /* Iniciar en el bloque 2 */
+    const initialIndex=shuffled.length*2;
     track.style.transition='none';
     track.style.transform=`translateY(-${initialIndex*symH}px)`;
     track._shuffled=shuffled;
     track._totalItems=reelData.length;
     track._currentIndex=initialIndex;
-  }
-
-  /* ── Precarga proactiva en memoria para 0 lag ────────────────── */
-  function preloadFortuneImages(){
-    if(!allSlots||allSlots.length===0)return;
-    const topPool=[...allSlots].sort((a,b)=>(b._totalClicks||0)-(a._totalClicks||0)).slice(0,60);
-    setTimeout(()=>{
-      topPool.forEach(s=>{
-        if(s.image_url){
-          const img=new Image();
-          img.src=s.image_url;
-        }
-      });
-    },500);
   }
 
   function getSymbolHeight(){
@@ -2904,7 +3160,7 @@ input,select{font:inherit;color:inherit}
     return 270;
   }
 
-  /* ── Spin con física de desaceleración sin pantallas negras ──── */
+  /* ── 🎰 DESAFÍO 4: Spin Fortune VIP con validación RAM (4.A) y animación de 3.5s / 10 vueltas (4.B) ──── */
   function spinFortune(){
     if(fortuneSpinning)return;
     fortuneSpinning=true;
@@ -2913,9 +3169,18 @@ input,select{font:inherit;color:inherit}
     const shuffled=track._shuffled||[];
     if(shuffled.length===0){fortuneSpinning=false;return}
 
+    /* 4.A: Filtrar únicamente tragamonedas cuyo objeto Image esté 100% cargado y validado en RAM */
+    const validWinners = shuffled.filter(s => isSlotImageValid(s));
+    const winnerPool = validWinners.length > 0 ? validWinners : shuffled;
+
+    const winner = winnerPool[Math.floor(Math.random() * winnerPool.length)];
+    const winnerIdx = shuffled.indexOf(winner);
+
     const spinBtn=$('fortuneSpinBtn');
-    spinBtn.classList.add('spinning');
-    spinBtn.textContent='★ GIRANDO… ★';
+    if(spinBtn){
+      spinBtn.classList.add('spinning');
+      spinBtn.textContent='★ GIRANDO… ★';
+    }
 
     /* Ocultar resultado anterior */
     $('fortuneResult').classList.remove('visible');
@@ -2926,56 +3191,40 @@ input,select{font:inherit;color:inherit}
     const lever=$('cabinetLever');
     if(lever){lever.style.transform='translateY(-30%)';setTimeout(()=>lever.style.transform='translateY(-50%)',300)}
 
-    /* Seleccionar ganador del shuffled */
-    const winnerIdx=Math.floor(Math.random()*shuffled.length);
-    const winner=shuffled[winnerIdx];
     const symH=getSymbolHeight();
     const winH=getReelWindowH();
 
-    /* 
-       Cálculo seguro de posición centrada en la línea de pago:
-       Avanzamos 2 a 3 bloques completos + el winnerIdx dentro del bloque.
-    */
-    const baseBlock=shuffled.length;
-    const targetSymbolIndex = baseBlock * 4 + winnerIdx;
-    
-    /* Centrar el símbolo ganador exactamente en la línea de pago */
+    /* 4.B: Reseteo síncrono invisible en Bloque 2 para permitir infinitas tiradas consecutivas sin pantallas negras */
+    const currentSymbolOffset = (track._currentIndex || (shuffled.length * 2)) % shuffled.length;
+    const startSymbolIndex = (shuffled.length * 2) + currentSymbolOffset;
+    const startOffset = startSymbolIndex * symH - (winH / 2 - symH / 2);
+
+    track.style.transition = 'none';
+    track.style.transform = `translateY(-${startOffset}px)`;
+    void track.offsetHeight; // Forzar reflow síncrono para 0 parpadeos
+
+    /* Girar 6 bloques completos de distancia (~240 símbolos recorridos a alta velocidad en 3.5s) */
+    const spinRevolutions = 6;
+    const safeWinnerIdx = winnerIdx >= 0 ? winnerIdx : 0;
+    const targetSymbolIndex = (shuffled.length * (2 + spinRevolutions)) + safeWinnerIdx;
     const targetOffset = targetSymbolIndex * symH - (winH / 2 - symH / 2);
-    const startY = (track._currentIndex||(baseBlock*2)) * symH - (winH / 2 - symH / 2);
-    const distance = targetOffset - startY;
 
-    let startTime=null;
-    const duration=3200;
+    /* Duración exactísima de 3.5s (3500ms) con desaceleración progresiva cubic-bezier(0.15, 0.9, 0.2, 1) */
+    const durationMs = 3500;
+    requestAnimationFrame(() => {
+      track.style.transition = `transform ${durationMs}ms cubic-bezier(0.15, 0.9, 0.2, 1)`;
+      track.style.transform = `translateY(-${targetOffset}px)`;
+      track._currentIndex = targetSymbolIndex;
+    });
 
-    track.style.transition='none';
-
-    function animate(now){
-      if(!startTime)startTime=now;
-      const elapsed=now-startTime;
-      const progress=Math.min(elapsed/duration,1);
-
-      /* Easing: desaceleración suave (quart Out) */
-      const eased=1-Math.pow(1-progress,4);
-      const currentY=startY+eased*distance;
-
-      track.style.transform=`translateY(-${currentY}px)`;
-
-      if(progress<1){
-        fortuneAnimId=requestAnimationFrame(animate);
-      }else{
-        /* Snap final suave */
-        track.style.transition='transform 0.25s cubic-bezier(0.16,1,0.3,1)';
-        track.style.transform=`translateY(-${targetOffset}px)`;
-        track._currentIndex=targetSymbolIndex;
-
-        fortuneSpinning=false;
+    setTimeout(() => {
+      fortuneSpinning = false;
+      if(spinBtn){
         spinBtn.classList.remove('spinning');
         spinBtn.textContent='★ ¡GIRAR! ★';
-
-        setTimeout(()=>showFortuneResult(winner),400);
       }
-    }
-    fortuneAnimId=requestAnimationFrame(animate);
+      showFortuneResult(winner);
+    }, durationMs + 50);
   }
 
   /* ── Mostrar resultado + confetti ───────────────────────────── */
@@ -3045,12 +3294,15 @@ input,select{font:inherit;color:inherit}
   }
 
   /* ══════════════════════════════════════════════════════════════
-     CASINO AMBIENT SOUND PLAYER — GESTOR DE AUDIO ACÚSTICO PRO (v3.4)
+     🎵 DESAFÍO 6: CICLO DE VIDA DE AUDIO & PAGE VISIBILITY API
+     [FADE-OUT DE 200MS Y FADE-IN DE 1.0S AL REANUDAR AUTOMÁTICAMENTE]
      ══════════════════════════════════════════════════════════════ */
   let ambientAudio = null;
   let isAmbientPlaying = false;
   let fadeInterval = null;
   let collapseTimeout = null;
+  let wasAudioPlayingBeforeHide = false;
+  let isBackgroundPaused = false;
 
   function initAmbientPlayer() {
     ambientAudio = $('bgAmbientAudio');
@@ -3065,7 +3317,7 @@ input,select{font:inherit;color:inherit}
       
       const currentPref = localStorage.getItem('parley_ambient_audio');
       if (currentPref !== 'disabled' && !isAmbientPlaying) {
-        playAmbientAudio(true);
+        playAmbientAudio(true, 1000);
         localStorage.setItem('parley_ambient_audio', 'enabled');
       }
       cleanupFirstTouchListeners();
@@ -3091,8 +3343,60 @@ input,select{font:inherit;color:inherit}
     document.addEventListener('click', (e) => {
       const playBtn = e.target.closest('.btn-play-always, .featured-play-btn, #fortuneResultPlay');
       if (playBtn && isAmbientPlaying) {
-        pauseAmbientAudio();
+        pauseAmbientAudio(200);
       }
+    });
+
+    setupPageVisibilityListeners();
+  }
+
+  /* 🎧 DESAFÍO 6: Escuchadores de visibilidad de página, blur y pagehide */
+  function setupPageVisibilityListeners() {
+    const handleAudioPauseOnHide = () => {
+      const pref = localStorage.getItem('parley_ambient_audio');
+      if (isAmbientPlaying || (pref === 'enabled' && ambientAudio && !ambientAudio.paused)) {
+        wasAudioPlayingBeforeHide = true;
+        isBackgroundPaused = true;
+        pauseAmbientAudio(200); // Fade-out de 200ms y pausar audio
+      }
+    };
+
+    const handleAudioResumeOnShow = () => {
+      const pref = localStorage.getItem('parley_ambient_audio');
+      if ((wasAudioPlayingBeforeHide || pref === 'enabled') && isBackgroundPaused && !document.hidden) {
+        isBackgroundPaused = false;
+        playAmbientAudio(false, 1000); // Reanudar automáticamente con fade-in de 1.0s
+      }
+    };
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        handleAudioPauseOnHide();
+        setFeaturedState(CarouselState.HIDDEN);
+        stopCarousel();
+      } else {
+        handleAudioResumeOnShow();
+        setFeaturedState(CarouselState.AUTOPLAY);
+        startCarousel();
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      handleAudioPauseOnHide();
+      setFeaturedState(CarouselState.HIDDEN);
+      stopCarousel();
+    });
+
+    window.addEventListener('pagehide', () => {
+      handleAudioPauseOnHide();
+      setFeaturedState(CarouselState.HIDDEN);
+      stopCarousel();
+    });
+
+    window.addEventListener('focus', () => {
+      handleAudioResumeOnShow();
+      setFeaturedState(CarouselState.AUTOPLAY);
+      startCarousel();
     });
   }
 
@@ -3101,16 +3405,16 @@ input,select{font:inherit;color:inherit}
     if (!ambientAudio) return;
 
     if (isAmbientPlaying) {
-      pauseAmbientAudio();
+      pauseAmbientAudio(200);
       localStorage.setItem('parley_ambient_audio', 'disabled');
       triggerTempExpansion(); // Muestra texto por 2.5s al silenciar
     } else {
-      playAmbientAudio(true);
+      playAmbientAudio(true, 1000);
       localStorage.setItem('parley_ambient_audio', 'enabled');
     }
   }
 
-  function playAmbientAudio(showExpansion = false) {
+  function playAmbientAudio(showExpansion = false, durationMs = 1000) {
     if (!ambientAudio) ambientAudio = $('bgAmbientAudio');
     if (!ambientAudio) return;
 
@@ -3123,12 +3427,21 @@ input,select{font:inherit;color:inherit}
         isAmbientPlaying = true;
         updateAmbientWidgetUI(true);
         if (showExpansion) triggerTempExpansion();
+
+        const targetVol = 0.25;
+        const steps = 20;
+        const stepTime = Math.max(10, Math.floor(durationMs / steps));
+        const volStep = targetVol / steps;
         let v = 0;
+
         fadeInterval = setInterval(() => {
-          v = Math.min(v + 0.02, 0.25);
+          v = Math.min(v + volStep, targetVol);
           ambientAudio.volume = v;
-          if (v >= 0.25) clearInterval(fadeInterval);
-        }, 50);
+          if (v >= targetVol) {
+            clearInterval(fadeInterval);
+            fadeInterval = null;
+          }
+        }, stepTime);
       }).catch(() => {
         isAmbientPlaying = false;
         updateAmbientWidgetUI(false);
@@ -3136,21 +3449,27 @@ input,select{font:inherit;color:inherit}
     }
   }
 
-  function pauseAmbientAudio() {
-    if (!ambientAudio || !isAmbientPlaying) return;
+  function pauseAmbientAudio(durationMs = 200) {
+    if (!ambientAudio || (!isAmbientPlaying && ambientAudio.paused)) return;
     if (fadeInterval) clearInterval(fadeInterval);
 
-    let v = ambientAudio.volume;
+    const startVol = ambientAudio.volume || 0.25;
+    const steps = 10;
+    const stepTime = Math.max(10, Math.floor(durationMs / steps));
+    const volStep = startVol / steps;
+    let v = startVol;
+
     fadeInterval = setInterval(() => {
-      v = Math.max(v - 0.03, 0);
+      v = Math.max(v - volStep, 0);
       ambientAudio.volume = v;
       if (v <= 0) {
         clearInterval(fadeInterval);
+        fadeInterval = null;
         ambientAudio.pause();
         isAmbientPlaying = false;
         updateAmbientWidgetUI(false);
       }
-    }, 40);
+    }, stepTime);
   }
 
   function triggerTempExpansion() {
@@ -3185,7 +3504,7 @@ input,select{font:inherit;color:inherit}
       splash.classList.add('hidden');
       setTimeout(() => { splash.style.display = 'none'; }, 500);
     }
-    playAmbientAudio(true);
+    playAmbientAudio(true, 1000);
     localStorage.setItem('parley_ambient_audio', 'enabled');
   }
 
@@ -3193,7 +3512,7 @@ input,select{font:inherit;color:inherit}
   init();
 
   /* ── Public API ──────────────────────────────────────────────── */
-  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio,enterCasino};
+  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio,enterCasino,preloadCatalogAndImages};
 })();
 </script>
 <script>
