@@ -1149,9 +1149,226 @@ input,select{font:inherit;color:inherit}
     left: 12px;
   }
 }
+
+/* 🎰 Welcome Splash Modal (Opción 1 Marquesina Casino VIP 360°) */
+@font-face {
+  font-family: 'Beaufort for LoL';
+  src: local('Beaufort for LoL'), local('BeaufortforLoL-Bold'), local('BeaufortforLoL-Regular'), url('https://fonts.cdnfonts.com/s/17258/BeaufortforLoL-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+.welcome-splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(18, 24, 46, 0.96) 0%, rgba(4, 7, 16, 0.98) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 20px;
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.welcome-splash-overlay.hidden {
+  opacity: 0;
+  transform: scale(1.05);
+  pointer-events: none;
+}
+
+/* Cuadro con marco perimetral marquesina de 360° */
+.welcome-marquee-frame {
+  position: relative;
+  background: linear-gradient(145deg, rgba(22, 28, 52, 0.97), rgba(8, 12, 24, 0.99));
+  border: 3px solid #fdd835;
+  box-shadow: 0 0 40px rgba(253, 216, 53, 0.5), inset 0 0 25px rgba(253, 216, 53, 0.2), 0 25px 70px rgba(0, 0, 0, 0.85);
+  border-radius: 24px;
+  padding: 24px 20px 28px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Beaufort for LoL', 'Outfit', 'Montserrat', 'Cinzel', serif, sans-serif;
+  animation: welcomePop 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes welcomePop {
+  0% { transform: scale(0.88) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Focos de marquesina bordes horizontales (superior e inferior) */
+.welcome-bulbs-horizontal {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+  margin-bottom: 12px;
+}
+
+.welcome-bulbs-horizontal.bottom {
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+/* Focos de marquesina bordes verticales (izquierdo y derecho) */
+.welcome-content-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+}
+
+.welcome-bulbs-vertical {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 100%;
+  gap: 14px;
+}
+
+.welcome-inner-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Efecto de título fluido cambiando ÚNICAMENTE entre Rojos y Dorados */
+@keyframes fluidRedGold {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.welcome-title {
+  font-family: 'Beaufort for LoL', 'Outfit', 'Montserrat', 'Cinzel', serif, sans-serif;
+  font-size: 1.55rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, #fdd835, #ffb300, #ff3d00, #e51c23, #d50000, #ffb300, #fdd835);
+  background-size: 300% 300%;
+  animation: fluidRedGold 3.5s ease infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(253, 216, 53, 0.35));
+}
+
+.welcome-logo {
+  max-width: 165px;
+  height: auto;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+.welcome-subtitle {
+  font-family: 'Beaufort for LoL', 'Roboto', 'Montserrat', sans-serif;
+  font-size: 0.92rem;
+  color: #e2e8f0;
+  font-weight: 600;
+  line-height: 1.45;
+  margin-bottom: 22px;
+  max-width: 320px;
+}
+
+.welcome-enter-btn {
+  width: 100%;
+  padding: 16px 24px;
+  font-family: 'Beaufort for LoL', 'Outfit', 'Montserrat', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: #fff;
+  background: linear-gradient(135deg, #fdd835 0%, #e51c23 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(229, 28, 35, 0.5), 0 0 18px rgba(253, 216, 53, 0.4);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.welcome-enter-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(229, 28, 35, 0.7), 0 0 28px rgba(253, 216, 53, 0.6);
+}
+
+.welcome-enter-btn:active {
+  transform: translateY(1px) scale(0.99);
+}
   </style>
 </head>
 <body>
+
+<!-- 🎰 Welcome Splash Modal (Opción 1 Marquesina Casino VIP 360°) -->
+<div class="welcome-splash-overlay" id="welcomeSplash">
+  <div class="welcome-marquee-frame">
+    
+    <!-- Marquesina Borde Superior (Horizontal) -->
+    <div class="welcome-bulbs-horizontal">
+      <div class="b-bulb gold"></div><div class="b-bulb red"></div>
+      <div class="b-bulb gold"></div><div class="b-bulb red"></div>
+      <div class="b-bulb gold"></div><div class="b-bulb red"></div>
+      <div class="b-bulb gold"></div><div class="b-bulb red"></div>
+      <div class="b-bulb gold"></div>
+    </div>
+
+    <!-- Cuerpo Central con Bordes Izquierdo y Derecho (Verticales) -->
+    <div class="welcome-content-row">
+      
+      <!-- Marquesina Borde Izquierdo (Vertical) -->
+      <div class="welcome-bulbs-vertical">
+        <div class="b-bulb red"></div>
+        <div class="b-bulb gold"></div>
+        <div class="b-bulb red"></div>
+        <div class="b-bulb gold"></div>
+        <div class="b-bulb red"></div>
+      </div>
+
+      <div class="welcome-inner-body">
+        <img class="welcome-logo" src="ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png" alt="Parley.com.ve"
+             onerror="this.style.display='none'">
+        
+        <h2 class="welcome-title">★ CASINO PARLEY VIP ★</h2>
+        <p class="welcome-subtitle">¡Bienvenido al Casino VIP de Parley!</p>
+        
+        <button class="welcome-enter-btn" id="welcomeEnterBtn" onclick="App.enterCasino()">
+          <span>🎰</span> ENTRAR AL CASINO
+        </button>
+      </div>
+
+      <!-- Marquesina Borde Derecho (Vertical) -->
+      <div class="welcome-bulbs-vertical">
+        <div class="b-bulb gold"></div>
+        <div class="b-bulb red"></div>
+        <div class="b-bulb gold"></div>
+        <div class="b-bulb red"></div>
+        <div class="b-bulb gold"></div>
+      </div>
+
+    </div>
+
+    <!-- Marquesina Borde Inferior (Horizontal) -->
+    <div class="welcome-bulbs-horizontal bottom">
+      <div class="b-bulb red"></div><div class="b-bulb gold"></div>
+      <div class="b-bulb red"></div><div class="b-bulb gold"></div>
+      <div class="b-bulb red"></div><div class="b-bulb gold"></div>
+      <div class="b-bulb red"></div><div class="b-bulb gold"></div>
+      <div class="b-bulb red"></div>
+    </div>
+
+  </div>
+</div>
 
 <div class="ambient-glow-1"></div>
 <canvas id="bgCanvas"></canvas>
@@ -2902,11 +3119,21 @@ input,select{font:inherit;color:inherit}
     }
   }
 
+  function enterCasino() {
+    const splash = $('welcomeSplash');
+    if (splash) {
+      splash.classList.add('hidden');
+      setTimeout(() => { splash.style.display = 'none'; }, 500);
+    }
+    playAmbientAudio(true);
+    localStorage.setItem('parley_ambient_audio', 'enabled');
+  }
+
   /* ── Boot ────────────────────────────────────────────────────── */
   init();
 
   /* ── Public API ──────────────────────────────────────────────── */
-  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio};
+  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio,enterCasino};
 })();
 </script>
 <script>
