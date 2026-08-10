@@ -1013,7 +1013,7 @@ input,select{font:inherit;color:inherit}
   .spin-btn{padding:10px 0;font-size:0.9rem}
 }
 
-/* 🎵 Casino Ambient Sound Widget — Compact Top-Left Pill (Glassmorphism) */
+/* 🎵 Casino Ambient Sound Widget — Retractable Auto-Collapsing Circle Pill */
 .ambient-sound-widget {
   position: fixed;
   top: 16px;
@@ -1021,31 +1021,46 @@ input,select{font:inherit;color:inherit}
   z-index: 99999;
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(13, 20, 38, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  gap: 0px;
+  background: rgba(13, 20, 38, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(253, 216, 53, 0.35);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 12px rgba(253, 216, 53, 0.15);
-  padding: 4px 10px 4px 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(253, 216, 53, 0.15);
+  padding: 4px;
   border-radius: 999px;
   cursor: pointer;
   user-select: none;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  max-width: 34px; /* Reposo: Solo círculo de 34px */
+  height: 34px;
+  box-sizing: border-box;
+  transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s, background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
+
+.ambient-sound-widget:hover,
+.ambient-sound-widget.expanded {
+  max-width: 190px; /* Desplegado: Muestra texto por 3 segundos o al pasar el cursor */
+  padding: 4px 12px 4px 4px;
+  gap: 8px;
+}
+
 .ambient-sound-widget:hover {
-  transform: translateY(-1px) scale(1.02);
+  transform: translateY(-1px);
   border-color: rgba(253, 216, 53, 0.8);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 18px rgba(253, 216, 53, 0.3);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 20px rgba(253, 216, 53, 0.35);
 }
+
 .ambient-sound-widget.active {
-  background: rgba(22, 28, 48, 0.92);
+  background: rgba(22, 28, 48, 0.94);
   border-color: #fdd835;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(253, 216, 53, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 18px rgba(253, 216, 53, 0.4);
 }
+
 .ambient-icon-wrap {
   width: 24px;
   height: 24px;
+  min-width: 24px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
   display: flex;
@@ -1055,28 +1070,35 @@ input,select{font:inherit;color:inherit}
   position: relative;
   transition: background 0.3s;
 }
+
 .ambient-sound-widget.active .ambient-icon-wrap {
   background: linear-gradient(135deg, #fdd835, #e51c23);
   color: #fff;
+  box-shadow: 0 0 10px rgba(253, 216, 53, 0.5);
 }
+
 .sound-wave-bars {
   display: none;
   align-items: flex-end;
   gap: 2px;
   height: 10px;
 }
+
 .ambient-sound-widget.active .sound-wave-bars {
   display: flex;
 }
+
 .ambient-sound-widget.active .ambient-icon {
   display: none;
 }
+
 .sound-wave-bars span {
   width: 2px;
   background: #fff;
   border-radius: 2px;
   animation: waveBar 1.2s ease-in-out infinite alternate;
 }
+
 .sound-wave-bars span:nth-child(1) { height: 40%; animation-delay: 0.1s; }
 .sound-wave-bars span:nth-child(2) { height: 80%; animation-delay: 0.3s; }
 .sound-wave-bars span:nth-child(3) { height: 60%; animation-delay: 0.2s; }
@@ -1090,20 +1112,33 @@ input,select{font:inherit;color:inherit}
 .ambient-info {
   display: flex;
   flex-direction: column;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-5px);
+  transition: opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s;
 }
+
+.ambient-sound-widget:hover .ambient-info,
+.ambient-sound-widget.expanded .ambient-info {
+  opacity: 1;
+  transform: translateX(0);
+}
+
 .ambient-title {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
   color: #fff;
   line-height: 1.1;
 }
+
 .ambient-subtitle {
-  font-size: 8px;
+  font-size: 7.5px;
   color: #94a3b8;
   font-weight: 500;
   line-height: 1.1;
 }
+
 .ambient-sound-widget.active .ambient-subtitle {
   color: #fdd835;
 }
@@ -1112,18 +1147,6 @@ input,select{font:inherit;color:inherit}
   .ambient-sound-widget {
     top: 12px;
     left: 12px;
-    padding: 3px 8px 3px 5px;
-  }
-  .ambient-icon-wrap {
-    width: 22px;
-    height: 22px;
-    font-size: 11px;
-  }
-  .ambient-title {
-    font-size: 8.5px;
-  }
-  .ambient-subtitle {
-    font-size: 7.5px;
   }
 }
   </style>
@@ -2745,21 +2768,27 @@ input,select{font:inherit;color:inherit}
   }
 
   /* ══════════════════════════════════════════════════════════════
-     CASINO AMBIENT SOUND PLAYER — GESTOR DE AUDIO ACÚSTICO PRO (v3.3)
+     CASINO AMBIENT SOUND PLAYER — GESTOR DE AUDIO ACÚSTICO PRO (v3.4)
      ══════════════════════════════════════════════════════════════ */
   let ambientAudio = null;
   let isAmbientPlaying = false;
   let fadeInterval = null;
+  let collapseTimeout = null;
 
   function initAmbientPlayer() {
     ambientAudio = $('bgAmbientAudio');
     if (!ambientAudio) return;
-    ambientAudio.volume = 0.25; // 25% de volumen inicial sutil
+    ambientAudio.volume = 0.25; // 25% de volumen sutil
 
     const pref = localStorage.getItem('parley_ambient_audio');
-    if (pref === 'enabled') {
+    
+    // Si el usuario NO ha desactivado el audio explícitamente ('disabled'),
+    // activamos la música automáticamente en su PRIMER toque/clic en cualquier parte de la web
+    if (pref !== 'disabled') {
       const enableOnFirstTouch = () => {
-        if (!isAmbientPlaying) playAmbientAudio();
+        if (!isAmbientPlaying) {
+          playAmbientAudio(true); // Reproducir y desplegar texto por 3s
+        }
         document.removeEventListener('click', enableOnFirstTouch);
         document.removeEventListener('keydown', enableOnFirstTouch);
         document.removeEventListener('touchstart', enableOnFirstTouch);
@@ -2769,7 +2798,7 @@ input,select{font:inherit;color:inherit}
       document.addEventListener('touchstart', enableOnFirstTouch, { once: true });
     }
 
-    // Auto-Pausa cuando el usuario hace clic en "▶ JUGAR" en cualquier slot
+    // Auto-Pausa inteligente cuando el usuario hace clic en "▶ JUGAR" en cualquier slot
     document.addEventListener('click', (e) => {
       const playBtn = e.target.closest('.btn-play-always, .featured-play-btn, #fortuneResultPlay');
       if (playBtn && isAmbientPlaying) {
@@ -2785,13 +2814,14 @@ input,select{font:inherit;color:inherit}
     if (isAmbientPlaying) {
       pauseAmbientAudio();
       localStorage.setItem('parley_ambient_audio', 'disabled');
+      triggerTempExpansion(); // Muestra texto por 3s al silenciar
     } else {
-      playAmbientAudio();
+      playAmbientAudio(true);
       localStorage.setItem('parley_ambient_audio', 'enabled');
     }
   }
 
-  function playAmbientAudio() {
+  function playAmbientAudio(showExpansion = false) {
     if (!ambientAudio) ambientAudio = $('bgAmbientAudio');
     if (!ambientAudio) return;
 
@@ -2803,6 +2833,7 @@ input,select{font:inherit;color:inherit}
       playPromise.then(() => {
         isAmbientPlaying = true;
         updateAmbientWidgetUI(true);
+        if (showExpansion) triggerTempExpansion();
         let v = 0;
         fadeInterval = setInterval(() => {
           v = Math.min(v + 0.02, 0.25);
@@ -2833,6 +2864,16 @@ input,select{font:inherit;color:inherit}
     }, 40);
   }
 
+  function triggerTempExpansion() {
+    const w = $('ambientWidget');
+    if (!w) return;
+    w.classList.add('expanded');
+    if (collapseTimeout) clearTimeout(collapseTimeout);
+    collapseTimeout = setTimeout(() => {
+      w.classList.remove('expanded');
+    }, 3000);
+  }
+
   function updateAmbientWidgetUI(active) {
     const w = $('ambientWidget');
     const sub = $('ambientSubtitle');
@@ -2841,7 +2882,7 @@ input,select{font:inherit;color:inherit}
 
     if (active) {
       w.classList.add('active');
-      if (sub) sub.textContent = 'Música sonando (25%)';
+      if (sub) sub.textContent = 'Sonando (25%)';
     } else {
       w.classList.remove('active');
       if (sub) sub.textContent = 'Clic para activar';
