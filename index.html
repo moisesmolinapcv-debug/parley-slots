@@ -672,15 +672,49 @@ input,select{font:inherit;color:inherit}
   z-index: 1;
 }
 
-/* Provider badge — siempre visible en esquina superior izquierda con micro-escala */
-.card-provider-badge{position:absolute;top:5px;left:5px;z-index:5;background:rgba(5,10,24,0.94);border:1px solid rgba(253,216,53,0.65);border-radius:999px;padding:1.8px 6px;font-size:0.52rem;font-weight:800;color:#ffffff;letter-spacing:0.2px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);white-space:nowrap;max-width:calc(100% - 50px);overflow:hidden;text-overflow:ellipsis;box-shadow:0 3px 10px rgba(0,0,0,0.9),0 0 6px rgba(0,0,0,0.7);text-shadow:0 1px 3px rgba(0,0,0,0.9)}
+/* Provider & Status Badges — Flexbox Bar con Truncado Dinámico (0 Solapamientos) */
+.card-badges-bar {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  pointer-events: none;
+}
 
-/* HOT badge — micro-escala */
-.badge-hot{position:absolute;top:5px;right:5px;background:linear-gradient(135deg,#ff1744 0%,#ff5252 100%);color:#ffffff;font-size:0.48rem;font-weight:900;padding:1.8px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 3px 10px rgba(0,0,0,0.9),0 0 8px rgba(255,23,68,0.6);text-shadow:0 1px 3px rgba(0,0,0,0.9);z-index:5;animation:pulseHot 2s infinite}
+.card-provider-badge {
+  position: relative;
+  top: auto;
+  left: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: rgba(5,10,24,0.94);
+  border: 1px solid rgba(253,216,53,0.65);
+  border-radius: 999px;
+  padding: 1.8px 6px;
+  font-size: 0.52rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+}
+
+/* HOT badge — Flexbox item */
+.badge-hot{position:relative;top:auto;right:auto;flex:0 0 auto;background:linear-gradient(135deg,#ff1744 0%,#ff5252 100%);color:#ffffff;font-size:0.48rem;font-weight:900;padding:1.8px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 3px 10px rgba(0,0,0,0.9),0 0 8px rgba(255,23,68,0.6);text-shadow:0 1px 3px rgba(0,0,0,0.9);animation:pulseHot 2s infinite;white-space:nowrap}
 @keyframes pulseHot{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 
-/* NUEVO badge — micro-escala */
-.badge-new{position:absolute;top:5px;right:5px;background:linear-gradient(135deg,#00e676 0%,#00b0ff 100%);color:#030a1c;font-size:0.48rem;font-weight:900;padding:1.8px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.45);box-shadow:0 3px 10px rgba(0,0,0,0.9),0 0 8px rgba(0,230,118,0.5);z-index:5;animation:pulseNew 2.5s ease-in-out infinite}
+/* NUEVO badge — Flexbox item */
+.badge-new{position:relative;top:auto;right:auto;flex:0 0 auto;background:linear-gradient(135deg,#00e676 0%,#00b0ff 100%);color:#030a1c;font-size:0.48rem;font-weight:900;padding:1.8px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.45);box-shadow:0 3px 10px rgba(0,0,0,0.9),0 0 8px rgba(0,230,118,0.5);animation:pulseNew 2.5s ease-in-out infinite;white-space:nowrap}
 @keyframes pulseNew{0%,100%{box-shadow:0 3px 10px rgba(0,0,0,0.9)}50%{box-shadow:0 3px 18px rgba(0,230,118,0.8),0 0 16px rgba(0,230,118,0.4)}}
 
 /* Card body — Micro-escalado y simetría perfecta */
@@ -2458,9 +2492,11 @@ input,select{font:inherit;color:inherit}
       const isNew = (!hot) && (Boolean(s.is_new) || (s._createdTs > 0 && (Date.now() - s._createdTs <= newCutoffMs)));
       const statusBadge = hot ? '<span class="badge-hot">🔥 HOT</span>' : (isNew ? '<span class="badge-new">✨ NUEVO</span>' : '');
       card.innerHTML=`
-        ${statusBadge}
         <div class="card-img-wrap">
-          <span class="card-provider-badge">${s._providerDisplay}</span>
+          <div class="card-badges-bar">
+            <span class="card-provider-badge" title="${s._providerDisplay}">${s._providerDisplay}</span>
+            ${statusBadge}
+          </div>
           <img class="card-img" data-src="${s.image_url}" alt="${s.name}" decoding="async"
                onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex'">
           <div class="card-img-placeholder">🎰 ${s.name}</div>
