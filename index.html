@@ -1012,12 +1012,142 @@ input,select{font:inherit;color:inherit}
   .marquee-title{font-size:1rem}
   .spin-btn{padding:10px 0;font-size:0.9rem}
 }
+
+/* 🎵 Casino Ambient Sound Widget (Glassmorphism & Neon Gold Glow) */
+.ambient-sound-widget {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(18, 22, 38, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(253, 216, 53, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(253, 216, 53, 0.15);
+  padding: 8px 16px 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ambient-sound-widget:hover {
+  transform: translateY(-2px) scale(1.03);
+  border-color: rgba(253, 216, 53, 0.7);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 25px rgba(253, 216, 53, 0.35);
+}
+.ambient-sound-widget.active {
+  background: rgba(26, 31, 53, 0.92);
+  border-color: #fdd835;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(253, 216, 53, 0.4);
+}
+.ambient-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  position: relative;
+  transition: background 0.3s;
+}
+.ambient-sound-widget.active .ambient-icon-wrap {
+  background: linear-gradient(135deg, #fdd835, #e51c23);
+  color: #fff;
+}
+.sound-wave-bars {
+  display: none;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 14px;
+}
+.ambient-sound-widget.active .sound-wave-bars {
+  display: flex;
+}
+.ambient-sound-widget.active .ambient-icon {
+  display: none;
+}
+.sound-wave-bars span {
+  width: 3px;
+  background: #fff;
+  border-radius: 2px;
+  animation: waveBar 1.2s ease-in-out infinite alternate;
+}
+.sound-wave-bars span:nth-child(1) { height: 40%; animation-delay: 0.1s; }
+.sound-wave-bars span:nth-child(2) { height: 80%; animation-delay: 0.3s; }
+.sound-wave-bars span:nth-child(3) { height: 60%; animation-delay: 0.2s; }
+.sound-wave-bars span:nth-child(4) { height: 100%; animation-delay: 0.4s; }
+
+@keyframes waveBar {
+  0% { height: 20%; }
+  100% { height: 100%; }
+}
+
+.ambient-info {
+  display: flex;
+  flex-direction: column;
+}
+.ambient-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #fff;
+  line-height: 1.2;
+}
+.ambient-subtitle {
+  font-size: 9.5px;
+  color: #94a3b8;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.ambient-sound-widget.active .ambient-subtitle {
+  color: #fdd835;
+}
+
+@media (max-width: 600px) {
+  .ambient-sound-widget {
+    bottom: 20px;
+    left: 16px;
+    padding: 6px 12px 6px 10px;
+  }
+  .ambient-icon-wrap {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+  .ambient-title {
+    font-size: 10px;
+  }
+  .ambient-subtitle {
+    font-size: 8.5px;
+  }
+}
   </style>
 </head>
 <body>
 
 <div class="ambient-glow-1"></div>
 <canvas id="bgCanvas"></canvas>
+
+<!-- 🎵 Casino Ambient Sound Player Component -->
+<audio id="bgAmbientAudio" loop preload="auto" src="musica/Golden_Floor_Show.mp3"></audio>
+
+<div class="ambient-sound-widget" id="ambientWidget" onclick="App.toggleAmbientAudio()" title="Música ambiental Casino VIP">
+  <div class="ambient-icon-wrap" id="ambientIconWrap">
+    <span class="ambient-icon" id="ambientIcon">🔇</span>
+    <div class="sound-wave-bars" id="soundWaveBars">
+      <span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+  <div class="ambient-info">
+    <span class="ambient-title" id="ambientTitle">MÚSICA AMBIENTAL</span>
+    <span class="ambient-subtitle" id="ambientSubtitle">Clic para activar</span>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════════
      PORTAL HEADER — Logo + Buscador
@@ -1613,6 +1743,7 @@ input,select{font:inherit;color:inherit}
     initFeaturedSlotsCarousel();
     restoreFromURL();
     preloadFortuneImages();
+    initAmbientPlayer();
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -2613,11 +2744,116 @@ input,select{font:inherit;color:inherit}
     if(searchQuery||activeTheme||activeCategory||activeProviders.size||activeTags.size||sortMode!=='popular')applyFilters();
   }
 
+  /* ══════════════════════════════════════════════════════════════
+     CASINO AMBIENT SOUND PLAYER — GESTOR DE AUDIO ACÚSTICO PRO (v3.3)
+     ══════════════════════════════════════════════════════════════ */
+  let ambientAudio = null;
+  let isAmbientPlaying = false;
+  let fadeInterval = null;
+
+  function initAmbientPlayer() {
+    ambientAudio = $('bgAmbientAudio');
+    if (!ambientAudio) return;
+    ambientAudio.volume = 0.25; // 25% de volumen inicial sutil
+
+    const pref = localStorage.getItem('parley_ambient_audio');
+    if (pref === 'enabled') {
+      const enableOnFirstTouch = () => {
+        if (!isAmbientPlaying) playAmbientAudio();
+        document.removeEventListener('click', enableOnFirstTouch);
+        document.removeEventListener('keydown', enableOnFirstTouch);
+        document.removeEventListener('touchstart', enableOnFirstTouch);
+      };
+      document.addEventListener('click', enableOnFirstTouch, { once: true });
+      document.addEventListener('keydown', enableOnFirstTouch, { once: true });
+      document.addEventListener('touchstart', enableOnFirstTouch, { once: true });
+    }
+
+    // Auto-Pausa cuando el usuario hace clic en "▶ JUGAR" en cualquier slot
+    document.addEventListener('click', (e) => {
+      const playBtn = e.target.closest('.btn-play-always, .featured-play-btn, #fortuneResultPlay');
+      if (playBtn && isAmbientPlaying) {
+        pauseAmbientAudio();
+      }
+    });
+  }
+
+  function toggleAmbientAudio() {
+    if (!ambientAudio) ambientAudio = $('bgAmbientAudio');
+    if (!ambientAudio) return;
+
+    if (isAmbientPlaying) {
+      pauseAmbientAudio();
+      localStorage.setItem('parley_ambient_audio', 'disabled');
+    } else {
+      playAmbientAudio();
+      localStorage.setItem('parley_ambient_audio', 'enabled');
+    }
+  }
+
+  function playAmbientAudio() {
+    if (!ambientAudio) ambientAudio = $('bgAmbientAudio');
+    if (!ambientAudio) return;
+
+    if (fadeInterval) clearInterval(fadeInterval);
+    ambientAudio.volume = 0;
+    const playPromise = ambientAudio.play();
+
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        isAmbientPlaying = true;
+        updateAmbientWidgetUI(true);
+        let v = 0;
+        fadeInterval = setInterval(() => {
+          v = Math.min(v + 0.02, 0.25);
+          ambientAudio.volume = v;
+          if (v >= 0.25) clearInterval(fadeInterval);
+        }, 50);
+      }).catch(() => {
+        isAmbientPlaying = false;
+        updateAmbientWidgetUI(false);
+      });
+    }
+  }
+
+  function pauseAmbientAudio() {
+    if (!ambientAudio || !isAmbientPlaying) return;
+    if (fadeInterval) clearInterval(fadeInterval);
+
+    let v = ambientAudio.volume;
+    fadeInterval = setInterval(() => {
+      v = Math.max(v - 0.03, 0);
+      ambientAudio.volume = v;
+      if (v <= 0) {
+        clearInterval(fadeInterval);
+        ambientAudio.pause();
+        isAmbientPlaying = false;
+        updateAmbientWidgetUI(false);
+      }
+    }, 40);
+  }
+
+  function updateAmbientWidgetUI(active) {
+    const w = $('ambientWidget');
+    const sub = $('ambientSubtitle');
+    const icon = $('ambientIcon');
+    if (!w) return;
+
+    if (active) {
+      w.classList.add('active');
+      if (sub) sub.textContent = 'Música sonando (25%)';
+    } else {
+      w.classList.remove('active');
+      if (sub) sub.textContent = 'Clic para activar';
+      if (icon) icon.textContent = '🔇';
+    }
+  }
+
   /* ── Boot ────────────────────────────────────────────────────── */
   init();
 
   /* ── Public API ──────────────────────────────────────────────── */
-  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune};
+  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio};
 })();
 </script>
 <script>
