@@ -1032,15 +1032,16 @@ input,select{font:inherit;color:inherit}
   cursor: pointer;
   user-select: none;
   overflow: hidden;
-  max-width: 34px; /* Reposo: Solo círculo de 34px */
+  width: 34px;
+  max-width: 34px; /* Reposo: Círculo de 34px estricto */
   height: 34px;
   box-sizing: border-box;
-  transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s, background 0.3s, border-color 0.3s, box-shadow 0.3s;
+  transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), width 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s, background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
-.ambient-sound-widget:hover,
 .ambient-sound-widget.expanded {
-  max-width: 190px; /* Desplegado: Muestra texto por 3 segundos o al pasar el cursor */
+  width: auto;
+  max-width: 195px; /* Desplegado: Muestra texto por 2.5s únicamente con la clase .expanded */
   padding: 4px 12px 4px 4px;
   gap: 8px;
 }
@@ -1118,7 +1119,6 @@ input,select{font:inherit;color:inherit}
   transition: opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s;
 }
 
-.ambient-sound-widget:hover .ambient-info,
 .ambient-sound-widget.expanded .ambient-info {
   opacity: 1;
   transform: translateX(0);
@@ -2782,20 +2782,32 @@ input,select{font:inherit;color:inherit}
 
     const pref = localStorage.getItem('parley_ambient_audio');
     
-    // Si el usuario NO ha desactivado el audio explícitamente ('disabled'),
-    // activamos la música automáticamente en su PRIMER toque/clic en cualquier parte de la web
+    // Función robusta de primera interacción en ventana
+    const enableOnFirstTouch = (e) => {
+      if (e && e.target && e.target.closest && e.target.closest('#ambientWidget')) return;
+      
+      const currentPref = localStorage.getItem('parley_ambient_audio');
+      if (currentPref !== 'disabled' && !isAmbientPlaying) {
+        playAmbientAudio(true);
+        localStorage.setItem('parley_ambient_audio', 'enabled');
+      }
+      cleanupFirstTouchListeners();
+    };
+
+    const cleanupFirstTouchListeners = () => {
+      window.removeEventListener('pointerdown', enableOnFirstTouch, true);
+      window.removeEventListener('click', enableOnFirstTouch, true);
+      window.removeEventListener('touchstart', enableOnFirstTouch, true);
+      window.removeEventListener('keydown', enableOnFirstTouch, true);
+      window.removeEventListener('scroll', enableOnFirstTouch, true);
+    };
+
     if (pref !== 'disabled') {
-      const enableOnFirstTouch = () => {
-        if (!isAmbientPlaying) {
-          playAmbientAudio(true); // Reproducir y desplegar texto por 3s
-        }
-        document.removeEventListener('click', enableOnFirstTouch);
-        document.removeEventListener('keydown', enableOnFirstTouch);
-        document.removeEventListener('touchstart', enableOnFirstTouch);
-      };
-      document.addEventListener('click', enableOnFirstTouch, { once: true });
-      document.addEventListener('keydown', enableOnFirstTouch, { once: true });
-      document.addEventListener('touchstart', enableOnFirstTouch, { once: true });
+      window.addEventListener('pointerdown', enableOnFirstTouch, { once: true, capture: true });
+      window.addEventListener('click', enableOnFirstTouch, { once: true, capture: true });
+      window.addEventListener('touchstart', enableOnFirstTouch, { once: true, capture: true });
+      window.addEventListener('keydown', enableOnFirstTouch, { once: true, capture: true });
+      window.addEventListener('scroll', enableOnFirstTouch, { once: true, capture: true });
     }
 
     // Auto-Pausa inteligente cuando el usuario hace clic en "▶ JUGAR" en cualquier slot
@@ -2814,7 +2826,7 @@ input,select{font:inherit;color:inherit}
     if (isAmbientPlaying) {
       pauseAmbientAudio();
       localStorage.setItem('parley_ambient_audio', 'disabled');
-      triggerTempExpansion(); // Muestra texto por 3s al silenciar
+      triggerTempExpansion(); // Muestra texto por 2.5s al silenciar
     } else {
       playAmbientAudio(true);
       localStorage.setItem('parley_ambient_audio', 'enabled');
@@ -2871,7 +2883,7 @@ input,select{font:inherit;color:inherit}
     if (collapseTimeout) clearTimeout(collapseTimeout);
     collapseTimeout = setTimeout(() => {
       w.classList.remove('expanded');
-    }, 3000);
+    }, 2500);
   }
 
   function updateAmbientWidgetUI(active) {
