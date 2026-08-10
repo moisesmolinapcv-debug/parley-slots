@@ -1013,45 +1013,45 @@ input,select{font:inherit;color:inherit}
   .spin-btn{padding:10px 0;font-size:0.9rem}
 }
 
-/* 🎵 Casino Ambient Sound Widget (Glassmorphism & Neon Gold Glow) */
+/* 🎵 Casino Ambient Sound Widget — Compact Top-Left Pill (Glassmorphism) */
 .ambient-sound-widget {
   position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 9999;
+  top: 16px;
+  left: 16px;
+  z-index: 99999;
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: rgba(18, 22, 38, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(253, 216, 53, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(253, 216, 53, 0.15);
-  padding: 8px 16px 8px 12px;
+  gap: 6px;
+  background: rgba(13, 20, 38, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(253, 216, 53, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 12px rgba(253, 216, 53, 0.15);
+  padding: 4px 10px 4px 6px;
   border-radius: 999px;
   cursor: pointer;
   user-select: none;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ambient-sound-widget:hover {
-  transform: translateY(-2px) scale(1.03);
-  border-color: rgba(253, 216, 53, 0.7);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 25px rgba(253, 216, 53, 0.35);
+  transform: translateY(-1px) scale(1.02);
+  border-color: rgba(253, 216, 53, 0.8);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 18px rgba(253, 216, 53, 0.3);
 }
 .ambient-sound-widget.active {
-  background: rgba(26, 31, 53, 0.92);
+  background: rgba(22, 28, 48, 0.92);
   border-color: #fdd835;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(253, 216, 53, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(253, 216, 53, 0.35);
 }
 .ambient-icon-wrap {
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 12px;
   position: relative;
   transition: background 0.3s;
 }
@@ -1062,8 +1062,8 @@ input,select{font:inherit;color:inherit}
 .sound-wave-bars {
   display: none;
   align-items: flex-end;
-  gap: 2.5px;
-  height: 14px;
+  gap: 2px;
+  height: 10px;
 }
 .ambient-sound-widget.active .sound-wave-bars {
   display: flex;
@@ -1072,7 +1072,7 @@ input,select{font:inherit;color:inherit}
   display: none;
 }
 .sound-wave-bars span {
-  width: 3px;
+  width: 2px;
   background: #fff;
   border-radius: 2px;
   animation: waveBar 1.2s ease-in-out infinite alternate;
@@ -1092,17 +1092,17 @@ input,select{font:inherit;color:inherit}
   flex-direction: column;
 }
 .ambient-title {
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   color: #fff;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 .ambient-subtitle {
-  font-size: 9.5px;
+  font-size: 8px;
   color: #94a3b8;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 .ambient-sound-widget.active .ambient-subtitle {
   color: #fdd835;
@@ -1110,20 +1110,20 @@ input,select{font:inherit;color:inherit}
 
 @media (max-width: 600px) {
   .ambient-sound-widget {
-    bottom: 20px;
-    left: 16px;
-    padding: 6px 12px 6px 10px;
+    top: 12px;
+    left: 12px;
+    padding: 3px 8px 3px 5px;
   }
   .ambient-icon-wrap {
-    width: 30px;
-    height: 30px;
-    font-size: 14px;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
   }
   .ambient-title {
-    font-size: 10px;
+    font-size: 8.5px;
   }
   .ambient-subtitle {
-    font-size: 8.5px;
+    font-size: 7.5px;
   }
 }
   </style>
