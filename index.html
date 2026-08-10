@@ -1248,9 +1248,10 @@ input,select{font:inherit;color:inherit}
 
 .welcome-title {
   font-family: 'Beaufort for LoL', 'Outfit', 'Montserrat', 'Cinzel', serif, sans-serif;
-  font-size: 1.55rem;
+  font-size: clamp(0.95rem, 5.2vw, 1.55rem);
   font-weight: 900;
-  letter-spacing: 2px;
+  letter-spacing: clamp(0.5px, 0.4vw, 2px);
+  white-space: nowrap; /* 🛡️ Cero corte de línea: '★ CASINO PARLEY VIP ★' siempre corrido */
   text-transform: uppercase;
   margin-bottom: 8px;
   background: linear-gradient(90deg, #fdd835, #ffb300, #ff3d00, #e51c23, #d50000, #ffb300, #fdd835);
@@ -1270,21 +1271,22 @@ input,select{font:inherit;color:inherit}
 
 .welcome-subtitle {
   font-family: 'Beaufort for LoL', 'Roboto', 'Montserrat', sans-serif;
-  font-size: 0.92rem;
+  font-size: clamp(0.78rem, 3.2vw, 0.92rem);
   color: #e2e8f0;
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.4;
   margin-bottom: 22px;
   max-width: 320px;
 }
 
 .welcome-enter-btn {
   width: 100%;
-  padding: 16px 24px;
+  padding: 14px 18px;
   font-family: 'Beaufort for LoL', 'Outfit', 'Montserrat', sans-serif;
-  font-size: 1.15rem;
+  font-size: clamp(0.85rem, 4vw, 1.15rem);
   font-weight: 900;
-  letter-spacing: 1.5px;
+  letter-spacing: clamp(0.5px, 0.3vw, 1.5px);
+  white-space: nowrap; /* 🛡️ Cero corte de línea: 'ENTRAR AL CASINO' siempre corrido */
   color: #fff;
   background: linear-gradient(135deg, #fdd835 0%, #e51c23 100%);
   border: 1px solid rgba(255, 255, 255, 0.35);
@@ -1295,7 +1297,7 @@ input,select{font:inherit;color:inherit}
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .welcome-enter-btn:hover {
@@ -1305,6 +1307,32 @@ input,select{font:inherit;color:inherit}
 
 .welcome-enter-btn:active {
   transform: translateY(1px) scale(0.99);
+}
+
+@media (max-width: 480px) {
+  .welcome-splash-overlay {
+    padding: 10px;
+  }
+  .welcome-marquee-frame {
+    padding: 16px 8px 20px;
+    max-width: 96vw;
+  }
+  .welcome-content-row {
+    gap: 4px;
+  }
+  .welcome-bulbs-vertical {
+    gap: 8px;
+  }
+  .welcome-logo {
+    max-width: 130px;
+    margin-bottom: 8px;
+  }
+  .welcome-subtitle {
+    margin-bottom: 16px;
+  }
+  .welcome-enter-btn {
+    padding: 12px 10px;
+  }
 }
   </style>
 </head>
