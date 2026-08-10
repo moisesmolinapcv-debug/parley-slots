@@ -606,28 +606,35 @@ input,select{font:inherit;color:inherit}
 .chip--clear-all:hover{background:rgba(229,28,35,0.3)}
 
 /* ══════════════════════════════════════════════════════════════
-   SLOTS GRID — 5/3/2 columnas, cards 1:1
+   SLOTS GRID — Experimento 35% Micro-Cards (7 cols Desktop / 3 cols Móvil)
    ══════════════════════════════════════════════════════════════ */
-.grid-wrap{max-width:var(--max-w);margin:0 auto;padding:8px 24px 80px}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.grid-wrap{max-width:var(--max-w);margin:0 auto;padding:8px 20px 80px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px}
 
-/* ── CARD ─────────────────────────────────────────────────── */
+@media(max-width:1400px){
+  .grid{grid-template-columns:repeat(6,1fr);gap:10px}
+}
+@media(max-width:1024px){
+  .grid{grid-template-columns:repeat(4,1fr);gap:10px}
+}
+
+/* ── CARD 35% MICRO-SCALE ─────────────────────────────────── */
 .card {
   background: rgba(13,20,38,0.88);
   border: 1px solid rgba(212,175,55,0.3);
-  border-radius: 14px;
+  border-radius: 10px;
   overflow: hidden;
-  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   position: relative;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.55);
-  animation: cardAppear 0.38s ease both;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.55);
+  animation: cardAppear 0.35s ease both;
   display: flex;
   flex-direction: column;
   content-visibility: auto;
-  contain-intrinsic-size: 1px 320px;
+  contain-intrinsic-size: 1px 230px;
 }
-.card:hover{transform:translateY(-6px) scale(1.025);border-color:#fdd835;box-shadow:0 18px 46px rgba(0,0,0,0.8),0 0 24px rgba(253,216,53,0.3)}
-@keyframes cardAppear{from{opacity:0;transform:translateY(20px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.card:hover{transform:translateY(-5px) scale(1.03);border-color:#fdd835;box-shadow:0 14px 36px rgba(0,0,0,0.8),0 0 20px rgba(253,216,53,0.35)}
+@keyframes cardAppear{from{opacity:0;transform:translateY(16px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 
 /* [CORRECCIÓN IMÁGENES] 1:1 Image Wrapper — Suavizado HD por GPU */
 .card-img-wrap {
@@ -647,7 +654,7 @@ input,select{font:inherit;color:inherit}
   image-rendering: auto;
   transform: translateZ(0);
   backface-visibility: hidden;
-  transition: transform 0.5s ease, opacity 0.3s ease;
+  transition: transform 0.45s ease, opacity 0.3s ease;
 }
 .card:hover .card-img{transform:scale(1.06) translateZ(0)}
 .card-img-placeholder {
@@ -658,32 +665,32 @@ input,select{font:inherit;color:inherit}
   justify-content: center;
   background: linear-gradient(135deg, #1e1b4b 0%, #31103f 100%);
   color: var(--text-2);
-  font-size: 0.78rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-align: center;
-  padding: 12px;
+  padding: 8px;
   z-index: 1;
 }
 
-/* Provider badge — siempre visible en esquina superior izquierda con contraste máximo */
-.card-provider-badge{position:absolute;top:8px;left:8px;z-index:5;background:rgba(5,10,24,0.94);border:1.5px solid rgba(253,216,53,0.65);border-radius:999px;padding:2.5px 8px;font-size:0.63rem;font-weight:800;color:#ffffff;letter-spacing:0.3px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);white-space:nowrap;max-width:calc(100% - 72px);overflow:hidden;text-overflow:ellipsis;box-shadow:0 4px 12px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.7);text-shadow:0 1px 3px rgba(0,0,0,0.9)}
+/* Provider badge — siempre visible en esquina superior izquierda con micro-escala */
+.card-provider-badge{position:absolute;top:5px;left:5px;z-index:5;background:rgba(5,10,24,0.94);border:1px solid rgba(253,216,53,0.65);border-radius:999px;padding:1.8px 6px;font-size:0.52rem;font-weight:800;color:#ffffff;letter-spacing:0.2px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);white-space:nowrap;max-width:calc(100% - 50px);overflow:hidden;text-overflow:ellipsis;box-shadow:0 3px 10px rgba(0,0,0,0.9),0 0 6px rgba(0,0,0,0.7);text-shadow:0 1px 3px rgba(0,0,0,0.9)}
 
-/* HOT badge — siempre en esquina superior derecha */
-.badge-hot{position:absolute;top:8px;right:8px;background:linear-gradient(135deg,#ff1744 0%,#ff5252 100%);color:#ffffff;font-size:0.58rem;font-weight:900;padding:2.5px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 4px 14px rgba(0,0,0,0.9),0 0 10px rgba(255,23,68,0.6);text-shadow:0 1px 3px rgba(0,0,0,0.9);z-index:5;animation:pulseHot 2s infinite}
+/* HOT badge — micro-escala */
+.badge-hot{position:absolute;top:5px;right:5px;background:linear-gradient(135deg,#ff1744 0%,#ff5252 100%);color:#ffffff;font-size:0.48rem;font-weight:900;padding:1.8px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 3px 10px rgba(0,0,0,0.9),0 0 8px rgba(255,23,68,0.6);text-shadow:0 1px 3px rgba(0,0,0,0.9);z-index:5;animation:pulseHot 2s infinite}
 @keyframes pulseHot{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 
-/* NUEVO badge — siempre en esquina superior derecha (no colisiona con proveedor) */
-.badge-new{position:absolute;top:8px;right:8px;background:linear-gradient(135deg,#00e676 0%,#00b0ff 100%);color:#030a1c;font-size:0.58rem;font-weight:900;padding:2.5px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;border:1px solid rgba(255,255,255,0.45);box-shadow:0 4px 14px rgba(0,0,0,0.9),0 0 10px rgba(0,230,118,0.5);z-index:5;animation:pulseNew 2.5s ease-in-out infinite}
-@keyframes pulseNew{0%,100%{box-shadow:0 4px 14px rgba(0,0,0,0.9)}50%{box-shadow:0 4px 22px rgba(0,230,118,0.8),0 0 20px rgba(0,230,118,0.4)}}
+/* NUEVO badge — micro-escala */
+.badge-new{position:absolute;top:5px;right:5px;background:linear-gradient(135deg,#00e676 0%,#00b0ff 100%);color:#030a1c;font-size:0.48rem;font-weight:900;padding:1.8px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.45);box-shadow:0 3px 10px rgba(0,0,0,0.9),0 0 8px rgba(0,230,118,0.5);z-index:5;animation:pulseNew 2.5s ease-in-out infinite}
+@keyframes pulseNew{0%,100%{box-shadow:0 3px 10px rgba(0,0,0,0.9)}50%{box-shadow:0 3px 18px rgba(0,230,118,0.8),0 0 16px rgba(0,230,118,0.4)}}
 
-/* Card body */
-/* ── C-03: Simetría card body + line-clamp ────────────────── */
-.card-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}
-.card-name{font-size:0.84rem;font-weight:700;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;min-height:2.3em;transition:color 0.22s ease}
+/* Card body — Micro-escalado y simetría perfecta */
+.card-body{padding:6px 8px 8px;display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+.card-name{font-size:clamp(0.68rem, 0.9vw, 0.75rem);font-weight:700;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25;min-height:2.2em;transition:color 0.22s ease}
 .card:hover .card-name{color:#fdd835}
 
-/* JUGAR button — always visible */
-.btn-play-always{display:block;width:100%;padding:8px 0;background:linear-gradient(135deg,#e51c23 0%,#b70911 100%);color:#fff;border-radius:999px;font-size:0.78rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;text-align:center;box-shadow:0 3px 16px rgba(229,28,35,0.4);border:1px solid rgba(255,255,255,0.25);transition:0.25s ease}
+/* JUGAR button — siempre visible en micro-escala */
+.btn-play-always{display:block;width:100%;padding:5.5px 0;background:linear-gradient(135deg,#e51c23 0%,#b70911 100%);color:#fff;border-radius:999px;font-size:0.65rem;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;text-align:center;box-shadow:0 2.5px 12px rgba(229,28,35,0.4);border:1px solid rgba(255,255,255,0.25);transition:0.25s ease}
+.btn-play-always:hover{transform:scale(1.03);box-shadow:0 4px 18px rgba(229,28,35,0.8)}
 .btn-play-always:hover{transform:scale(1.04);box-shadow:0 5px 24px rgba(229,28,35,0.8)}
 
 /* ── EMPTY STATE ──────────────────────────────────────────── */
@@ -989,11 +996,12 @@ input,select{font:inherit;color:inherit}
   .fab-random{bottom:20px;right:20px;width:60px;height:60px;font-size:1.2rem}
 }
 @media(max-width:599px){
-  .grid{grid-template-columns:repeat(2,1fr);gap:10px}
-  .card-body{padding:8px 10px 10px}
-  /* C-05: Preservar line-clamp en 599px — sin white-space override */
-  .card-name{font-size:0.76rem;-webkit-line-clamp:2;min-height:2em}
-  .btn-play-always{font-size:0.7rem;padding:7px 0}
+  .grid{grid-template-columns:repeat(3,1fr);gap:8px}
+  .card-body{padding:5px 6px 6px;gap:4px}
+  .card-name{font-size:0.64rem;-webkit-line-clamp:2;min-height:2.1em;line-height:1.2}
+  .btn-play-always{font-size:0.58rem;padding:4.5px 0}
+  .card-provider-badge{padding:1.5px 4.5px;font-size:0.45rem;max-width:calc(100% - 42px)}
+  .badge-new, .badge-hot{padding:1.5px 4.5px;font-size:0.44rem}
   .reel-window{height:180px}
   .reel-symbol{height:90px}
   .reel-symbol-wrap{width:75px;height:75px}
@@ -3490,7 +3498,7 @@ input,select{font:inherit;color:inherit}
 
     if (active) {
       w.classList.add('active');
-      if (sub) sub.textContent = 'Sonando (25%)';
+      if (sub) sub.textContent = 'Clic para silenciar';
     } else {
       w.classList.remove('active');
       if (sub) sub.textContent = 'Clic para activar';
