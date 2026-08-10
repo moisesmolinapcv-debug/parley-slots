@@ -1080,11 +1080,6 @@
           <td><span class="badge ${p.is_active ? 'badge-active' : 'badge-inactive'}">${p.is_active ? 'Activo' : 'Inactivo'}</span></td>
         </tr>
       `).join('');
-
-      // Llenar select filtro de proveedores
-      const selectFilter = document.getElementById('slotProviderFilter');
-      selectFilter.innerHTML = '<option value="">Todos los Proveedores</option>' +
-        data.map(p => `<option value="${p.name}">${p.name} (${p.slot_count})</option>`).join('');
     }
 
     // ─── CARGAR SLOTS (PAGINADO + FILTROS) ───
@@ -1189,6 +1184,13 @@
           </td>
         </tr>
       `).join('');
+
+      // Llenar select filtro de proveedores con la lista 100% COMPLETA (51 proveedores A-Z)
+      const selectFilter = document.getElementById('slotProviderFilter');
+      if (selectFilter) {
+        selectFilter.innerHTML = '<option value="">Todos los Proveedores (51)</option>' +
+          data.map(p => `<option value="${p.name}">${p.display_name || p.name} (${p.slot_count || 0})</option>`).join('');
+      }
     }
 
     async function toggleProviderStatus(provName, isActive) {
