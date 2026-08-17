@@ -2779,6 +2779,8 @@ input,select{font:inherit;color:inherit}
   function showSkeletons(){let h='';for(let i=0;i<20;i++)h+=`<article class="card" style="animation-delay:${i*40}ms"><div class="card-img-wrap" style="background:linear-gradient(135deg,#1a1f35,#252b40);animation:pulse 1.5s ease-in-out infinite ${i*80}ms"></div><div class="card-body"><div style="height:14px;background:rgba(255,255,255,0.08);border-radius:6px;margin-bottom:8px;animation:pulse 1.5s infinite"></div><div style="height:32px;background:rgba(229,28,35,0.2);border-radius:999px;animation:pulse 1.5s infinite"></div></div></article>`;grid.innerHTML=`<style>@keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}</style>`+h}
 
   /* ══════════════════════════════════════════════════════════════
+     EVENT BINDING
+     ══════════════════════════════════════════════════════════════ */
   function bindEvents(){
     const searchClear = $('searchClearBtn');
     const ds = debounce(v => {
