@@ -2074,7 +2074,7 @@ input,select{font:inherit;color:inherit}
       const [resProvActive, resSlotsInactive, resBanners, resConfig] = await Promise.all([
         fetch(`${SUPABASE_API_URL}/providers?is_active=eq.true&select=name,display_name`, { headers }).catch(() => null),
         fetch(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=id,external_id,name`, { headers }).catch(() => null),
-        fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url&order=position.asc`, { headers }).catch(() => null),
+        fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url,link_url&order=position.asc`, { headers }).catch(() => null),
         fetch(`${SUPABASE_API_URL}/site_config?select=key,value`, { headers }).catch(() => null)
       ]);
 
@@ -2187,19 +2187,14 @@ input,select{font:inherit;color:inherit}
 
     banners.forEach((b, idx) => {
       const bannerNum = (idx % 2) + 1;
-      let deskUrl = b.image_url || `BANNER/banner_${bannerNum}_desktop_hd.webp`;
-      let mobUrl = b.image_url_movil || `BANNER/banner_${bannerNum}_mobile_hd.webp`;
+      // 🌟 La imagen activa de Supabase gobierna de forma universal (Desktop, Tablet y Móvil)
+      const bannerImg = b.image_url || `BANNER/banner_${bannerNum}_desktop_hd.webp`;
+      const mobUrl = b.image_url_movil || bannerImg;
 
-      if (deskUrl.includes('public.avif') || deskUrl.includes('ChatGPT') || deskUrl.includes('banner_1_desktop.webp')) {
-        deskUrl = `BANNER/banner_${bannerNum}_desktop_hd.webp`;
-        mobUrl = `BANNER/banner_${bannerNum}_mobile_hd.webp`;
-      }
-
-      /* 🚀 Precarga proactiva en memoria según dispositivo */
-      const activePreloadUrl = isMobile ? mobUrl : deskUrl;
-      if (activePreloadUrl) {
+      /* 🚀 Precarga proactiva en memoria */
+      if (bannerImg) {
         const imgPreload = new Image();
-        imgPreload.src = activePreloadUrl;
+        imgPreload.src = isMobile ? mobUrl : bannerImg;
       }
 
       const linkUrl = (b.link_url || '').trim();
@@ -2216,7 +2211,7 @@ input,select{font:inherit;color:inherit}
           <picture>
             <source media="(max-width: 600px)" srcset="${mobUrl}" type="image/webp">
             <img class="carousel-banner-img"
-                 src="${deskUrl}"
+                 src="${bannerImg}"
                  alt="${b.title || 'Banner Parley'}"
                  ${idx === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}
                  decoding="async"

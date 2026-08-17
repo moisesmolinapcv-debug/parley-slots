@@ -219,7 +219,7 @@ const SlotsApp = (() => {
 
   /** Renderiza los banners dinámicos desde Supabase DB en la web pública */
   function renderDynamicBanners(banners) {
-    const track = document.querySelector('.carousel-track');
+    const track = document.getElementById('carouselSlides') || document.querySelector('.carousel-slides') || document.querySelector('.carousel-track');
     const nav = document.getElementById('carouselNav');
     if (!track) return;
 
@@ -227,25 +227,30 @@ const SlotsApp = (() => {
     let dotsHtml = '';
 
     banners.forEach((b, idx) => {
-      const imgUrl = b.image_url || 'BANNER/public.avif';
+      const bannerNum = (idx % 2) + 1;
+      const bannerImg = b.image_url || `BANNER/banner_${bannerNum}_desktop_hd.webp`;
+      const mobUrl = b.image_url_movil || bannerImg;
 
-      // ── Imagen del banner ──────────────────────────────────────────
-      const imgTag = `<img class="carousel-banner-img"
-               src="${imgUrl}"
+      // ── Imagen del banner con soporte responsive universal
+      const pictureTag = `
+        <picture>
+          <source media="(max-width: 600px)" srcset="${mobUrl}" type="image/webp">
+          <img class="carousel-banner-img"
+               src="${bannerImg}"
                alt="${b.title || 'Banner Parley'}"
                ${idx === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}
                decoding="async"
-               onerror="this.src='BANNER/public.avif'">`;
+               onerror="this.src='BANNER/public.avif'">
+        </picture>`;
 
       // ── Si tiene link_url: envolver en <a> que abre en nueva pestaña
-      // Si no tiene link_url: solo la imagen sin comportamiento de clic
       const slideContent = b.link_url
-        ? `<a href="${b.link_url}" target="_blank" rel="noopener noreferrer"
+        ? `<a href="${b.link_url}" class="carousel-slide-link" target="_blank" rel="noopener noreferrer"
               style="display:block; width:100%; height:100%; cursor:pointer;"
               aria-label="${b.title || 'Ver promoción'}">
-             ${imgTag}
+             ${pictureTag}
            </a>`
-        : imgTag;
+        : pictureTag;
 
       slidesHtml += `<div class="carousel-slide">${slideContent}</div>`;
       dotsHtml += `<div class="carousel-dot ${idx === 0 ? 'active' : ''}" onclick="App.goSlide(${idx})"></div>`;
@@ -265,7 +270,7 @@ const SlotsApp = (() => {
       const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
 
       // ⚡ 1. Cargar Banners Dinámicos desde Supabase DB en tiempo real
-      fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url&order=position.asc`, { headers })
+      fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url,link_url&order=position.asc`, { headers })
         .then(r => r.ok ? r.json() : null)
         .then(bData => { if (Array.isArray(bData) && bData.length > 0) renderDynamicBanners(bData); })
         .catch(() => {});
