@@ -10,8 +10,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-  <!-- 🚀 OPTIMIZACIÓN PERF-1 & COLD-1: Pre-carga instantánea del Top 40 (~25 KB) + Carga progresiva del total -->
-  <link rel="preload" as="image" href="BANNER/ChatGPT%20Image%206%20jul%202026%2C%2002_23_45%20p.m.png" fetchpriority="high">
   <!-- 🚀 Precarga prioritaria en red para Banner 2K Ultra HD -->
   <link rel="preload" as="image" href="BANNER/banner_1_desktop_hd.webp" media="(min-width: 601px)" fetchpriority="high">
   <link rel="preload" as="image" href="BANNER/banner_1_mobile_hd.webp" media="(max-width: 600px)" fetchpriority="high">
@@ -3471,30 +3469,30 @@ input,select{font:inherit;color:inherit}
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         handleAudioPauseOnHide();
-        setFeaturedState(CarouselState.HIDDEN);
+        pauseFeaturedAutoScroll();
         stopCarousel();
       } else {
         handleAudioResumeOnShow();
-        setFeaturedState(CarouselState.AUTOPLAY);
+        startFeaturedAutoScroll();
         startCarousel();
       }
     });
 
     window.addEventListener('blur', () => {
       handleAudioPauseOnHide();
-      setFeaturedState(CarouselState.HIDDEN);
+      pauseFeaturedAutoScroll();
       stopCarousel();
     });
 
     window.addEventListener('pagehide', () => {
       handleAudioPauseOnHide();
-      setFeaturedState(CarouselState.HIDDEN);
+      pauseFeaturedAutoScroll();
       stopCarousel();
     });
 
     window.addEventListener('focus', () => {
       handleAudioResumeOnShow();
-      setFeaturedState(CarouselState.AUTOPLAY);
+      startFeaturedAutoScroll();
       startCarousel();
     });
   }
