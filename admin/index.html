@@ -1309,22 +1309,29 @@
         'site_description': '📝 Subtítulo / Descripción Principal del Sitio',
         'maintenance_mode': '🚨 Modo Mantenimiento (true / false)',
         'pipeline_schedule': '⏰ Hora de Ejecución del Pipeline Nocturno',
-        'pipeline_telegram_enabled': '📢 Notificaciones Telegram del Pipeline'
+        'pipeline_telegram_enabled': '📢 Notificaciones Telegram del Pipeline',
+        'github_pat': '🔑 GitHub Personal Access Token (PAT) para Modo Manual',
+        'featured_slots_order': '⭐ Orden de Slots Destacados (IDs en JSON)'
       };
 
       div.innerHTML = data.map(c => {
         const labelText = friendlyLabels[c.key] || c.description || c.key;
         const isNumber = c.key.includes('count') || c.key.includes('size') || c.key.includes('threshold') || c.key.includes('days');
+        const safeVal = String(c.value || '').replace(/"/g, '&quot;');
+        const extraNote = c.key === 'featured_slots_order' 
+          ? '<span style="color:#fdd835; font-size:11px; margin-left:6px;">💡 Se gestiona visualmente con arrastrar y soltar en la pestaña "Slots Destacados".</span>' 
+          : '';
         return `
           <div class="form-group" style="margin-bottom:20px; background:#161b22; padding:16px; border-radius:8px; border:1px solid #30363d;">
             <label style="display:block; font-weight:700; margin-bottom:8px; color:#fdd835; font-size:14px;">
               ${labelText}
               <span style="color:var(--text-muted); font-weight:normal; font-size:12px; margin-left:8px;">[ Clave DB: <code>${c.key}</code> ]</span>
+              ${extraNote}
             </label>
             <input type="${isNumber ? 'number' : 'text'}" 
                    class="form-control" 
                    style="background:#0d1117; color:#fff; border:1px solid #30363d; padding:10px; border-radius:6px; width:100%; font-size:14px;" 
-                   value="${c.value || ''}" 
+                   value="${safeVal}" 
                    data-config-key="${c.key}">
             <small style="color:var(--text-muted); display:block; margin-top:4px; font-size:12px;">${c.description || ''}</small>
           </div>
