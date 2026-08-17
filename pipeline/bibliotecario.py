@@ -634,8 +634,8 @@ def main():
             'providers_added': pipeline_stats.get('providers_added', 0),
             'duration_seconds': pipeline_stats['duration_seconds'],
             'trigger_mode': pipeline_stats['trigger_mode'],
-            'error_message': str(e),
-            'backup_file': Path(pipeline_stats.get('backup_file', '')).name,
+            'error_message': str(e)[:500],
+            'backup_file': Path(pipeline_stats['backup_file']).name if pipeline_stats.get('backup_file') else '',
             'notes': 'El Bibliotecario v1.0'
         }
         try:
