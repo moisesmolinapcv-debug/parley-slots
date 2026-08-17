@@ -71,7 +71,7 @@ input,select{font:inherit;color:inherit}
    ══════════════════════════════════════════════════════════════ */
 .portal-header {
   position: relative;
-  padding: 28px 24px 0;
+  padding: 18px 24px 14px;
   text-align: center;
   z-index: 90;
 }
@@ -79,58 +79,136 @@ input,select{font:inherit;color:inherit}
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 0;
 }
 .portal-logo-wrap img {
-  height: 52px;
+  height: 54px;
   width: auto;
-  filter: drop-shadow(0 0 18px rgba(253,216,53,0.5));
+  filter: drop-shadow(0 0 20px rgba(253,216,53,0.55));
   transition: filter 0.3s ease;
 }
 .portal-logo-wrap img:hover {
-  filter: drop-shadow(0 0 28px rgba(253,216,53,0.9));
+  filter: drop-shadow(0 0 30px rgba(253,216,53,0.95));
 }
 .logo-fallback-brand{font-family:'Space Grotesk',sans-serif;font-weight:900;font-size:1.6rem;letter-spacing:-0.5px;display:flex;align-items:center}
 .logo-brand-yellow{color:#fdd835;text-shadow:0 0 14px rgba(253,216,53,0.7)}
 .logo-brand-red{color:#e51c23;text-shadow:0 0 14px rgba(229,28,35,0.7)}
 
-/* ── PORTAL SEARCH ────────────────────────────────────────── */
-.portal-search-wrap{display:flex;justify-content:center;margin-bottom:20px}
-.portal-search-box{position:relative;width:100%;max-width:580px}
-.portal-search-box input {
-  width: 100%;
-  height: 52px;
-  background: rgba(255,255,255,0.06);
-  border: 1.5px solid rgba(253,216,53,0.4);
-  border-radius: 999px;
-  padding: 0 20px 0 52px;
-  color: #fff;
-  font-size: 0.95rem;
-  font-weight: 600;
-  transition: 0.25s ease;
+/* ── HERO BANNER TOP (OPCIÓN B: HEADER CON LOGO FLOTANTE) ── */
+.hero-carousel-wrap {
+  max-width: var(--max-w);
+  margin: 10px auto 20px;
+  padding: 0 16px;
+  position: relative;
+  z-index: 40;
 }
-.portal-search-box input:focus{outline:none;border-color:#fdd835;box-shadow:0 0 30px var(--gold-glow);background:rgba(255,255,255,0.09)}
-.portal-search-box input::placeholder{color:var(--text-3)}
-.portal-search-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:#fdd835;pointer-events:none}
+.hero-brand-badge {
+  position: absolute;
+  top: 14px;
+  left: 28px;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: rgba(3, 6, 17, 0.78);
+  border: 1.5px solid rgba(253, 216, 53, 0.4);
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.8), 0 0 15px rgba(253, 216, 53, 0.25);
+  transition: all 0.3s ease;
+}
+.hero-brand-badge:hover {
+  border-color: #fdd835;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.9), 0 0 25px var(--gold-glow);
+  transform: translateY(-2px);
+}
+.hero-brand-logo {
+  height: 36px;
+  width: auto;
+  filter: drop-shadow(0 0 10px rgba(253, 216, 53, 0.6));
+}
+.carousel-slide-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.carousel-slide-link:hover {
+  opacity: 0.96;
+}
 
-/* ══════════════════════════════════════════════════════════════
-   FILTER BAR — ESTILO CASINO PREMIUM
-   ══════════════════════════════════════════════════════════════ */
+/* ── UNIFIED POOL: SEARCH + FILTER BAR ─────────────────────── */
 .filter-bar-sticky-wrapper {
   position: sticky;
   top: 0;
   z-index: 100;
-  /* F-01: Glassmorphism cristalino ultra-ligero para integración 100% con el fondo animado */
-  background: rgba(3, 6, 17, 0.25);
+  background: rgba(3, 6, 17, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.6);
+  padding: 12px 0 10px;
   transition: background 0.3s ease, backdrop-filter 0.3s ease;
 }
+.portal-search-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+  padding: 0 20px;
+}
+.portal-search-box {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+}
+.portal-search-box input {
+  width: 100%;
+  height: 48px;
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(253,216,53,0.4);
+  border-radius: 999px;
+  padding: 0 46px 0 48px;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 600;
+  transition: 0.25s ease;
+}
+.portal-search-box input:focus{
+  outline: none;
+  border-color: #fdd835;
+  box-shadow: 0 0 28px var(--gold-glow);
+  background: rgba(255,255,255,0.11);
+}
+.portal-search-box input::placeholder{color:var(--text-3)}
+.portal-search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#fdd835;pointer-events:none}
+.search-clear-btn {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.search-clear-btn:hover {
+  background: #e51c23;
+}
+
 .filter-bar {
   max-width: var(--max-w);
   margin: 0 auto;
-  padding: 14px 24px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -143,10 +221,10 @@ input,select{font:inherit;color:inherit}
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 22px;
-  border-radius: 14px;
-  border: 2px solid rgba(253,216,53,0.4);
+  padding: 9px 18px;
+  border-radius: 999px;
   background: linear-gradient(180deg, rgba(30,15,40,0.95) 0%, rgba(13,20,38,0.95) 100%);
+  border: 1.5px solid rgba(253,216,53,0.4);
   font-family: 'Cinzel', serif;
   font-size: 0.88rem;
   font-weight: 800;
@@ -248,11 +326,6 @@ input,select{font:inherit;color:inherit}
   font-weight: 700;
   color: var(--text-2);
   user-select: none;
-  letter-spacing: 0.3px;
-}
-.dd-option:hover{background:rgba(253,216,53,0.1);color:#fff;text-shadow:0 0 8px rgba(253,216,53,0.3)}
-.dd-option.selected{background:rgba(253,216,53,0.15);color:#fdd835;text-shadow:0 0 12px rgba(253,216,53,0.4)}
-.dd-option input[type="checkbox"]{width:16px;height:16px;accent-color:#fdd835;cursor:pointer;flex-shrink:0}
 /* Submenu navigation & transitions */
 .dd-submenu-enter{animation:submenuFadeIn 0.22s cubic-bezier(0.16,1,0.3,1) forwards}
 @keyframes submenuFadeIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
@@ -361,32 +434,37 @@ input,select{font:inherit;color:inherit}
   left: 0;
 }
 
-/* TARJETAS 50% MÁS PEQUEÑAS (DESKTOP: 115px x 150px) */
+/* TARJETAS DESTACADAS EN DESKTOP (PLANAS, NÍTIDAS, 100% ACCESIBLES) */
 .featured-card {
-  flex: 0 0 115px;
-  width: 115px;
-  height: 150px;
+  flex: 0 0 120px;
+  width: 120px;
+  height: 155px;
   border-radius: 12px;
   background: rgba(13, 20, 38, 0.94);
-  border: 1.5px solid rgba(253, 216, 53, 0.25);
+  border: 1.5px solid rgba(253, 216, 53, 0.35);
   overflow: hidden;
   position: relative;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(0,0,0,0.7);
-  transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1), filter 0.45s ease, opacity 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
-  will-change: transform, filter, opacity;
-  filter: blur(4px) opacity(0.40) grayscale(20%);
-  transform: scale(0.85) translateZ(-30px);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  will-change: transform;
+  filter: none;
+  opacity: 1;
+  transform: none;
   z-index: 2;
 }
 
-.featured-card.active-center {
-  filter: blur(0px) opacity(1) grayscale(0%);
-  transform: scale(1.08) translateZ(0);
-  z-index: 10;
+.featured-card:hover {
+  transform: translateY(-4px) scale(1.03);
   border-color: #fdd835;
-  box-shadow: 0 0 25px var(--gold-glow), 0 10px 30px rgba(0,0,0,0.95);
-  cursor: default;
+  box-shadow: 0 0 20px var(--gold-glow), 0 10px 25px rgba(0,0,0,0.9);
+  z-index: 6;
+}
+
+.featured-card.active-center {
+  border-color: #fdd835;
+  box-shadow: 0 0 20px var(--gold-glow), 0 8px 24px rgba(0,0,0,0.85);
+  cursor: pointer;
 }
 
 .featured-card-img-wrap {
@@ -1496,28 +1574,75 @@ input,select{font:inherit;color:inherit}
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
-     PORTAL HEADER — Logo + Buscador
+     1. HERO CAROUSEL HEADER — Banners Interactivos con Logo Flotante (Opción B)
      ══════════════════════════════════════════════════════════════ -->
-<div class="portal-header">
-  <div class="portal-logo-wrap">
-    <img src="ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png" alt="Parley.com.ve"
-         onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex'">
-    <div class="logo-fallback-brand" style="display:none">
-      <span class="logo-brand-yellow">PaRleY</span><span class="logo-brand-red">.com.ve</span>
+<header class="hero-carousel-wrap" id="heroCarouselWrap">
+  <div class="hero-carousel" id="heroCarousel">
+    
+    <!-- Logo Parley Flotante como Marca de Agua / Insignia VIP (Opción B) -->
+    <div class="hero-brand-badge">
+      <a href="#" class="hero-brand-link" aria-label="Inicio Parley Slots">
+        <img src="ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png" alt="Parley.com.ve" class="hero-brand-logo"
+             onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="logo-fallback-brand" style="display:none">
+          <span class="logo-brand-yellow">PaRleY</span><span class="logo-brand-red">.com.ve</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="carousel-slides" id="carouselSlides">
+
+      <!-- Banner 1 -->
+      <div class="carousel-slide">
+        <img class="carousel-banner-img"
+             src="BANNER/banner_1_desktop_hd.webp"
+             alt="Promociones Exclusivas Parley"
+             loading="eager"
+             fetchpriority="high"
+             decoding="async"
+             onerror="this.src='BANNER/public.avif'">
+      </div>
+
+      <!-- Banner 2 -->
+      <div class="carousel-slide">
+        <img class="carousel-banner-img"
+             src="BANNER/banner_2_desktop_hd.webp"
+             alt="Casino Premium Parley"
+             loading="lazy"
+             decoding="async"
+             onerror="this.src='BANNER/public.avif'">
+      </div>
+
+      <!-- Banner 3 -->
+      <div class="carousel-slide">
+        <img class="carousel-banner-img"
+             src="BANNER/public%20(1).avif"
+             alt="Slots Exclusivos Parley"
+             loading="lazy"
+             decoding="async"
+             onerror="this.src='BANNER/public.avif'">
+      </div>
+
+    </div>
+
+    <!-- Sombra gradiente inferior para legibilidad -->
+    <div class="carousel-overlay-bottom"></div>
+
+    <!-- Botones Flechas de navegación (Anterior / Siguiente) -->
+    <button class="carousel-arrow prev" onclick="App.prevSlide()" aria-label="Banner anterior">&#10094;</button>
+    <button class="carousel-arrow next" onclick="App.nextSlide()" aria-label="Banner siguiente">&#10095;</button>
+
+    <!-- Dots de navegación — centrados -->
+    <div class="carousel-nav" id="carouselNav">
+      <div class="carousel-dot active" onclick="App.goSlide(0)"></div>
+      <div class="carousel-dot" onclick="App.goSlide(1)"></div>
+      <div class="carousel-dot" onclick="App.goSlide(2)"></div>
     </div>
   </div>
-  <div class="portal-search-wrap">
-    <div class="portal-search-box">
-      <svg class="portal-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-      <input type="text" id="searchInput" placeholder="Buscar slot por nombre" autocomplete="off">
-    </div>
-  </div>
-</div>
+</header>
 
 <!-- ══════════════════════════════════════════════════════════════
-     CARRUSEL DE SLOTS DESTACADOS — SIMETRÍA CENTRAL 3D & BLUR
+     2. CARRUSEL DE SLOTS DESTACADOS — DESKTOP NÍTIDO & FLUIDO
      ══════════════════════════════════════════════════════════════ -->
 <section class="featured-slots-section" id="featuredSlotsSection">
   <div class="featured-slots-header">
@@ -1534,9 +1659,21 @@ input,select{font:inherit;color:inherit}
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════
-     FILTER BAR — Estilo Casino Premium con Cinzel Dorado
+     3. POOL UNIFICADO: BÚSQUEDA + BARRA DE FILTROS STICKY
      ══════════════════════════════════════════════════════════════ -->
 <div class="filter-bar-sticky-wrapper">
+  
+  <!-- Buscador Integrado Superior de Filtros -->
+  <div class="portal-search-wrap">
+    <div class="portal-search-box">
+      <svg class="portal-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Buscar slot por nombre o temática..." autocomplete="off">
+      <button id="searchClearBtn" class="search-clear-btn" style="display:none;" aria-label="Limpiar búsqueda">✕</button>
+    </div>
+  </div>
+
   <div class="filter-bar" id="filterBar">
 
     <!-- 1. Tipo de Juego -->
@@ -1569,9 +1706,7 @@ input,select{font:inherit;color:inherit}
         <span class="filter-icon">♥</span> Especiales <span class="filter-arrow">▾</span>
       </button>
       <div class="filter-dropdown" id="ddTags">
-        <label class="dd-option" id="tagDW"><input type="checkbox" value="Drop&amp;Win"> ♦ Drop&amp;Win</label>
-        <label class="dd-option" id="tagTorneo"><input type="checkbox" value="Torneo"> ♠ Torneo</label>
-        <label class="dd-option" id="tagNavidad"><input type="checkbox" value="Navidad"> ♣ Navidad</label>
+        <!-- Renderizado dinámico desde Supabase -->
       </div>
     </div>
 
@@ -1588,63 +1723,6 @@ input,select{font:inherit;color:inherit}
       </div>
     </div>
 
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════
-     C-04: HERO CAROUSEL — Banners Locales Full-Frame
-     Agregar más imágenes a /BANNER/ para escalar el carousel
-     ══════════════════════════════════════════════════════════════ -->
-<div class="hero-carousel-wrap">
-  <div class="hero-carousel" id="heroCarousel">
-    <div class="carousel-slides" id="carouselSlides">
-
-      <!-- Banner 1 -->
-      <div class="carousel-slide">
-        <img class="carousel-banner-img"
-             src="BANNER/ChatGPT%20Image%206%20jul%202026%2C%2002_23_45%20p.m.png"
-             alt="Promociones Exclusivas Parley"
-             loading="eager"
-             fetchpriority="high"
-             decoding="async"
-             onerror="this.style.background='linear-gradient(135deg,#1a0e2e,#030611)'">
-      </div>
-
-      <!-- Banner 2 -->
-      <div class="carousel-slide">
-        <img class="carousel-banner-img"
-             src="BANNER/public.avif"
-             alt="Casino Premium Parley"
-             loading="lazy"
-             decoding="async"
-             onerror="this.style.background='linear-gradient(135deg,#0d1426,#030611)'">
-      </div>
-
-      <!-- Banner 3 -->
-      <div class="carousel-slide">
-        <img class="carousel-banner-img"
-             src="BANNER/public%20(1).avif"
-             alt="Slots Exclusivos Parley"
-             loading="lazy"
-             decoding="async"
-             onerror="this.style.background='linear-gradient(135deg,#1a0e2e,#0d1426)'">
-      </div>
-
-    </div>
-
-    <!-- Sombra gradiente inferior para legibilidad -->
-    <div class="carousel-overlay-bottom"></div>
-
-    <!-- Botones Flechas de navegación (Anterior / Siguiente) -->
-    <button class="carousel-arrow prev" onclick="App.prevSlide()" aria-label="Banner anterior">&#10094;</button>
-    <button class="carousel-arrow next" onclick="App.nextSlide()" aria-label="Banner siguiente">&#10095;</button>
-
-    <!-- Dots de navegación — centrados -->
-    <div class="carousel-nav" id="carouselNav">
-      <div class="carousel-dot active" onclick="App.goSlide(0)"></div>
-      <div class="carousel-dot" onclick="App.goSlide(1)"></div>
-      <div class="carousel-dot" onclick="App.goSlide(2)"></div>
-    </div>
   </div>
 </div>
 
@@ -2050,6 +2128,7 @@ input,select{font:inherit;color:inherit}
   let searchQuery='',sortMode='popular';
   let currentSlide=0,slideTimer=null,infiniteObserver=null,isLoadingMore=false;
   let fortuneSpinning=false,fortuneAnimId=null;
+  let specialCollections = [];
 
   /* ── DOM refs ───────────────────────────────────────────────── */
   const $=id=>document.getElementById(id);
@@ -2155,6 +2234,16 @@ input,select{font:inherit;color:inherit}
       INITIAL_LOAD = BATCH_SIZE;
     }
     displayedCount = INITIAL_LOAD;
+
+    if (configMap.special_collections) {
+      try {
+        specialCollections = typeof configMap.special_collections === 'string' ? JSON.parse(configMap.special_collections) : configMap.special_collections;
+        if (typeof renderTagsDropdown === 'function') {
+          renderTagsDropdown();
+        }
+      } catch(e) {}
+    }
+
     if (configMap.maintenance_mode === 'true') {
       const hero = document.getElementById('heroCarousel');
       if (hero && !document.getElementById('maintenanceBanner')) {
@@ -2192,8 +2281,17 @@ input,select{font:inherit;color:inherit}
         imgPreload.src = activePreloadUrl;
       }
 
+      const linkUrl = (b.link_url || '').trim();
+      const hasLink = linkUrl.length > 0;
+      const isExternal = hasLink && (linkUrl.startsWith('http://') || linkUrl.startsWith('https://'));
+      const wrapOpen = hasLink 
+        ? `<a href="${linkUrl}" class="carousel-slide-link" ${isExternal ? 'target="_blank" rel="noopener noreferrer"' : ''} title="${b.title || 'Promoción Parley'}">` 
+        : '';
+      const wrapClose = hasLink ? '</a>' : '';
+
       slidesHtml += `
         <div class="carousel-slide">
+          ${wrapOpen}
           <picture>
             <source media="(max-width: 600px)" srcset="${mobUrl}" type="image/webp">
             <img class="carousel-banner-img"
@@ -2203,6 +2301,7 @@ input,select{font:inherit;color:inherit}
                  decoding="async"
                  onerror="this.src='BANNER/public.avif'">
           </picture>
+          ${wrapClose}
         </div>`;
       dotsHtml += `<div class="carousel-dot ${idx === 0 ? 'active' : ''}" onclick="App.goSlide(${idx})"></div>`;
     });
@@ -2297,7 +2396,7 @@ input,select{font:inherit;color:inherit}
     {id:'GJ_BINGO',  name:'Bingo',                icon:'🔵', parent:null,        isGroup:false},
     {id:'GJ_CRASH',  name:'Crash & Instant',      icon:'⚡',  parent:null,        isGroup:false},
     {id:'GJ_CLASSIC',name:'Clásicos 777',         icon:'🍒', parent:null,        isGroup:false},
-    {id:'GJ_SCRATCH',name:'Scratch Cards',        icon:'🎟️', parent:null,        isGroup:false},
+    {id:'GJ_SCRATCH',name:'Raspaditos',           icon:'🎟️', parent:null,        isGroup:false},
     {id:'GJ_KENO',   name:'Keno',                 icon:'🔢', parent:null,        isGroup:false},
     {id:'GJ_LOTTERY',name:'Lotería',              icon:'🎱', parent:null,        isGroup:false},
   ];
@@ -2369,21 +2468,40 @@ input,select{font:inherit;color:inherit}
     }).join('');
   }
 
-  /* Renderiza el dropdown de Tags especiales: seleccionados al TOP */
+  /* Renderiza el dropdown de Tags especiales: seleccionados al TOP con soporte para colecciones dinámicas */
   function renderTagsDropdown(){
-    const tags=[...SPECIAL_TAGS];
-    tags.sort((a,b)=>{
-      const aSel=activeTags.has(a)?1:0;
-      const bSel=activeTags.has(b)?1:0;
-      return bSel - aSel;
-    });
-
     const dd=$('ddTags');
     if(!dd) return;
-    dd.innerHTML=tags.map(t=>{
-      const isChecked=activeTags.has(t);
-      return `<label class="dd-option${isChecked?' selected':''}"><input type="checkbox" value="${t}" class="tag-check"${isChecked?' checked':''}> ${t}</label>`;
-    }).join('');
+
+    if (specialCollections && Array.isArray(specialCollections) && specialCollections.length > 0) {
+      const sortedCols = [...specialCollections];
+      sortedCols.sort((a,b) => {
+        const aSel = (activeTags.has(a.id) || activeTags.has(a.name)) ? 1 : 0;
+        const bSel = (activeTags.has(b.id) || activeTags.has(b.name)) ? 1 : 0;
+        return bSel - aSel;
+      });
+
+      dd.innerHTML = sortedCols.map(col => {
+        const isChecked = activeTags.has(col.id) || activeTags.has(col.name);
+        return `
+          <label class="dd-option${isChecked?' selected':''}">
+            <input type="checkbox" value="${col.id}" class="tag-check"${isChecked?' checked':''}>
+            ${col.icon || '🏷️'} ${col.name}
+          </label>
+        `;
+      }).join('');
+    } else {
+      const tags=[...SPECIAL_TAGS];
+      tags.sort((a,b)=>{
+        const aSel=activeTags.has(a)?1:0;
+        const bSel=activeTags.has(b)?1:0;
+        return bSel - aSel;
+      });
+      dd.innerHTML=tags.map(t=>{
+        const isChecked=activeTags.has(t);
+        return `<label class="dd-option${isChecked?' selected':''}"><input type="checkbox" value="${t}" class="tag-check"${isChecked?' checked':''}> ${t}</label>`;
+      }).join('');
+    }
   }
 
   /* Renderiza el dropdown de Tipo de Juego (nivel raiz o submenu de un padre) con animacion fluida */
@@ -2463,8 +2581,18 @@ input,select{font:inherit;color:inherit}
           if(s.game_type_id!==activeCategory)return false;
         }
       }
-      if(activeProviders.size>0&&!activeProviders.has(s.provider))return false;
-      if(activeTags.size>0){for(const tag of activeTags){if(!s._tags.includes(tag))return false}}
+      if(activeProviders.size > 0 && !activeProviders.has(s.provider)) return false;
+      if(activeTags.size > 0){
+        for(const tag of activeTags){
+          const matchedCol = specialCollections.find(c => c.id === tag || c.name === tag);
+          if (matchedCol && Array.isArray(matchedCol.slot_ids) && matchedCol.slot_ids.length > 0) {
+            const extIdStr = String(s.external_id || s.id || '');
+            if (!matchedCol.slot_ids.includes(extIdStr)) return false;
+          } else {
+            if(!s._tags || !s._tags.includes(tag)) return false;
+          }
+        }
+      }
       return true;
     });
     filtered.sort(SORT_FNS[sortMode]||SORT_FNS.popular);
@@ -2609,13 +2737,49 @@ input,select{font:inherit;color:inherit}
   function showSkeletons(){let h='';for(let i=0;i<20;i++)h+=`<article class="card" style="animation-delay:${i*40}ms"><div class="card-img-wrap" style="background:linear-gradient(135deg,#1a1f35,#252b40);animation:pulse 1.5s ease-in-out infinite ${i*80}ms"></div><div class="card-body"><div style="height:14px;background:rgba(255,255,255,0.08);border-radius:6px;margin-bottom:8px;animation:pulse 1.5s infinite"></div><div style="height:32px;background:rgba(229,28,35,0.2);border-radius:999px;animation:pulse 1.5s infinite"></div></div></article>`;grid.innerHTML=`<style>@keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}</style>`+h}
 
   /* ══════════════════════════════════════════════════════════════
-     EVENT BINDING
-     ══════════════════════════════════════════════════════════════ */
   function bindEvents(){
-    const ds=debounce(v=>{searchQuery=v.trim();applyFilters()},DEBOUNCE_MS);
-    searchInput.addEventListener('input',e=>ds(e.target.value));
-    searchInput.addEventListener('keydown',e=>{if(e.key==='Escape'){searchInput.value='';searchQuery='';applyFilters();searchInput.blur()}});
-    document.addEventListener('keydown',e=>{const isIn=['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName);if((e.ctrlKey&&e.key==='k')||(e.key==='/'&&!isIn)){e.preventDefault();searchInput.focus();searchInput.select()}});
+    const searchClear = $('searchClearBtn');
+    const ds = debounce(v => {
+      searchQuery = v.trim();
+      if (searchClear) searchClear.style.display = searchQuery ? 'flex' : 'none';
+      applyFilters();
+    }, DEBOUNCE_MS);
+
+    if (searchInput) {
+      searchInput.addEventListener('input', e => ds(e.target.value));
+      searchInput.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          searchInput.value = '';
+          searchQuery = '';
+          if (searchClear) searchClear.style.display = 'none';
+          applyFilters();
+          searchInput.blur();
+        }
+      });
+    }
+
+    if (searchClear) {
+      searchClear.addEventListener('click', () => {
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.focus();
+        }
+        searchQuery = '';
+        searchClear.style.display = 'none';
+        applyFilters();
+      });
+    }
+
+    document.addEventListener('keydown', e => {
+      const isIn = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+      if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && !isIn)) {
+        e.preventDefault();
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    });
 
     $('btnTipoJuego').onclick=e=>{e.stopPropagation();toggleDropdown('btnTipoJuego','ddTipoJuego')};
     $('btnTematica').onclick=e=>{e.stopPropagation();toggleDropdown('btnTematica','ddTematica')};
@@ -2891,20 +3055,32 @@ input,select{font:inherit;color:inherit}
       let diff = idx - featuredVirtualIdx;
       card.classList.remove('active-center');
 
-      if (diff === 0) {
-        card.classList.add('active-center');
-        card.style.filter = 'blur(0px) opacity(1) grayscale(0%)';
-        card.style.transform = 'scale(1.08) translateZ(0)';
-        card.style.zIndex = '10';
+      if (!isMobile) {
+        // Desktop: Carrusel plano, 100% nítido, sin blur ni opacidad reducida
+        card.style.filter = 'none';
+        card.style.opacity = '1';
+        card.style.transform = 'none';
+        card.style.zIndex = '2';
+        if (diff === 0) {
+          card.classList.add('active-center');
+        }
       } else {
-        const absDiff = Math.abs(diff);
-        const blurAmt = Math.min(3 + absDiff * 1.5, 6);
-        const opacityAmt = Math.max(0.40 - absDiff * 0.08, 0.2);
-        const scaleAmt = Math.max(0.85 - absDiff * 0.08, 0.65);
+        // Mobile: Enfoque dinámico
+        if (diff === 0) {
+          card.classList.add('active-center');
+          card.style.filter = 'blur(0px) opacity(1) grayscale(0%)';
+          card.style.transform = 'scale(1.05) translateZ(0)';
+          card.style.zIndex = '10';
+        } else {
+          const absDiff = Math.abs(diff);
+          const blurAmt = Math.min(2 + absDiff * 1, 4);
+          const opacityAmt = Math.max(0.60 - absDiff * 0.1, 0.35);
+          const scaleAmt = Math.max(0.90 - absDiff * 0.05, 0.80);
 
-        card.style.filter = `blur(${blurAmt}px) opacity(${opacityAmt}) grayscale(20%)`;
-        card.style.transform = `scale(${scaleAmt}) translateZ(-${absDiff * 30}px)`;
-        card.style.zIndex = `${10 - absDiff}`;
+          card.style.filter = `blur(${blurAmt}px) opacity(${opacityAmt})`;
+          card.style.transform = `scale(${scaleAmt})`;
+          card.style.zIndex = `${10 - absDiff}`;
+        }
       }
     });
 
@@ -2938,18 +3114,25 @@ input,select{font:inherit;color:inherit}
           cards.forEach((c, i) => {
             let d = i - snappedVirtualIdx;
             c.classList.toggle('active-center', d === 0);
-            if (d === 0) {
-              c.style.filter = 'blur(0px) opacity(1) grayscale(0%)';
-              c.style.transform = 'scale(1.08) translateZ(0)';
-              c.style.zIndex = '10';
+            if (!isMobile) {
+              c.style.filter = 'none';
+              c.style.opacity = '1';
+              c.style.transform = 'none';
+              c.style.zIndex = '2';
             } else {
-              const absD = Math.abs(d);
-              const bAmt = Math.min(3 + absD * 1.5, 6);
-              const oAmt = Math.max(0.40 - absD * 0.08, 0.2);
-              const sAmt = Math.max(0.85 - absD * 0.08, 0.65);
-              c.style.filter = `blur(${bAmt}px) opacity(${oAmt}) grayscale(20%)`;
-              c.style.transform = `scale(${sAmt}) translateZ(-${absD * 30}px)`;
-              c.style.zIndex = `${10 - absD}`;
+              if (d === 0) {
+                c.style.filter = 'blur(0px) opacity(1) grayscale(0%)';
+                c.style.transform = 'scale(1.05) translateZ(0)';
+                c.style.zIndex = '10';
+              } else {
+                const absD = Math.abs(d);
+                const bAmt = Math.min(2 + absD * 1, 4);
+                const oAmt = Math.max(0.60 - absD * 0.1, 0.35);
+                const sAmt = Math.max(0.90 - absD * 0.05, 0.80);
+                c.style.filter = `blur(${bAmt}px) opacity(${oAmt})`;
+                c.style.transform = `scale(${sAmt})`;
+                c.style.zIndex = `${10 - absD}`;
+              }
             }
           });
 
@@ -3534,7 +3717,7 @@ input,select{font:inherit;color:inherit}
 
     if (active) {
       w.classList.add('active');
-      if (sub) sub.textContent = 'Clic para silenciar';
+      if (sub) sub.textContent = 'Clic para silenciar ';
     } else {
       w.classList.remove('active');
       if (sub) sub.textContent = 'Clic para activar';

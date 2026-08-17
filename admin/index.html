@@ -533,6 +533,9 @@
         <li class="menu-item" onclick="switchTab('banners', this)">
           <span>🖼️</span> <span>Banners Carrusel</span>
         </li>
+        <li class="menu-item" onclick="switchTab('specials', this)">
+          <span>🏷️</span> <span>Especiales</span>
+        </li>
         <li class="menu-item" onclick="switchTab('config', this)">
           <span>⚙️</span> <span>Configuracion</span>
         </li>
@@ -721,6 +724,23 @@
         </div>
       </section>
 
+      <!-- TAB: ESPECIALES -->
+      <section id="tab-specials" class="tab-content">
+        <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h1 class="page-title">🏷️ Gestión de Colecciones Especiales (Tags)</h1>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">
+              Crea colecciones personalizadas (ej. Drop &amp; Win, Torneos, Promociones) y asigna slots de forma manual.
+            </p>
+          </div>
+          <button class="btn btn-gold" style="width:auto;" onclick="openNewSpecialModal()">➕ Nueva Colección</button>
+        </div>
+
+        <div id="specialsContainer" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div style="color:var(--text-muted);">Cargando colecciones especiales...</div>
+        </div>
+      </section>
+
       <!-- TAB 5: CONFIGURACIÓN -->
       <section id="tab-config" class="tab-content">
         <div class="page-header">
@@ -866,6 +886,8 @@
 
       if (tabId === 'featured') {
         loadFeaturedSlotsAdmin();
+      } else if (tabId === 'specials') {
+        loadSpecialsAdmin();
       }
     }
 
@@ -903,6 +925,7 @@
           loadSlots(currentSlotsPage || 1),
           loadProvidersList(),
           loadBanners(),
+          loadSpecialsAdmin(),
           loadConfig(),
           loadPipelineLogs(),
           loadFeaturedSlotsAdmin()
@@ -1248,7 +1271,7 @@
       return '../BANNER/' + url;
     }
 
-    // ─── CARGAR BANNERS (T3 FIX) ───
+    // ─── CARGAR BANNERS (CON HIPERVÍNCULOS DINÁMICOS) ───
     async function loadBanners() {
       const { data } = await supabaseClient.from('banners').select('*').order('position', { ascending: true });
       const container = document.getElementById('bannersContainer');
@@ -1271,23 +1294,221 @@
               <label>URL Imagen</label>
               <input type="text" class="form-control" value="${b.image_url || ''}" id="bannerUrl_${b.position}">
             </div>
-            <button class="btn btn-gold" style="width:100%; font-size:12px;" onclick="saveBanner(${b.position})">💾 Guardar Banner #${b.position}</button>
+            <div class="form-group">
+              <label>🔗 URL de Destino / Hipervínculo (Opcional)</label>
+              <input type="text" class="form-control" value="${b.link_url || ''}" id="bannerLink_${b.position}" placeholder="https://ejemplo.com/promo o #seccion">
+              <small style="color:var(--text-muted); font-size:11px;">Al hacer clic sobre el banner, el usuario será redirigido a este enlace.</small>
+            </div>
+            <button class="btn btn-gold" style="width:100%; font-size:12px; margin-top:8px;" onclick="saveBanner(${b.position})">💾 Guardar Banner #${b.position}</button>
           </div>
         </div>
       `).join('');
     }
 
     async function saveBanner(pos) {
-      const title = document.getElementById(`bannerTitle_${pos}`).value;
-      const image_url = document.getElementById(`bannerUrl_${pos}`).value;
+      const title = document.getElementById(`bannerTitle_${pos}`).value.trim();
+      const image_url = document.getElementById(`bannerUrl_${pos}`).value.trim();
+      const link_url = document.getElementById(`bannerLink_${pos}`).value.trim() || null;
 
       showToast(`Guardando Banner #${pos}...`, 'loading', 1500);
-      const { error } = await supabaseClient.from('banners').update({ title, image_url }).eq('position', pos);
+      const { error } = await supabaseClient.from('banners').update({ title, image_url, link_url }).eq('position', pos);
       if (error) {
         showToast('Error guardando banner: ' + error.message, 'error');
       } else {
-        showToast(`✅ Banner #${pos} actualizado exitosamente`, 'success');
+        showToast(`✅ Banner #${pos} actualizado con enlace exitosamente`, 'success');
       }
+    }
+
+    // ─── GESTIÓN DE COLECCIONES ESPECIALES (TAGS) ───
+    let cachedSpecials = [];
+    let activeSpecialEditId = null;
+
+    async function loadSpecialsAdmin() {
+      const container = document.getElementById('specialsContainer');
+      if (!container) return;
+
+      const { data, error } = await supabaseClient.from('site_config').select('value').eq('key', 'special_collections').maybeSingle();
+      if (error || !data || !data.value) {
+        cachedSpecials = [
+          { id: "Drop&Win", name: "Drop & Win", icon: "♦", slot_ids: [] },
+          { id: "Torneo", name: "Torneo", icon: "♠", slot_ids: [] },
+          { id: "Navidad", name: "Navidad", icon: "♣", slot_ids: [] }
+        ];
+      } else {
+        try {
+          cachedSpecials = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        } catch(e) {
+          cachedSpecials = [];
+        }
+      }
+
+      if (!Array.isArray(cachedSpecials) || cachedSpecials.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-muted); padding:20px;">No hay colecciones especiales configuradas. Pulsa "+ Nueva Colección" para crear la primera.</div>';
+        return;
+      }
+
+      container.innerHTML = cachedSpecials.map((col, idx) => {
+        const slotCount = Array.isArray(col.slot_ids) ? col.slot_ids.length : 0;
+        return `
+          <div class="card-panel" style="background:#131722; border:1px solid #30363d; border-radius:12px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                <span style="font-size:28px; background:rgba(253,216,53,0.1); border:1px solid rgba(253,216,53,0.3); border-radius:8px; padding:4px 10px;">${col.icon || '🏷️'}</span>
+                <span style="background:rgba(56,139,253,0.15); color:var(--info); font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;">
+                  ${slotCount} slots asignados
+                </span>
+              </div>
+              <h3 style="color:#fff; font-size:17px; margin-bottom:4px;">${col.name}</h3>
+              <p style="color:var(--text-muted); font-size:12px; margin-bottom:16px;">Clave identificadora: <code>${col.id}</code></p>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top:10px;">
+              <button class="btn btn-gold" style="flex:1; font-size:12px; padding:8px 12px;" onclick="openSpecialSlotPicker('${col.id}')">
+                ⚙️ Asignar Slots (${slotCount})
+              </button>
+              <button class="btn" style="background:rgba(218,54,51,0.15); color:var(--danger); border:1px solid rgba(218,54,51,0.4); padding:8px 12px; font-size:12px;" onclick="deleteSpecialCollection('${col.id}')" title="Eliminar colección">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function saveSpecialsToDb() {
+      showToast('Guardando colecciones especiales...', 'loading', 1500);
+      const { error } = await supabaseClient.from('site_config').upsert({
+        key: 'special_collections',
+        value: JSON.stringify(cachedSpecials),
+        description: 'Colecciones especiales y tags configurados manualmente'
+      }, { onConflict: 'key' });
+
+      if (error) {
+        showToast('Error guardando especiales: ' + error.message, 'error');
+      } else {
+        showToast('✅ Colecciones especiales guardadas exitosamente', 'success');
+        loadSpecialsAdmin();
+      }
+    }
+
+    function openNewSpecialModal() {
+      const name = prompt('Nombre de la nueva colección especial (ej. "Megaways Favoritos", "Halloween", "Exclusivos"):');
+      if (!name || !name.trim()) return;
+
+      const icon = prompt('Emoji o Icono representativo (ej. 🎃, 💎, ⚡, ♠):', '⭐') || '⭐';
+      const cleanId = name.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+
+      if (cachedSpecials.some(s => s.id === cleanId)) {
+        alert('Ya existe una colección con este identificador.');
+        return;
+      }
+
+      cachedSpecials.push({
+        id: cleanId,
+        name: name.trim(),
+        icon: icon.trim(),
+        slot_ids: []
+      });
+
+      saveSpecialsToDb();
+    }
+
+    function deleteSpecialCollection(colId) {
+      if (!confirm(`¿Estás seguro de eliminar la colección especial "${colId}"?`)) return;
+      cachedSpecials = cachedSpecials.filter(s => s.id !== colId);
+      saveSpecialsToDb();
+    }
+
+    // Modal asignador de slots a colección especial
+    async function openSpecialSlotPicker(colId) {
+      const col = cachedSpecials.find(s => s.id === colId);
+      if (!col) return;
+      activeSpecialEditId = colId;
+
+      const modalHtml = `
+        <div id="specialPickerModal" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;">
+          <div style="background:#131722; border:1.5px solid var(--accent-gold); border-radius:16px; width:100%; max-width:800px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.9);">
+            <div style="padding:20px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="color:#fdd835; font-size:18px; margin-bottom:2px;">Asignar Slots a: ${col.icon} ${col.name}</h3>
+                <p style="color:var(--text-muted); font-size:12px;">Actualmente seleccionados: <strong id="pickerSelectedCount" style="color:#fff;">${col.slot_ids.length}</strong> slots</p>
+              </div>
+              <button onclick="document.getElementById('specialPickerModal').remove()" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">✕</button>
+            </div>
+            
+            <div style="padding:16px 20px; border-bottom:1px solid #30363d;">
+              <input type="text" id="specialSlotSearch" placeholder="🔍 Buscar slot por nombre o ID para agregar..." style="width:100%; background:#090c10; border:1px solid #30363d; border-radius:8px; padding:10px 16px; color:#fff; font-size:14px;" oninput="filterSpecialPickerSlots(this.value)">
+            </div>
+
+            <div id="specialSlotPickerList" style="flex:1; overflow-y:auto; padding:16px 20px; display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px;">
+              <div style="color:var(--text-muted);">Cargando slots disponibles...</div>
+            </div>
+
+            <div style="padding:16px 20px; border-top:1px solid #30363d; display:flex; justify-content:flex-end; gap:12px; background:#0d1117; border-radius:0 0 16px 16px;">
+              <button class="btn" style="background:#21262d; color:#fff;" onclick="document.getElementById('specialPickerModal').remove()">Cerrar</button>
+              <button class="btn btn-gold" onclick="confirmSaveSpecialSlots()">💾 Guardar Asignación</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const existingModal = document.getElementById('specialPickerModal');
+      if (existingModal) existingModal.remove();
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      // Cargar slots activos de Supabase
+      const { data: slots } = await supabaseClient.from('slots').select('external_id, name, provider_display, image_url, is_active').eq('is_active', true).order('total_clicks', { ascending: false }).limit(200);
+      window._allPickerSlots = slots || [];
+      renderSpecialPickerList(window._allPickerSlots, col.slot_ids);
+    }
+
+    function renderSpecialPickerList(slots, selectedIds) {
+      const container = document.getElementById('specialSlotPickerList');
+      if (!container) return;
+
+      const selSet = new Set(selectedIds.map(String));
+      container.innerHTML = slots.map(s => {
+        const isChecked = selSet.has(String(s.external_id));
+        return `
+          <label style="display:flex; align-items:center; gap:10px; background:${isChecked ? 'rgba(245,196,49,0.12)' : '#0d1117'}; border:1px solid ${isChecked ? 'var(--accent-gold)' : '#30363d'}; padding:10px; border-radius:8px; cursor:pointer; transition:all 0.2s;">
+            <input type="checkbox" value="${s.external_id}" ${isChecked ? 'checked' : ''} onchange="toggleSpecialSlotId('${s.external_id}', this.checked)" style="accent-color:#fdd835; transform:scale(1.2);">
+            <div style="overflow:hidden;">
+              <div style="font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.name}</div>
+              <div style="font-size:11px; color:var(--text-muted);">${s.provider_display || ''} (#${s.external_id})</div>
+            </div>
+          </label>
+        `;
+      }).join('');
+    }
+
+    function filterSpecialPickerSlots(query) {
+      if (!window._allPickerSlots) return;
+      const q = query.toLowerCase().trim();
+      const col = cachedSpecials.find(s => s.id === activeSpecialEditId);
+      const filtered = window._allPickerSlots.filter(s => s.name.toLowerCase().includes(q) || String(s.external_id).includes(q));
+      renderSpecialPickerList(filtered, col ? col.slot_ids : []);
+    }
+
+    function toggleSpecialSlotId(slotId, isChecked) {
+      const col = cachedSpecials.find(s => s.id === activeSpecialEditId);
+      if (!col) return;
+      if (!Array.isArray(col.slot_ids)) col.slot_ids = [];
+
+      const strId = String(slotId);
+      if (isChecked) {
+        if (!col.slot_ids.includes(strId)) col.slot_ids.push(strId);
+      } else {
+        col.slot_ids = col.slot_ids.filter(id => String(id) !== strId);
+      }
+
+      const countEl = document.getElementById('pickerSelectedCount');
+      if (countEl) countEl.innerText = col.slot_ids.length;
+    }
+
+    async function confirmSaveSpecialSlots() {
+      await saveSpecialsToDb();
+      const modal = document.getElementById('specialPickerModal');
+      if (modal) modal.remove();
     }
 
     // ─── CARGAR CONFIGURACIÓN ───
