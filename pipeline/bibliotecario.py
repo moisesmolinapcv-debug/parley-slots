@@ -462,13 +462,28 @@ def inject_data(added, modified, deactivated, new_providers, prov_updates):
         patch_data = {k: v for k, v in payload.items() if k != 'external_id'}  # Copiar sin el id
         supabase_request("PATCH", f"slots?external_id=eq.{ext_id}", json_data=patch_data)
 
-    # Insertar proveedores nuevos
+    # Insertar proveedores NUEVOS (ya fueron filtrados — no existen en Supabase)
+    # No usamos on_conflict porque la tabla puede no tener UNIQUE constraint en name
+    # y además ya sabemos que son nuevos (filtrado previo vs prov_map)
     if new_providers:
-        supabase_request(
-            "POST", "providers?on_conflict=name",
-            json_data=new_providers,
-            prefer="resolution=merge-duplicates,return=minimal"
-        )
+        try:
+            supabase_request(
+                "POST", "providers",
+                json_data=new_providers,
+                prefer="return=minimal"
+            )
+            print(f"[4] Proveedores nuevos insertados: {len(new_providers)}")
+        except Exception as e:
+            # Si falla el batch, intentar uno a uno (tolerancia a duplicados)
+            print(f"[4] Batch de proveedores falló ({e}), intentando uno a uno...")
+            inserted = 0
+            for prov in new_providers:
+                try:
+                    supabase_request("POST", "providers", json_data=[prov], prefer="return=minimal")
+                    inserted += 1
+                except Exception as e2:
+                    print(f"[4] Proveedor '{prov.get('name')}' ya existe o error: {e2}")
+            print(f"[4] Proveedores insertados individualmente: {inserted}/{len(new_providers)}")
 
     # Actualizar slot_count de proveedores existentes
     for pu in prov_updates:
