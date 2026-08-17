@@ -228,15 +228,26 @@ const SlotsApp = (() => {
 
     banners.forEach((b, idx) => {
       const imgUrl = b.image_url || 'BANNER/public.avif';
-      slidesHtml += `
-        <div class="carousel-slide">
-          <img class="carousel-banner-img"
+
+      // ── Imagen del banner ──────────────────────────────────────────
+      const imgTag = `<img class="carousel-banner-img"
                src="${imgUrl}"
                alt="${b.title || 'Banner Parley'}"
                ${idx === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}
                decoding="async"
-               onerror="this.src='BANNER/public.avif'">
-        </div>`;
+               onerror="this.src='BANNER/public.avif'">`;
+
+      // ── Si tiene link_url: envolver en <a> que abre en nueva pestaña
+      // Si no tiene link_url: solo la imagen sin comportamiento de clic
+      const slideContent = b.link_url
+        ? `<a href="${b.link_url}" target="_blank" rel="noopener noreferrer"
+              style="display:block; width:100%; height:100%; cursor:pointer;"
+              aria-label="${b.title || 'Ver promoción'}">
+             ${imgTag}
+           </a>`
+        : imgTag;
+
+      slidesHtml += `<div class="carousel-slide">${slideContent}</div>`;
       dotsHtml += `<div class="carousel-dot ${idx === 0 ? 'active' : ''}" onclick="App.goSlide(${idx})"></div>`;
     });
 

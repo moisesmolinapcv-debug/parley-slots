@@ -580,11 +580,11 @@ def main():
     parser.add_argument('--mode', choices=['auto', 'manual'], default='auto')
     parser.add_argument('--restore', type=str, help='Backup file to restore from')
     args = parser.parse_args()
-    
+
     pipeline_stats['trigger_mode'] = 'automatic' if args.mode == 'auto' else 'manual'
-    
+
     t0 = time.time()
-    
+
     if args.restore:
         backup_path = BACKUP_DIR / args.restore
         if not backup_path.exists():
@@ -592,90 +592,136 @@ def main():
             sys.exit(1)
         rollback(backup_path)
         sys.exit(0)
-        
+
+    # ══════════════════════════════════════════════════════════
+    # §2D-2 Documento Madre: Se usa try/except/finally para garantizar que
+    # pipeline_logs SIEMPRE recibe un registro al terminar, ya sea por éxito,
+    # error controlado, o fallo inesperado a mitad del proceso.
+    # El bloque `finally` es incondicional — siempre ejecuta.
+    # ══════════════════════════════════════════════════════════
+    _log_written = False  # Flag para evitar doble escritura
+
     try:
         supabase_slots = fetch_supabase_slots()
         backup_file = create_backup(supabase_slots)
         pipeline_stats['backup_file'] = str(backup_file)
-        
+
         api_slots = fetch_api_slots()
         pipeline_stats['slots_fetched'] = len(api_slots)
-        
+
         supabase_providers = fetch_supabase_providers()
         site_config = fetch_site_config()
-        
+
         if site_config.get('maintenance_mode') == 'true':
             print("Maintenance mode active. Exiting without changes.")
+            # Registrar salida por mantenimiento antes de salir
+            pipeline_stats['status'] = 'skipped'
+            pipeline_stats['error_message'] = 'Maintenance mode activo'
             sys.exit(0)
-            
-        added, modified, deactivated, new_providers, prov_updates = process_data(api_slots, supabase_slots, supabase_providers, site_config)
-        
-        pipeline_stats['slots_added'] = len(added)
-        pipeline_stats['slots_modified'] = len(modified)
-        pipeline_stats['slots_deactivated'] = len(deactivated)
-        pipeline_stats['providers_added'] = len(new_providers)
-        
+
+        added, modified, deactivated, new_providers, prov_updates = process_data(
+            api_slots, supabase_slots, supabase_providers, site_config
+        )
+
+        pipeline_stats['slots_added']       = len(added)
+        pipeline_stats['slots_modified']     = len(modified)
+        pipeline_stats['slots_deactivated']  = len(deactivated)
+        pipeline_stats['providers_added']    = len(new_providers)
+
         inject_data(added, modified, deactivated, new_providers, prov_updates)
         generate_static(site_config, supabase_providers)
-        
+
         elapsed = time.time() - t0
         pipeline_stats['duration_seconds'] = int(elapsed)
-        pipeline_stats['status'] = 'success'  # Marcar éxito solo si llegamos aquí
+        pipeline_stats['status'] = 'success'  # Solo se marca success si llegamos aqui
 
+        # Escribir log de éxito directamente
         log_entry = {
-            'executed_at': datetime.now(timezone.utc).isoformat(),
-            'status': pipeline_stats['status'],
-            'slots_fetched': pipeline_stats['slots_fetched'],
-            'slots_total': pipeline_stats['slots_total'],
-            'slots_added': pipeline_stats['slots_added'],
-            'slots_modified': pipeline_stats['slots_modified'],
+            'executed_at':     datetime.now(timezone.utc).isoformat(),
+            'status':          pipeline_stats['status'],
+            'slots_fetched':   pipeline_stats['slots_fetched'],
+            'slots_total':     pipeline_stats['slots_total'],
+            'slots_added':     pipeline_stats['slots_added'],
+            'slots_modified':  pipeline_stats['slots_modified'],
             'slots_deactivated': pipeline_stats['slots_deactivated'],
-            'slots_reactivated': pipeline_stats['slots_reactivated'],
+            'slots_reactivated': pipeline_stats.get('slots_reactivated', 0),
             'providers_added': pipeline_stats['providers_added'],
             'duration_seconds': pipeline_stats['duration_seconds'],
-            'trigger_mode': pipeline_stats['trigger_mode'],
-            'error_message': None,
-            'backup_file': Path(pipeline_stats['backup_file']).name,
-            'notes': 'El Bibliotecario v1.0'
+            'trigger_mode':    pipeline_stats['trigger_mode'],
+            'error_message':   None,
+            'backup_file':     Path(pipeline_stats['backup_file']).name,
+            'notes':           'El Bibliotecario v1.0'
         }
         supabase_request("POST", "pipeline_logs", json_data=log_entry, prefer="return=minimal")
-        
+        _log_written = True
+
         send_telegram_success(elapsed)
-        
+
     except Exception as e:
         elapsed = time.time() - t0
-        pipeline_stats['status'] = 'error'
-        pipeline_stats['error_message'] = str(e)
+        pipeline_stats['status']           = 'error'
+        pipeline_stats['error_message']    = str(e)
         pipeline_stats['duration_seconds'] = int(elapsed)
-        
-        print(f"Error: {e}")
-        
+
+        print(f"[ERROR] {e}")
+
+        # Rollback si tenemos backup
         if pipeline_stats.get('backup_file'):
             rollback(Path(pipeline_stats['backup_file']))
-            
+
+        # Escribir log de error directamente
         log_entry = {
-            'executed_at': datetime.now(timezone.utc).isoformat(),
-            'status': 'error',
-            'slots_fetched': pipeline_stats.get('slots_fetched', 0),
-            'slots_total': pipeline_stats.get('slots_total', 0),
-            'slots_added': pipeline_stats.get('slots_added', 0),
-            'slots_modified': pipeline_stats.get('slots_modified', 0),
+            'executed_at':     datetime.now(timezone.utc).isoformat(),
+            'status':          'error',
+            'slots_fetched':   pipeline_stats.get('slots_fetched', 0),
+            'slots_total':     pipeline_stats.get('slots_total', 0),
+            'slots_added':     pipeline_stats.get('slots_added', 0),
+            'slots_modified':  pipeline_stats.get('slots_modified', 0),
             'slots_deactivated': pipeline_stats.get('slots_deactivated', 0),
             'slots_reactivated': pipeline_stats.get('slots_reactivated', 0),
             'providers_added': pipeline_stats.get('providers_added', 0),
             'duration_seconds': pipeline_stats['duration_seconds'],
-            'trigger_mode': pipeline_stats['trigger_mode'],
-            'error_message': str(e)[:500],
-            'backup_file': Path(pipeline_stats['backup_file']).name if pipeline_stats.get('backup_file') else '',
-            'notes': 'El Bibliotecario v1.0'
+            'trigger_mode':    pipeline_stats['trigger_mode'],
+            'error_message':   str(e)[:500],
+            'backup_file':     Path(pipeline_stats['backup_file']).name if pipeline_stats.get('backup_file') else '',
+            'notes':           'El Bibliotecario v1.0'
         }
         try:
             supabase_request("POST", "pipeline_logs", json_data=log_entry, prefer="return=minimal")
-        except:
-            pass
-            
+            _log_written = True
+        except Exception as log_err:
+            print(f"[CRITICAL] No se pudo escribir pipeline_log: {log_err}")
+
         send_telegram_error(elapsed, str(e))
         sys.exit(1)
+
+    finally:
+        # ══ GARANTIA INCONDICIONAL: Si el proceso terminó sin escribir log
+        # (ej. KeyboardInterrupt, señal del SO, sys.exit(0) por mantenimiento),
+        # escribir un registro mínimo para dejar constancia de la ejecución.
+        if not _log_written:
+            elapsed_final = time.time() - t0
+            fallback_log = {
+                'executed_at':     datetime.now(timezone.utc).isoformat(),
+                'status':          pipeline_stats.get('status', 'unknown'),
+                'slots_fetched':   pipeline_stats.get('slots_fetched', 0),
+                'slots_total':     pipeline_stats.get('slots_total', 0),
+                'slots_added':     pipeline_stats.get('slots_added', 0),
+                'slots_modified':  pipeline_stats.get('slots_modified', 0),
+                'slots_deactivated': pipeline_stats.get('slots_deactivated', 0),
+                'slots_reactivated': pipeline_stats.get('slots_reactivated', 0),
+                'providers_added': pipeline_stats.get('providers_added', 0),
+                'duration_seconds': int(elapsed_final),
+                'trigger_mode':    pipeline_stats.get('trigger_mode', 'unknown'),
+                'error_message':   pipeline_stats.get('error_message', 'Ejecución terminada sin log previo'),
+                'backup_file':     Path(pipeline_stats['backup_file']).name if pipeline_stats.get('backup_file') else '',
+                'notes':           'El Bibliotecario v1.0 (§2D-2: fallback finally)'
+            }
+            try:
+                supabase_request("POST", "pipeline_logs", json_data=fallback_log, prefer="return=minimal")
+                print("[FINALLY] Pipeline log registrado via bloque finally.")
+            except Exception as fe:
+                print(f"[FINALLY] No se pudo escribir log de emergencia: {fe}")
 
 if __name__ == "__main__":
     main()

@@ -478,6 +478,41 @@
       .sidebar-logo span:last-child, .menu-item span:last-child, .user-info { display: none; }
       .content { margin-left: 70px; padding: 20px; }
     }
+
+    /* ── PROVEEDOR INACTIVO — fila roja sutil (§2B Documento Madre) ── */
+    tr.provider-inactive td {
+      background: rgba(218, 54, 51, 0.12) !important;
+    }
+    tr.provider-inactive {
+      border-left: 4px solid #da3633;
+    }
+    tr.provider-inactive:hover td {
+      background: rgba(218, 54, 51, 0.18) !important;
+    }
+
+    /* ── AUTO-REFRESH INDICATOR ── */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .auto-refresh-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      color: #58a6ff;
+      font-size: 12px;
+      padding: 6px 12px;
+      background: rgba(56, 139, 253, 0.1);
+      border: 1px solid rgba(56, 139, 253, 0.3);
+      border-radius: 6px;
+    }
+    .auto-refresh-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #58a6ff;
+      animation: pulse 1.5s infinite;
+    }
   </style>
 </head>
 <body>
@@ -721,11 +756,17 @@
       <!-- TAB 4: BANNERS -->
       <section id="tab-banners" class="tab-content">
         <div class="page-header">
-          <h1 class="page-title">Carrusel de Banners (3 Posiciones)</h1>
+          <div>
+            <h1 class="page-title">🖼️ Carrusel de Banners</h1>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">
+              Gestiona los banners del carrusel. Sube imágenes directo a Supabase Storage, configura hipervínculos y ordena por posición.
+            </p>
+          </div>
+          <button class="btn btn-gold" style="width:auto;" onclick="createNewBanner()">➕ Nuevo Banner</button>
         </div>
 
         <div class="banner-grid" id="bannersContainer">
-          <!-- Banners se cargan dinámicamente -->
+          <!-- Banners se cargan dinámicamente desde Supabase -->
         </div>
       </section>
 
@@ -768,7 +809,12 @@
               Sincronización automática: diariamente a las 02:00 AM (VET). El modo manual dispara el workflow real en GitHub Actions.
             </p>
           </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <!-- Indicador de auto-refresh — visible solo cuando hay status='running' -->
+            <div id="pipelineAutoRefreshIndicator" class="auto-refresh-indicator">
+              <div class="auto-refresh-dot"></div>
+              <span>Actualizando cada 30s...</span>
+            </div>
             <button id="refreshLogsBtn" class="btn" style="width:auto; background:#21262d; color:#fff;" onclick="loadPipelineLogs()">
               🔄 Refrescar Logs
             </button>
@@ -955,13 +1001,12 @@
       container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Cargando slots destacados desde Supabase...</div>';
 
       try {
+        // §2A-2 Documento Madre: Supabase es la ÚNICA fuente de verdad.
+        // No se usa localStorage como fallback para evitar datos desincronizados.
         let order = null;
         const { data } = await supabaseClient.from('site_config').select('value').eq('key', 'featured_slots_order').single();
         if (data && data.value) {
           order = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-        } else {
-          const stored = localStorage.getItem('parley_featured_slots_v3');
-          if (stored) order = JSON.parse(stored);
         }
 
         if (Array.isArray(order) && order.length > 0) {
@@ -1060,44 +1105,88 @@
       if (searchInput && searchInput.value) searchSlotsForFeatured(searchInput.value);
     }
 
+    // ── §2A-1: Búsqueda sin límite con paginación 50/50 (Documento Madre) ──────
     let featuredSearchTimeout = null;
+    let _featuredSearchPage = 0;     // Página actual de resultados de búsqueda
+    let _featuredSearchQuery = '';   // Query activa (para el botón "Cargar más")
+
     function searchSlotsForFeatured(query) {
       clearTimeout(featuredSearchTimeout);
-      featuredSearchTimeout = setTimeout(async () => {
-        const resultsDiv = document.getElementById('featuredSearchResults');
-        if (!query.trim()) {
-          resultsDiv.innerHTML = '<div style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px;">Escribe un nombre para buscar en Supabase...</div>';
-          return;
-        }
+      _featuredSearchPage = 0;
+      _featuredSearchQuery = query;
+      featuredSearchTimeout = setTimeout(() => _execFeaturedSearch(query, 0, false), 250);
+    }
 
-        resultsDiv.innerHTML = '<div style="text-align:center; padding:10px;">Buscando slots...</div>';
-        const { data, error } = await supabaseClient.from('slots').select('*').ilike('name', `%${query.trim()}%`).limit(25);
-        
-        if (error || !data || data.length === 0) {
-          resultsDiv.innerHTML = '<div style="color:var(--danger); text-align:center; padding:10px;">No se encontraron slots.</div>';
-          return;
-        }
+    async function _execFeaturedSearch(query, page, append) {
+      const resultsDiv = document.getElementById('featuredSearchResults');
+      if (!query.trim()) {
+        resultsDiv.innerHTML = '<div style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px;">Escribe un nombre para buscar en el catálogo completo...</div>';
+        return;
+      }
 
-        resultsDiv.innerHTML = data.map(s => {
-          const isAlreadyAdded = adminFeaturedSlots.some(f => (f.external_id || f.id) === (s.external_id || s.id));
-          return `
-            <div style="display:flex; align-items:center; justify-content:space-between; background:#0d1117; border:1px solid var(--border-color); border-radius:8px; padding:8px 12px;">
-              <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
-                <img src="${s.image_url}" style="width:36px; height:36px; border-radius:6px; object-fit:cover; flex-shrink:0;" onerror="this.src='../BANNER/public.avif'">
-                <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  <div style="font-weight:600; font-size:13px; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.name}</div>
-                  <div style="font-size:11px; color:var(--text-muted);">${s.provider || ''}</div>
-                </div>
+      if (!append) {
+        resultsDiv.innerHTML = '<div style="text-align:center; padding:10px; color:var(--text-muted);">⏳ Buscando en catálogo completo...</div>';
+      }
+
+      const PAGE_SIZE = 50;
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, error, count } = await supabaseClient
+        .from('slots')
+        .select('id, external_id, name, provider, image_url', { count: 'exact' })
+        .ilike('name', `%${query.trim()}%`)
+        .range(from, to)
+        .order('total_clicks', { ascending: false });
+
+      if (error || !data || data.length === 0) {
+        if (!append) {
+          resultsDiv.innerHTML = '<div style="color:var(--danger); text-align:center; padding:10px;">No se encontraron slots con ese nombre.</div>';
+        }
+        return;
+      }
+
+      // Construir items HTML
+      const itemsHtml = data.map(s => {
+        const isAlreadyAdded = adminFeaturedSlots.some(f => (f.external_id || f.id) === (s.external_id || s.id));
+        return `
+          <div style="display:flex; align-items:center; justify-content:space-between; background:#0d1117; border:1px solid var(--border-color); border-radius:8px; padding:8px 12px;">
+            <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+              <img src="${s.image_url}" style="width:36px; height:36px; border-radius:6px; object-fit:cover; flex-shrink:0;" onerror="this.src='../BANNER/public.avif'">
+              <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                <div style="font-weight:600; font-size:13px; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.name}</div>
+                <div style="font-size:11px; color:var(--text-muted);">${s.provider || ''}</div>
               </div>
-              <button class="btn btn-gold" style="padding:4px 10px; font-size:11px; width:auto; flex-shrink:0;" 
-                      onclick="addFeaturedAdmin('${s.external_id || s.id}')" 
-                      ${isAlreadyAdded || adminFeaturedSlots.length >= 20 ? 'disabled' : ''}>
-                ${isAlreadyAdded ? '✓ Añadido' : (adminFeaturedSlots.length >= 20 ? 'Límite (20)' : '＋ Añadir')}
-              </button>
             </div>
-          `;
-        }).join('');
-      }, 250);
+            <button class="btn btn-gold" style="padding:4px 10px; font-size:11px; width:auto; flex-shrink:0;"
+                    onclick="addFeaturedAdmin('${s.external_id || s.id}')"
+                    ${isAlreadyAdded || adminFeaturedSlots.length >= 20 ? 'disabled' : ''}>
+              ${isAlreadyAdded ? '✓ Añadido' : (adminFeaturedSlots.length >= 20 ? 'Límite (20)' : '＋ Añadir')}
+            </button>
+          </div>`;
+      }).join('');
+
+      if (append) {
+        // Reemplazar el botón "Cargar más" anterior antes de agregar
+        const prevBtn = document.getElementById('featuredSearchLoadMore');
+        if (prevBtn) prevBtn.remove();
+        resultsDiv.insertAdjacentHTML('beforeend', itemsHtml);
+      } else {
+        const totalText = count ? `<div style="color:var(--text-muted); font-size:11px; text-align:right; margin-bottom:8px;">${count.toLocaleString()} resultados encontrados</div>` : '';
+        resultsDiv.innerHTML = totalText + itemsHtml;
+      }
+
+      // Mostrar botón "Cargar más" si quedan resultados
+      const totalShown = (page + 1) * PAGE_SIZE;
+      if (count && totalShown < count) {
+        const remaining = count - totalShown;
+        resultsDiv.insertAdjacentHTML('beforeend', `
+          <button id="featuredSearchLoadMore" class="btn"
+                  style="width:100%; margin-top:8px; background:#21262d; color:#fff; font-size:12px; padding:10px;"
+                  onclick="_featuredSearchPage++; _execFeaturedSearch(_featuredSearchQuery, _featuredSearchPage, true)">
+            ▼ Cargar más resultados (${remaining.toLocaleString()} restantes)
+          </button>`);
+      }
     }
 
     async function addFeaturedAdmin(slotId) {
@@ -1128,7 +1217,7 @@
       const jsonValue = JSON.stringify(ids);
 
       showToast('Guardando slots destacados en Supabase...', 'loading', 2000);
-      localStorage.setItem('parley_featured_slots_v3', jsonValue);
+      // §2A-2: Solo guardamos en Supabase. Eliminado localStorage para evitar desincronización.
 
       const { error } = await supabaseClient.from('site_config').upsert({ key: 'featured_slots_order', value: jsonValue }, { onConflict: 'key' });
 
@@ -1258,14 +1347,15 @@
 
       if (!data) return;
 
+      // §2B: Pintar fila completa de rojo sutil cuando el proveedor está inactivo
       tbody.innerHTML = data.map(p => `
-        <tr>
+        <tr class="${!p.is_active ? 'provider-inactive' : ''}">
           <td><strong>${p.name}</strong></td>
           <td>${p.display_name || p.name}</td>
           <td>${p.slot_count || 0}</td>
           <td>
             <label class="switch">
-              <input type="checkbox" ${p.is_active ? 'checked' : ''} onchange="toggleProviderStatus('${p.name}', this.checked)">
+              <input type="checkbox" ${p.is_active ? 'checked' : ''} onchange="toggleProviderStatus('${p.name}', this.checked, this)">
               <span class="slider"></span>
             </label>
           </td>
@@ -1280,9 +1370,9 @@
       }
     }
 
-    async function toggleProviderStatus(provName, isActive) {
+    async function toggleProviderStatus(provName, isActive, checkboxEl) {
       showToast(`Actualizando estado global de proveedor ${provName} y sus slots...`, 'loading', 2500);
-      
+
       const p1 = supabaseClient.from('providers').update({ is_active: isActive }).eq('name', provName);
       const p2 = supabaseClient.from('slots').update({ is_active: isActive }).ilike('provider', provName);
       const p3 = supabaseClient.from('slots').update({ is_active: isActive }).ilike('provider_display', provName);
@@ -1294,9 +1384,20 @@
         showToast('Error al actualizar proveedor: ' + (results.find(r => r.error)?.error?.message || 'Error en Supabase'), 'error');
       } else {
         showToast(`✅ Proveedor ${provName} y todos sus slots marcados como ${isActive ? 'ACTIVOS' : 'INACTIVOS'}`, 'success', 3000);
+        // §2B: Actualizar color de fila en tiempo real sin recargar toda la tabla
+        if (checkboxEl) {
+          const row = checkboxEl.closest('tr');
+          if (row) row.className = isActive ? '' : 'provider-inactive';
+        }
       }
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    //  MÓDULO BANNERS — §2F Documento Madre
+    //  Gestión completa: Supabase Storage, crear, editar, eliminar, toggle
+    // ═══════════════════════════════════════════════════════════════════
+
+    /** Resuelve URLs relativas de imágenes para mostrar en el panel */
     function resolveBannerUrl(url) {
       if (!url) return '../BANNER/public.avif';
       if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) return url;
@@ -1304,51 +1405,224 @@
       return '../BANNER/' + url;
     }
 
-    // ─── CARGAR BANNERS (CON HIPERVÍNCULOS DINÁMICOS) ───
+    /** Carga todos los banners desde Supabase y renderiza las tarjetas */
     async function loadBanners() {
-      const { data } = await supabaseClient.from('banners').select('*').order('position', { ascending: true });
       const container = document.getElementById('bannersContainer');
+      container.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:20px;">⏳ Cargando banners...</div>';
 
+      const { data, error } = await supabaseClient.from('banners').select('*').order('position', { ascending: true });
+
+      if (error) {
+        container.innerHTML = `<div style="color:var(--danger); padding:20px;">❌ Error cargando banners: ${error.message}</div>`;
+        return;
+      }
       if (!data || data.length === 0) {
-        container.innerHTML = '<div>No se encontraron banners configurados.</div>';
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted);">
+          No hay banners configurados. Crea el primero con el botón "➕ Nuevo Banner".</div>`;
+        return;
+      }
+      container.innerHTML = data.map(b => renderBannerCard(b)).join('');
+    }
+
+    /** Renderiza la tarjeta HTML completa de un banner */
+    function renderBannerCard(b) {
+      const resolvedUrl = resolveBannerUrl(b.image_url);
+      const safeTitle = (b.title || '').replace(/"/g, '&quot;');
+      const safeLink  = (b.link_url || '').replace(/"/g, '&quot;');
+      return `
+        <div class="banner-card" id="banner-card-${b.position}">
+          <!-- Vista previa de imagen + overlay de carga -->
+          <div style="position:relative; background:#161b22;">
+            <img src="${resolvedUrl}" class="banner-img" id="bannerPreview_${b.position}"
+                 onerror="this.src='../BANNER/public.avif'">
+            <div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.75);
+                        border-radius:6px; padding:4px 10px; font-size:12px;
+                        font-weight:700; color:var(--accent-gold);">
+              Posición #${b.position}
+            </div>
+            <div style="position:absolute; top:8px; left:8px;">
+              <span class="badge ${b.is_active ? 'badge-active' : 'badge-inactive'}">
+                ${b.is_active ? '● Activo' : '○ Inactivo'}
+              </span>
+            </div>
+            <!-- Input oculto para subida de archivo -->
+            <input type="file" id="bannerFile_${b.position}" accept="image/*,image/webp"
+                   style="display:none;" onchange="handleBannerFileUpload(${b.position}, this)">
+          </div>
+
+          <div class="banner-body">
+            <h4 style="margin-bottom:12px; color:var(--text-main); font-size:15px;">Banner #${b.position}</h4>
+
+            <!-- Campo: Título / Alt Text -->
+            <div class="form-group">
+              <label>Título / Alt Text</label>
+              <input type="text" class="form-control" value="${safeTitle}" id="bannerTitle_${b.position}" placeholder="Ej: Bono de Bienvenida">
+            </div>
+
+            <!-- Campo: URL de Destino (hipervínculo) -->
+            <div class="form-group">
+              <label>🔗 URL de Destino (Hipervínculo)</label>
+              <input type="text" class="form-control" value="${safeLink}" id="bannerLink_${b.position}"
+                     placeholder="https://parley.com.ve/promo o #slots">
+              <small style="color:var(--text-muted); font-size:11px; display:block; margin-top:4px;">
+                Al hacer clic en el banner, el usuario irá a esta URL (nueva pestaña).
+              </small>
+            </div>
+
+            <!-- Toggle: Activo en carrusel -->
+            <div class="form-group" style="display:flex; align-items:center; justify-content:space-between; background:#161b22; padding:10px 14px; border-radius:8px;">
+              <span style="font-size:13px; font-weight:600;">Activo en Carrusel</span>
+              <label class="switch" style="margin:0;">
+                <input type="checkbox" id="bannerActive_${b.position}" ${b.is_active ? 'checked' : ''}
+                       onchange="toggleBannerStatus(${b.position}, this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Acciones: Subir imagen, Guardar, Eliminar -->
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+              <button class="btn" style="background:#21262d; color:#fff; font-size:12px;"
+                      onclick="document.getElementById('bannerFile_${b.position}').click()">
+                📤 Cambiar Imagen (Supabase Storage)
+              </button>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-gold" style="flex:1; font-size:12px;" onclick="saveBanner(${b.position})">
+                  💾 Guardar Cambios
+                </button>
+                <button class="btn" style="background:rgba(218,54,51,0.15); color:var(--danger); border:1px solid rgba(218,54,51,0.4); font-size:12px; padding:8px 12px;"
+                        onclick="deleteBanner(${b.position})" title="Eliminar este banner">🗑️</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    /**
+     * Sube una imagen al bucket 'banners' en Supabase Storage.
+     * Obtiene la URL pública automáticamente y la guarda en la DB.
+     * Máximo 5MB por imagen.
+     */
+    async function handleBannerFileUpload(position, input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      // Validar tamaño (máx 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('❌ La imagen supera el límite de 5MB. Comprime el archivo antes de subir.', 'error', 5000);
+        input.value = '';
         return;
       }
 
-      container.innerHTML = data.map(b => `
-        <div class="banner-card">
-          <img src="${resolveBannerUrl(b.image_url)}" class="banner-img" onerror="this.src='../BANNER/public.avif'">
-          <div class="banner-body">
-            <h4 style="margin-bottom:8px;">Banner Posición #${b.position}</h4>
-            <div class="form-group">
-              <label>Título / Alt Text</label>
-              <input type="text" class="form-control" value="${b.title || ''}" id="bannerTitle_${b.position}">
-            </div>
-            <div class="form-group">
-              <label>URL Imagen</label>
-              <input type="text" class="form-control" value="${b.image_url || ''}" id="bannerUrl_${b.position}">
-            </div>
-            <div class="form-group">
-              <label>🔗 URL de Destino / Hipervínculo (Opcional)</label>
-              <input type="text" class="form-control" value="${b.link_url || ''}" id="bannerLink_${b.position}" placeholder="https://ejemplo.com/promo o #seccion">
-              <small style="color:var(--text-muted); font-size:11px;">Al hacer clic sobre el banner, el usuario será redirigido a este enlace.</small>
-            </div>
-            <button class="btn btn-gold" style="width:100%; font-size:12px; margin-top:8px;" onclick="saveBanner(${b.position})">💾 Guardar Banner #${b.position}</button>
-          </div>
-        </div>
-      `).join('');
+      showToast('⏳ Subiendo imagen a Supabase Storage...', 'loading', 0);
+
+      try {
+        // Nombre único para evitar caché: banner_posX_timestamp.ext
+        const ext  = (file.name.split('.').pop() || 'webp').toLowerCase();
+        const fileName = `banner_pos${position}_${Date.now()}.${ext}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+          .from('banners')
+          .upload(fileName, file, { upsert: true, contentType: file.type });
+
+        if (uploadError) throw new Error('Storage: ' + uploadError.message);
+
+        // Obtener URL pública del archivo subido
+        const { data: { publicUrl } } = supabaseClient.storage.from('banners').getPublicUrl(fileName);
+
+        // Actualizar preview visual inmediatamente
+        const preview = document.getElementById(`bannerPreview_${position}`);
+        if (preview) { preview.src = publicUrl + '?t=' + Date.now(); }
+
+        // Guardar URL en Supabase DB automáticamente
+        const { error: dbError } = await supabaseClient.from('banners')
+          .update({ image_url: publicUrl })
+          .eq('position', position);
+        if (dbError) throw new Error('DB: ' + dbError.message);
+
+        showToast(`✅ Imagen subida y guardada para Banner #${position}`, 'success', 4000);
+      } catch (err) {
+        showToast('❌ Error al subir imagen: ' + err.message, 'error', 5000);
+      } finally {
+        input.value = ''; // Resetear input para permitir resubida del mismo archivo
+      }
     }
 
+    /** Activa o desactiva un banner en el carrusel sin recargar la lista */
+    async function toggleBannerStatus(position, isActive) {
+      const { error } = await supabaseClient.from('banners')
+        .update({ is_active: isActive })
+        .eq('position', position);
+
+      if (error) {
+        showToast('Error actualizando estado del banner: ' + error.message, 'error');
+      } else {
+        showToast(`Banner #${position} ${isActive ? 'activado ✅' : 'desactivado ⭕'} en carrusel`, 'success');
+        // Actualizar badge de estado en la tarjeta visualmente
+        const card = document.getElementById(`banner-card-${position}`);
+        if (card) {
+          const badge = card.querySelector('.badge-active, .badge-inactive');
+          if (badge) {
+            badge.className = `badge ${isActive ? 'badge-active' : 'badge-inactive'}`;
+            badge.textContent = isActive ? '● Activo' : '○ Inactivo';
+          }
+        }
+      }
+    }
+
+    /** Guarda título y link_url del banner en Supabase */
     async function saveBanner(pos) {
-      const title = document.getElementById(`bannerTitle_${pos}`).value.trim();
-      const image_url = document.getElementById(`bannerUrl_${pos}`).value.trim();
-      const link_url = document.getElementById(`bannerLink_${pos}`).value.trim() || null;
+      const title    = document.getElementById(`bannerTitle_${pos}`)?.value.trim() || '';
+      const link_url = document.getElementById(`bannerLink_${pos}`)?.value.trim() || null;
 
       showToast(`Guardando Banner #${pos}...`, 'loading', 1500);
-      const { error } = await supabaseClient.from('banners').update({ title, image_url, link_url }).eq('position', pos);
+      const { error } = await supabaseClient.from('banners')
+        .update({ title, link_url })
+        .eq('position', pos);
+
       if (error) {
         showToast('Error guardando banner: ' + error.message, 'error');
       } else {
-        showToast(`✅ Banner #${pos} actualizado con enlace exitosamente`, 'success');
+        showToast(`✅ Banner #${pos} guardado con hipervínculo`, 'success');
+      }
+    }
+
+    /** Elimina un banner de la DB (con confirmación) */
+    async function deleteBanner(pos) {
+      if (!confirm(`¿Eliminar el Banner #${pos}? Esta acción no se puede deshacer.`)) return;
+      showToast(`Eliminando Banner #${pos}...`, 'loading', 1500);
+      const { error } = await supabaseClient.from('banners').delete().eq('position', pos);
+      if (error) {
+        showToast('Error eliminando banner: ' + error.message, 'error');
+      } else {
+        showToast(`✅ Banner #${pos} eliminado`, 'success');
+        loadBanners(); // Recargar lista actualizada
+      }
+    }
+
+    /**
+     * Crea un nuevo banner en la posición siguiente disponible.
+     * El banner se crea inactivo hasta que se le asigne imagen.
+     */
+    async function createNewBanner() {
+      // Obtener la posición más alta actual y sumarle 1
+      const { data: existing } = await supabaseClient
+        .from('banners').select('position').order('position', { ascending: false }).limit(1);
+      const nextPos = (existing && existing.length > 0) ? (existing[0].position + 1) : 1;
+
+      showToast(`Creando Banner #${nextPos}...`, 'loading', 1500);
+      const { error } = await supabaseClient.from('banners').insert([{
+        position: nextPos,
+        title: `Nuevo Banner ${nextPos}`,
+        image_url: null,
+        link_url: null,
+        is_active: false
+      }]);
+
+      if (error) {
+        showToast('Error creando nuevo banner: ' + error.message, 'error');
+      } else {
+        showToast(`✅ Banner #${nextPos} creado. Ahora sube una imagen con "📤 Cambiar Imagen".`, 'success', 5000);
+        loadBanners();
       }
     }
 
@@ -1544,7 +1818,11 @@
       if (modal) modal.remove();
     }
 
-    // ─── CARGAR CONFIGURACIÓN ───
+    // ═══════════════════════════════════════════════════════════════════
+    //  MÓDULO CONFIGURACIÓN — §2E Documento Madre
+    //  Incluye: labels amigables, 8 nuevas claves, sección game_categories
+    // ═══════════════════════════════════════════════════════════════════
+
     async function loadConfig() {
       const { data, error } = await supabaseClient.from('site_config').select('*').order('key');
       const div = document.getElementById('configFields');
@@ -1554,85 +1832,161 @@
         return;
       }
 
+      // ── Etiquetas amigables para todas las claves (existentes + nuevas §2E)
       const friendlyLabels = {
-        'initial_load_count': '🚀 Cantidad de Slots en Carga Inicial (Primer Render)',
-        'batch_size': '🔄 Cantidad de Slots por Scroll Infinito (Batch)',
-        'hot_threshold': '🔥 Umbral de Clics para Etiqueta HOT',
-        'new_threshold_days': '✨ Días de Antigüedad para Etiqueta NUEVO',
-        'site_title': '🌐 Título Principal del Sitio (Navegador)',
-        'site_description': '📝 Subtítulo / Descripción Principal del Sitio',
-        'maintenance_mode': '🚨 Modo Mantenimiento (true / false)',
-        'pipeline_schedule': '⏰ Hora de Ejecución del Pipeline Nocturno',
-        'pipeline_telegram_enabled': '📢 Notificaciones Telegram del Pipeline',
-        'github_pat': '🔑 GitHub Personal Access Token (PAT) para Modo Manual',
-        'featured_slots_order': '⭐ Orden de Slots Destacados (IDs en JSON)'
+        // Apariencia del Sitio
+        'site_title':        '🌐 Título Principal del Sitio (Pestaña del Navegador)',
+        'site_description':  '📝 Subtítulo / Descripción Principal del Sitio',
+        'accent_color':      '🎨 Color de Acento del Tema (ej: #f5c431 para dorado)',
+        'welcome_page_enabled': '📌 Mostrar Página de Bienvenida (true / false)',
+        'maintenance_mode':  '🚨 Modo Mantenimiento — Oculta catálogo (true / false)',
+        // Catálogo de Slots
+        'initial_load_count':'🚀 Slots en Carga Inicial (primer render visible)',
+        'batch_size':        '🔄 Slots por Carga de Página (paginación del catálogo)',
+        'slots_per_page':    '📚 Slots por Página en el Catálogo Público',
+        'default_sort':      '🔢 Ordenamiento por Defecto (popular / recent / name-asc)',
+        'hot_threshold':     '🔥 Umbral de Clics para Etiqueta HOT (ej: 30000)',
+        'new_threshold_days':'✨ Días de Antigüedad para Etiqueta NUEVO (ej: 30)',
+        'game_categories':   '🎠 Categorías / Tipos de Juego (JSON Array)',
+        'featured_slots_order': '🌟 Orden de Slots Destacados — Se gestiona en la pestaña "Slots Destacados"',
+        // Banners
+        'banner_count':      '🖼️ Máximo de Banners Activos en el Carrusel (ej: 3)',
+        'carousel_speed':    '⏱️ Velocidad del Carrusel — Segundos entre slides (ej: 5)',
+        'banner_cta_text':   '💬 Texto del Botón CTA de Banners (ej: ¡Jugar Ahora!)',
+        // Pipeline
+        'pipeline_schedule':         '⏰ Hora de Ejecución del Bibliotecario Nocturno',
+        'pipeline_telegram_enabled': '📢 Notificaciones Telegram del Bibliotecario (true / false)',
+        'github_pat':        '🔑 GitHub Personal Access Token (PAT) para modo manual',
       };
 
-      div.innerHTML = data.map(c => {
-        const labelText = friendlyLabels[c.key] || c.description || c.key;
-        const isNumber = c.key.includes('count') || c.key.includes('size') || c.key.includes('threshold') || c.key.includes('days');
-        const safeVal = String(c.value || '').replace(/"/g, '&quot;');
-        const extraNote = c.key === 'featured_slots_order' 
-          ? '<span style="color:#fdd835; font-size:11px; margin-left:6px;">💡 Se gestiona visualmente con arrastrar y soltar en la pestaña "Slots Destacados".</span>' 
-          : '';
-        return `
-          <div class="form-group" style="margin-bottom:20px; background:#161b22; padding:16px; border-radius:8px; border:1px solid #30363d;">
-            <label style="display:block; font-weight:700; margin-bottom:8px; color:#fdd835; font-size:14px;">
-              ${labelText}
-              <span style="color:var(--text-muted); font-weight:normal; font-size:12px; margin-left:8px;">[ Clave DB: <code>${c.key}</code> ]</span>
-              ${extraNote}
-            </label>
-            <input type="${isNumber ? 'number' : 'text'}" 
-                   class="form-control" 
-                   style="background:#0d1117; color:#fff; border:1px solid #30363d; padding:10px; border-radius:6px; width:100%; font-size:14px;" 
-                   value="${safeVal}" 
-                   data-config-key="${c.key}">
-            <small style="color:var(--text-muted); display:block; margin-top:4px; font-size:12px;">${c.description || ''}</small>
-          </div>
-        `;
-      }).join('');
+      // Descripción corta para mostrar debajo del input
+      const fieldHints = {
+        'accent_color':      'Color hex o CSS. Ej: #f5c431 (dorado Parley), #3b82f6 (azul)',
+        'welcome_page_enabled': 'Valores: true (mostrar bienvenida) o false (ir directo al catálogo)',
+        'maintenance_mode':  'Valores: true (activar mantenimiento) o false (sitio normal)',
+        'default_sort':      'Opciones válidas: popular | recent | name-asc | name-desc',
+        'game_categories':   'JSON Array de objetos: [{"id":"video_slots","name":"Video Slots","emoji":"🎰"},...]',
+        'carousel_speed':    'En segundos. Ej: 5 = rota cada 5 segundos',
+        'banner_cta_text':   'Texto del botón sobre el banner. Ej: ¡Jugar Ahora! o Ver Oferta',
+        'github_pat':        'Token personal de GitHub con permiso \'workflow\'. Requerido para el Bibliotecario manual.',
+        'featured_slots_order': 'Array JSON de IDs de slots. Gestionado desde la pestaña Slots Destacados.',
+      };
+
+      // Claves que muestran textarea en vez de input (para JSON largo)
+      const textareaKeys = new Set(['game_categories', 'featured_slots_order']);
+
+      // Claves que son fields numéricos
+      const numberKeys = new Set(['initial_load_count','batch_size','slots_per_page','hot_threshold','new_threshold_days','banner_count','carousel_speed']);
+
+      // Agrupar keys por sección para ordenarlas visualmente
+      const sectionGroups = {
+        '🎨 Apariencia del Sitio': ['site_title','site_description','accent_color','welcome_page_enabled','maintenance_mode'],
+        '📚 Catálogo de Slots': ['initial_load_count','batch_size','slots_per_page','default_sort','hot_threshold','new_threshold_days','game_categories','featured_slots_order'],
+        '🖼️ Banners y Carrusel': ['banner_count','carousel_speed','banner_cta_text'],
+        '🤖 Pipeline / Bibliotecario': ['pipeline_schedule','pipeline_telegram_enabled','github_pat'],
+      };
+
+      // Construir un mapa de los datos actuales para acceso rápido
+      const dataMap = {};
+      data.forEach(c => { dataMap[c.key] = c; });
+
+      // Claves de la DB que no están en grupos conocidos (mostrar al final)
+      const knownKeys = new Set(Object.values(sectionGroups).flat());
+      const orphanKeys = data.filter(c => !knownKeys.has(c.key)).map(c => c.key);
+      if (orphanKeys.length > 0) {
+        sectionGroups['🔧 Otras Configuraciones'] = orphanKeys;
+      }
+
+      let html = '';
+
+      for (const [sectionName, keys] of Object.entries(sectionGroups)) {
+        const sectionItems = keys.filter(k => dataMap[k] || !knownKeys.has(k));
+        if (sectionItems.length === 0) continue;
+
+        html += `<div style="margin-bottom:28px;">
+          <h3 style="color:var(--text-muted); font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border-color);">${sectionName}</h3>`;
+
+        for (const key of sectionItems) {
+          const c = dataMap[key];
+          if (!c) continue; // Clave no existe en DB aún
+
+          const labelText = friendlyLabels[key] || c.description || key;
+          const hint = fieldHints[key] || c.description || '';
+          const safeVal = String(c.value || '').replace(/"/g, '&quot;');
+          const isReadonly = key === 'featured_slots_order'; // Solo lectura en config, se gestiona en otra pestaña
+
+          // Nota especial para claves con información adicional
+          const extraNote = key === 'featured_slots_order'
+            ? '<span style="color:#fdd835; font-size:11px; margin-left:6px;">&#128161; Gestionar en pestaña "Slots Destacados".</span>'
+            : '';
+
+          if (textareaKeys.has(key)) {
+            html += `
+              <div class="form-group" style="margin-bottom:16px; background:#161b22; padding:16px; border-radius:8px; border:1px solid #30363d;">
+                <label style="display:block; font-weight:700; margin-bottom:8px; color:#fdd835; font-size:14px;">
+                  ${labelText} ${extraNote}
+                  <span style="color:var(--text-muted); font-weight:normal; font-size:12px; margin-left:8px;">[ <code>${key}</code> ]</span>
+                </label>
+                <textarea class="form-control"
+                          style="background:#0d1117; color:#fff; border:1px solid #30363d; padding:10px; border-radius:6px; width:100%; font-size:13px; font-family:monospace; min-height:80px; resize:vertical;"
+                          data-config-key="${key}"${isReadonly ? ' readonly style="opacity:0.6; cursor:not-allowed;"' : ''}>${safeVal.replace(/&quot;/g,'"')}</textarea>
+                <small style="color:var(--text-muted); display:block; margin-top:4px; font-size:11px;">${hint}</small>
+              </div>`;
+          } else {
+            html += `
+              <div class="form-group" style="margin-bottom:16px; background:#161b22; padding:16px; border-radius:8px; border:1px solid #30363d;">
+                <label style="display:block; font-weight:700; margin-bottom:8px; color:#fdd835; font-size:14px;">
+                  ${labelText} ${extraNote}
+                  <span style="color:var(--text-muted); font-weight:normal; font-size:12px; margin-left:8px;">[ <code>${key}</code> ]</span>
+                </label>
+                <input type="${numberKeys.has(key) ? 'number' : 'text'}"
+                       class="form-control"
+                       style="background:#0d1117; color:#fff; border:1px solid #30363d; padding:10px; border-radius:6px; width:100%; font-size:14px;"
+                       value="${safeVal}"
+                       data-config-key="${key}"${isReadonly ? ' readonly style="opacity:0.6; cursor:not-allowed;"' : ''}>
+                <small style="color:var(--text-muted); display:block; margin-top:4px; font-size:11px;">${hint}</small>
+              </div>`;
+          }
+        }
+
+        html += '</div>'; // Cierre de sección
+      }
+
+      div.innerHTML = html || '<div style="color:var(--text-muted);">No hay configuraciones disponibles.</div>';
     }
 
+    /** Guarda todas las configuraciones. Usa upsert para crear nuevas claves si no existen */
     async function saveConfig(e) {
       e.preventDefault();
-      const inputs = document.querySelectorAll('[data-config-key]');
+      const inputs = document.querySelectorAll('[data-config-key]:not([readonly])');
       showToast('Guardando configuraciones del sitio...', 'loading', 2000);
-      
+
       let updatedCount = 0;
+      let errorCount = 0;
+
       for (const input of inputs) {
-        const key = input.getAttribute('data-config-key');
-        const value = input.value.trim();
-        const { error } = await supabaseClient.from('site_config').update({ value }).eq('key', key);
+        const key   = input.getAttribute('data-config-key');
+        const value = (input.tagName === 'TEXTAREA' ? input.value : input.value).trim();
+
+        // Usar upsert: crea la clave si no existe, actualiza si existe
+        const { error } = await supabaseClient.from('site_config')
+          .upsert({ key, value }, { onConflict: 'key' });
+
         if (!error) updatedCount++;
+        else { errorCount++; console.warn(`Error guardando ${key}:`, error); }
       }
-      
-      showToast(`✅ ${updatedCount} configuraciones guardadas exitosamente`, 'success');
+
+      if (errorCount > 0) {
+        showToast(`⚠️ ${updatedCount} guardadas, ${errorCount} con error. Revisa la consola.`, 'warning');
+      } else {
+        showToast(`✅ ${updatedCount} configuraciones guardadas exitosamente`, 'success');
+      }
       loadConfig();
     }
 
-    // ─── CARGAR LOGS PIPELINE (T4 FIX) ───
-    async function loadPipelineLogs() {
-      const { data, error } = await supabaseClient.from('pipeline_logs').select('*').order('executed_at', { ascending: false }).limit(20);
-      const tbody = document.getElementById('pipelineLogsTable');
-
-      if (error || !data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Sin ejecuciones registradas recientemente</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = data.map(l => `
-        <tr>
-          <td><small>${l.executed_at ? new Date(l.executed_at).toLocaleString('es-VE') : '-'}</small></td>
-          <td><span class="badge ${l.status === 'success' ? 'badge-active' : 'badge-inactive'}">${l.status}</span></td>
-          <td>${(l.slots_total || 0).toLocaleString()}</td>
-          <td>+${l.slots_added || 0}</td>
-          <td>${l.slots_modified || 0}</td>
-          <td>${l.slots_deactivated || 0}</td>
-          <td>${l.duration_seconds || 0}s</td>
-          <td><small>${l.notes || ''}</small></td>
-        </tr>
-      `).join('');
-    }
+    // ── NOTA §2D-1: La primera declaración de loadPipelineLogs fue eliminada.
+    // Solo existe UNA declaración definitiva más abajo (la completa de 11 columnas).
+    // ─────────────────────────────────────────────────────────────────────────────
 
     // ─── ACCIÓN FAST-SYNC EN VIVO (T7) ───
     async function triggerFastSync() {
@@ -1648,8 +2002,21 @@
       }, 1500);
     }
 
-    // ─── CARGAR LOGS PIPELINE (ACTUALIZADO PARA EL BIBLIOTECARIO) ───
+    // ═══════════════════════════════════════════════════════════════════
+    //  PIPELINE LOGS — Versión única y definitiva (§2D-1 Documento Madre)
+    //  - Corrige la doble declaración previa (eliminada arriba)
+    //  - Agrega auto-refresh cada 30s cuando hay status='running'
+    // ═══════════════════════════════════════════════════════════════════
+
+    let _pipelineAutoRefreshTimer = null; // Timer de auto-refresh global
+
     async function loadPipelineLogs() {
+      // Limpiar timer anterior para evitar múltiples intervalos activos
+      if (_pipelineAutoRefreshTimer) {
+        clearInterval(_pipelineAutoRefreshTimer);
+        _pipelineAutoRefreshTimer = null;
+      }
+
       const { data, error } = await supabaseClient
         .from('pipeline_logs')
         .select('*')
@@ -1659,15 +2026,15 @@
       const tbody = document.getElementById('pipelineLogsTable');
 
       if (error || !data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">Sin ejecuciones registradas</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:var(--text-muted);">Sin ejecuciones registradas</td></tr>';
         return;
       }
 
       const statusColors = {
-        'success': 'badge-active',
-        'partial_success': 'badge-hot',
-        'error': 'badge-inactive',
-        'running': 'badge-new'
+        'success':        'badge-active',
+        'partial_success':'badge-hot',
+        'error':          'badge-inactive',
+        'running':        'badge-new'
       };
 
       tbody.innerHTML = data.map(l => `
@@ -1685,6 +2052,16 @@
           <td><small style="color:var(--text-muted);">${l.backup_file ? '💾 ' + (l.backup_file.split('/').pop() || l.backup_file).substring(0,25) + '...' : '-'}</small></td>
         </tr>
       `).join('');
+
+      // §2D: Auto-refresh cada 30s si algún registro está en estado 'running'
+      const hasRunning = data.some(l => l.status === 'running');
+      const indicator  = document.getElementById('pipelineAutoRefreshIndicator');
+      if (hasRunning) {
+        if (indicator) indicator.style.display = 'flex';
+        _pipelineAutoRefreshTimer = setInterval(() => loadPipelineLogs(), 30000);
+      } else {
+        if (indicator) indicator.style.display = 'none';
+      }
     }
 
     // ─── EL BIBLIOTECARIO — MODO MANUAL (DISPARA GITHUB ACTIONS REAL) ───
@@ -1795,20 +2172,9 @@
       }
     }
 
-    // ─── LABEL AMIGABLE PARA site_config (ACTUALIZADO) ───
-    const friendlyLabels = {
-      'initial_load_count': '🚀 Cantidad de Slots en Carga Inicial (Primer Render)',
-      'batch_size': '🔄 Cantidad de Slots por Scroll Infinito (Batch)',
-      'hot_threshold': '🔥 Umbral de Clics para Etiqueta HOT',
-      'new_threshold_days': '✨ Días de Antigüedad para Etiqueta NUEVO',
-      'site_title': '🌐 Título Principal del Sitio (Navegador)',
-      'site_description': '📝 Subtítulo / Descripción Principal del Sitio',
-      'maintenance_mode': '🚨 Modo Mantenimiento (true / false)',
-      'pipeline_schedule': '⏰ Hora de Ejecución del Bibliotecario Nocturno',
-      'pipeline_telegram_enabled': '📢 Notificaciones Telegram del Bibliotecario',
-      'github_pat': '🔑 GitHub Personal Access Token (para modo manual del Bibliotecario)',
-      'featured_slots_order': '🌟 Orden de Slots Destacados (JSON Array de IDs)'
-    };
+    // ─── NOTA §3.1: Este bloque `friendlyLabels` duplicado fue eliminado.
+    // La declaración única y activa está dentro de loadConfig() más arriba.
+    // ─────────────────────────────────────────────────────────────────────
   </script>
 </body>
 </html>
