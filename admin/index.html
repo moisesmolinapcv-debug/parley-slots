@@ -1763,18 +1763,29 @@
       if (existingModal) existingModal.remove();
       document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-      // Cargar slots activos de Supabase
-      const { data: slots } = await supabaseClient.from('slots').select('external_id, name, provider_display, image_url, is_active').eq('is_active', true).order('total_clicks', { ascending: false }).limit(200);
+      // ── §Especiales Bug Fix: Carga inicial de los 200 más populares.
+      // El buscador consultará Supabase directamente (sin límite) cuando el
+      // usuario escriba, igual que en el módulo de Slots Destacados (§2A-1).
+      const { data: slots } = await supabaseClient
+        .from('slots')
+        .select('external_id, name, provider_display, image_url, is_active')
+        .eq('is_active', true)
+        .order('total_clicks', { ascending: false })
+        .limit(200);
+
       window._allPickerSlots = slots || [];
+      window._specialPickerPage = 0;      // Página actual de búsqueda en Supabase
+      window._specialPickerQuery = '';    // Query activa para "Cargar más"
+
       renderSpecialPickerList(window._allPickerSlots, col.slot_ids);
     }
 
-    function renderSpecialPickerList(slots, selectedIds) {
+    function renderSpecialPickerList(slots, selectedIds, append) {
       const container = document.getElementById('specialSlotPickerList');
       if (!container) return;
 
       const selSet = new Set(selectedIds.map(String));
-      container.innerHTML = slots.map(s => {
+      const itemsHtml = slots.map(s => {
         const isChecked = selSet.has(String(s.external_id));
         return `
           <label style="display:flex; align-items:center; gap:10px; background:${isChecked ? 'rgba(245,196,49,0.12)' : '#0d1117'}; border:1px solid ${isChecked ? 'var(--accent-gold)' : '#30363d'}; padding:10px; border-radius:8px; cursor:pointer; transition:all 0.2s;">
@@ -1783,17 +1794,79 @@
               <div style="font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.name}</div>
               <div style="font-size:11px; color:var(--text-muted);">${s.provider_display || ''} (#${s.external_id})</div>
             </div>
-          </label>
-        `;
+          </label>`;
       }).join('');
+
+      if (append) {
+        const loadMoreBtn = document.getElementById('specialPickerLoadMore');
+        if (loadMoreBtn) loadMoreBtn.remove();
+        container.insertAdjacentHTML('beforeend', itemsHtml);
+      } else {
+        container.innerHTML = itemsHtml;
+      }
     }
 
+    // ── §Especiales: Buscador corregido — consulta Supabase directamente
+    // sin límite artificial. Paginación 50/50 igual que en Slots Destacados.
+    let _specialSearchTimeout = null;
+
     function filterSpecialPickerSlots(query) {
-      if (!window._allPickerSlots) return;
-      const q = query.toLowerCase().trim();
+      clearTimeout(_specialSearchTimeout);
+      window._specialPickerPage = 0;
+      window._specialPickerQuery = query;
+
       const col = cachedSpecials.find(s => s.id === activeSpecialEditId);
-      const filtered = window._allPickerSlots.filter(s => s.name.toLowerCase().includes(q) || String(s.external_id).includes(q));
-      renderSpecialPickerList(filtered, col ? col.slot_ids : []);
+
+      // Sin query: mostrar los 200 más populares ya cargados en memoria
+      if (!query.trim()) {
+        renderSpecialPickerList(window._allPickerSlots || [], col ? col.slot_ids : []);
+        return;
+      }
+
+      _specialSearchTimeout = setTimeout(() => _execSpecialSearch(query, 0, false), 250);
+    }
+
+    async function _execSpecialSearch(query, page, append) {
+      const container = document.getElementById('specialSlotPickerList');
+      const col = cachedSpecials.find(s => s.id === activeSpecialEditId);
+      if (!container || !col) return;
+
+      if (!append) {
+        container.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:20px;">⏳ Buscando en catálogo completo...</div>';
+      }
+
+      const PAGE_SIZE = 50;
+      const from = page * PAGE_SIZE;
+      const to   = from + PAGE_SIZE - 1;
+
+      const { data, error, count } = await supabaseClient
+        .from('slots')
+        .select('external_id, name, provider_display, image_url, is_active', { count: 'exact' })
+        .eq('is_active', true)
+        .ilike('name', `%${query.trim()}%`)
+        .range(from, to)
+        .order('total_clicks', { ascending: false });
+
+      if (error || !data || data.length === 0) {
+        if (!append) {
+          container.innerHTML = '<div style="color:var(--danger); text-align:center; padding:20px;">No se encontraron slots con ese nombre.</div>';
+        }
+        return;
+      }
+
+      renderSpecialPickerList(data, col.slot_ids, append);
+
+      // Botón "Cargar más" si quedan resultados
+      const totalShown = (page + 1) * PAGE_SIZE;
+      if (count && totalShown < count) {
+        const remaining = count - totalShown;
+        container.insertAdjacentHTML('beforeend', `
+          <button id="specialPickerLoadMore"
+                  style="grid-column:1/-1; width:100%; margin-top:4px; padding:10px; background:#21262d; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:12px;"
+                  onclick="window._specialPickerPage++; _execSpecialSearch(window._specialPickerQuery, window._specialPickerPage, true)">
+            ▼ Cargar más (${remaining.toLocaleString()} restantes)
+          </button>`);
+      }
     }
 
     function toggleSpecialSlotId(slotId, isChecked) {
