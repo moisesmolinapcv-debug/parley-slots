@@ -66,7 +66,7 @@ PROVIDER_DISPLAY = {
 # --- STATS GLOBALS ---
 pipeline_stats = {
     'slots_fetched': 0, 'slots_total': 0, 'slots_added': 0, 'slots_modified': 0,
-    'slots_deactivated': 0, 'slots_reactivated': 0, 'providers_added': 0,
+    'slots_deactivated': 0, 'slots_quarantined': 0, 'slots_reactivated': 0, 'providers_added': 0,
     'status': 'running', 'error_message': None, 'backup_file': None,
     'trigger_mode': 'automatic', 'duration_seconds': 0
 }
@@ -108,6 +108,8 @@ def send_telegram(message: str):
 def send_telegram_success(elapsed: float):
     fecha = datetime.now().strftime("%d/%m/%Y")
     hora = datetime.now().strftime("%I:%M %p")
+    quarantined = pipeline_stats.get('slots_quarantined', 0)
+    truly_off   = pipeline_stats['slots_deactivated'] - quarantined
     msg = (
         f"✅ EL BIBLIOTECARIO — PARLEY.COM.VE\n"
         f"📅 {fecha} · {hora} (VET)\n"
@@ -117,7 +119,8 @@ def send_telegram_success(elapsed: float):
         f"  📚 Catálogo activo en Supabase: {pipeline_stats['slots_total']:,}\n"
         f"  ✨ Slots nuevos añadidos:         +{pipeline_stats['slots_added']}\n"
         f"  🔄 Slots actualizados:            {pipeline_stats['slots_modified']}\n"
-        f"  🗑️  Slots desactivados:             {pipeline_stats['slots_deactivated']}\n"
+        f"  🗑️  Slots desactivados (perm.):    {truly_off}\n"
+        f"  ⏳ Slots en cuarentena (3d):      {quarantined}\n"
         f"  🏢 Proveedores nuevos:             {pipeline_stats['providers_added']}\n"
         f"  ⏱️  Duración total:              {int(elapsed//60)}m {int(elapsed%60)}s\n"
         f"  💾 Backup: {Path(pipeline_stats['backup_file'] or '').name} ✅\n"
@@ -433,14 +436,28 @@ def process_data(api_slots, supabase_slots, supabase_providers, site_config):
                 update_payload['external_id'] = ext_id
                 deactivated.append(update_payload)
                 
-    # Update providers slots count for existing
+    # Contar slots activos por proveedor — comparación en minúsculas para evitar duplicados
+    # por diferencias de casing entre la tabla providers y los slugs de api_map
     prov_updates = []
+    # Construir mapa de conteos por slug (todos en minúscula)
+    slug_counts = {}
+    for v in api_map.values():
+        if v['is_active']:
+            slug = v['provider'].lower().strip()
+            slug_counts[slug] = slug_counts.get(slug, 0) + 1
+
     for prov in supabase_providers:
-        slug = prov['name']
-        count = sum(1 for v in api_map.values() if v['provider'] == slug and v['is_active'])
+        # Comparar en minúsculas para ser resiliente a diferencias de casing
+        slug_norm = prov['name'].lower().strip()
+        count = slug_counts.get(slug_norm, 0)
         if prov.get('slot_count') != count:
-            prov_updates.append({'name': slug, 'slot_count': count, 'updated_at': now_utc.isoformat()})
-            
+            prov_updates.append({'name': prov['name'], 'slot_count': count, 'updated_at': now_utc.isoformat()})
+
+    # Separar métricas: verdaderamente desactivados vs en cuarentena
+    truly_deactivated = sum(1 for p in deactivated if p.get('is_active') is False)
+    quarantined = len(deactivated) - truly_deactivated
+    pipeline_stats['slots_quarantined'] = quarantined
+
     return added, modified, deactivated, list(new_providers.values()), prov_updates
 
 def inject_data(added, modified, deactivated, new_providers, prov_updates):
