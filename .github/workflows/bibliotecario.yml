@@ -1,0 +1,115 @@
+name: El Bibliotecario — Parley.com.ve
+
+# ══════════════════════════════════════════════════════════════════
+#  EL BIBLIOTECARIO — Workflow de GitHub Actions
+#  Sincronización automática y manual del catálogo de slots.
+#  Reemplaza: daily_update.yml
+#  Doc. Madre: §9 Modos de Operación
+# ══════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    # 06:00 UTC = 02:00 AM Venezuela (VET = UTC-4)
+    - cron: '0 6 * * *'
+
+  workflow_dispatch:
+    # Permite ejecución manual desde el Admin Panel o GitHub UI
+    inputs:
+      trigger:
+        description: 'Modo de disparo (manual desde Admin Panel o GitHub UI)'
+        required: false
+        default: 'manual'
+        type: string
+
+jobs:
+  bibliotecario:
+    name: Sincronización El Bibliotecario
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Para hacer commit y push de archivos estáticos
+
+    # Timeout generoso: 45 minutos (extracción completa + procesamiento)
+    # Doc. Madre §9.1: Timeout recomendado 45 minutos
+    timeout-minutes: 45
+
+    steps:
+      # ── PASO 1: Checkout del repositorio ──────────────────────────
+      - name: 📥 Checkout del repositorio
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      # ── PASO 2: Configurar Python 3.11 ────────────────────────────
+      - name: 🐍 Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # ── PASO 3: Instalar dependencias ─────────────────────────────
+      - name: 📦 Instalar dependencias
+        run: pip install requests
+
+      # ── PASO 4: Ejecutar El Bibliotecario ─────────────────────────
+      - name: 📚 Ejecutar El Bibliotecario
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          TELEGRAM_BOT_TOKEN:   ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:     ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Detectar modo de ejecución (auto vs manual)
+          TRIGGER_MODE:         ${{ github.event_name == 'workflow_dispatch' && inputs.trigger || 'automatic' }}
+        run: |
+          echo "════════════════════════════════════════"
+          echo "  EL BIBLIOTECARIO — PARLEY.COM.VE"
+          echo "  Modo: $TRIGGER_MODE"
+          echo "  Inicio: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "════════════════════════════════════════"
+          python pipeline/bibliotecario.py --mode=$TRIGGER_MODE
+
+      # ── PASO 5: Verificar si hay cambios en archivos estáticos ────
+      - name: 🔍 Verificar cambios en archivos estáticos
+        id: check_changes
+        run: |
+          git diff --quiet data/slots.json data/slots.js data/slots_initial.js \
+            || echo "changed=true" >> $GITHUB_OUTPUT
+
+      # ── PASO 6: Commit y push de archivos estáticos actualizados ──
+      - name: 💾 Commit de datos actualizados
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name  "El Bibliotecario — Parley Bot"
+          git config user.email "bibliotecario@parley.com.ve"
+          git add data/slots.json data/slots.js data/slots_initial.js
+          MODO="${{ github.event_name == 'workflow_dispatch' && 'manual' || 'auto' }}"
+          git commit -m "bibliotecario($MODO): actualización catálogo $(date +'%Y-%m-%d')"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+
+      # ── PASO 7: Notificación de éxito (si hubo cambios) ──────────
+      - name: ✅ Sin cambios detectados
+        if: steps.check_changes.outputs.changed != 'true'
+        run: echo "No se detectaron cambios en el catálogo. No se realizó commit."
+
+      # ── PASO 8: Notificar en caso de fallo crítico ────────────────
+      # (El script de Python ya envía Telegram si falla internamente)
+      # Este step captura fallos del workflow mismo (ej: Python crashea sin catch)
+      - name: 🚨 Notificar fallo crítico del Workflow
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MODO="${{ github.event_name == 'workflow_dispatch' && 'manual' || 'automático' }}"
+          MENSAJE="🚨 <b>EL BIBLIOTECARIO — FALLO CRÍTICO</b>%0A"
+          MENSAJE+="━━━━━━━━━━━━━━━━━━━━━━━━%0A"
+          MENSAJE+="❌ El workflow falló a nivel de GitHub Actions%0A"
+          MENSAJE+="🎯 Modo: $MODO%0A"
+          MENSAJE+="📅 $(date -u '+%Y-%m-%d %H:%M UTC')%0A"
+          MENSAJE+="🔗 Ver logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          
+          curl -s -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=${MENSAJE}" \
+            -d "parse_mode=HTML"

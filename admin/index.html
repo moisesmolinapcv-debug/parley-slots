@@ -734,29 +734,60 @@
         </div>
       </section>
 
-      <!-- TAB 6: PIPELINE LOGS -->
+      <!-- TAB 6: EL BIBLIOTECARIO -->
       <section id="tab-pipeline" class="tab-content">
-        <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
-          <h1 class="page-title">Historial de Ejecuciones del Pipeline v3.0</h1>
-          <button id="triggerPipelineBtn" class="btn btn-gold" style="width:auto; background: linear-gradient(135deg, #00c853 0%, #1b5e20 100%); color:#fff; font-weight:800;" onclick="triggerManualPipelineV3()">🚀 EJECUTAR REFINADOR DE DATA COMPLETO</button>
+        <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h1 class="page-title">📚 El Bibliotecario — Historial de Ejecuciones</h1>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">
+              Sincronización automática: diariamente a las 02:00 AM (VET). El modo manual dispara el workflow real en GitHub Actions.
+            </p>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="refreshLogsBtn" class="btn" style="width:auto; background:#21262d; color:#fff;" onclick="loadPipelineLogs()">
+              🔄 Refrescar Logs
+            </button>
+            <button id="triggerPipelineBtn" class="btn btn-gold" style="width:auto; background: linear-gradient(135deg, #00c853 0%, #1b5e20 100%); color:#fff; font-weight:800;" onclick="triggerBibliotecario()">
+              📚 EJECUTAR EL BIBLIOTECARIO
+            </button>
+          </div>
         </div>
+
+        <!-- Estado en tiempo real del Bibliotecario -->
+        <div id="bibliotecarioStatusPanel" style="display:none; background:#131722; border:1px solid var(--accent-gold); border-radius:12px; padding:20px; margin-bottom:20px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div id="bibliotecarioStatusDot" style="width:12px; height:12px; border-radius:50%; background:#f5c431; animation: pulse 1.5s infinite;"></div>
+            <div>
+              <div style="font-weight:700; font-size:14px;" id="bibliotecarioStatusText">Iniciando El Bibliotecario en GitHub Actions...</div>
+              <div style="color:var(--text-muted); font-size:12px; margin-top:2px;">El proceso tomará aproximadamente 10-15 minutos. Recibirás notificación en Telegram al finalizar.</div>
+            </div>
+          </div>
+          <a id="bibliotecarioActionsLink" href="https://github.com/moisesmolinapcv-debug/parley-slots/actions" target="_blank"
+             style="display:inline-block; margin-top:12px; padding:6px 14px; background:#21262d; border-radius:6px; color:#58a6ff; font-size:12px; text-decoration:none;">
+            👁️ Ver progreso en GitHub Actions →
+          </a>
+        </div>
+
         <div class="card-panel">
-          <div class="table-container">
+          <div style="overflow-x:auto;">
             <table>
               <thead>
                 <tr>
                   <th>Fecha/Hora</th>
                   <th>Status</th>
-                  <th>Total Slots</th>
+                  <th>Extraídos</th>
+                  <th>Total Activos</th>
                   <th>Nuevos</th>
                   <th>Modificados</th>
                   <th>Desactivados</th>
+                  <th>Proveedores</th>
                   <th>Duración</th>
-                  <th>Notas</th>
+                  <th>Modo</th>
+                  <th>Backup</th>
                 </tr>
               </thead>
               <tbody id="pipelineLogsTable">
-                <tr><td colspan="8" style="text-align:center;">Cargando historial de logs...</td></tr>
+                <tr><td colspan="11" style="text-align:center;">Cargando historial de El Bibliotecario...</td></tr>
               </tbody>
             </table>
           </div>
@@ -1346,40 +1377,177 @@
     async function triggerFastSync() {
       const btn = document.getElementById('fastSyncBtn');
       if (btn) btn.innerText = '⚡ Sincronizando...';
-      showToast('⚡ Ejecutando Sincronización Rápida Fast-Track (~2s)...', 'loading', 2500);
+      showToast('⚡ Actualizando datos desde Supabase...', 'loading', 2500);
 
       await reloadAllData();
 
       setTimeout(() => {
         if (btn) btn.innerText = '⚡ Sincronizar en Vivo (~2s)';
-        showToast('✅ Catálogo Sincronizado en Vivo exitosamente en ~1.5s', 'success', 3500);
+        showToast('✅ Panel actualizado exitosamente', 'success', 3500);
       }, 1500);
     }
 
-    // ─── ACCIÓN PIPELINE REFINADOR MANUAL (B4) ───
-    async function triggerManualPipelineV3() {
-      const btn = document.getElementById('triggerPipelineBtn');
-      if (btn) btn.innerText = '⏳ Iniciando Refinador...';
-      showToast('🚀 Solicitando ejecución del Refinador de Data v3.0 (B1-B5)...', 'loading', 4000);
+    // ─── CARGAR LOGS PIPELINE (ACTUALIZADO PARA EL BIBLIOTECARIO) ───
+    async function loadPipelineLogs() {
+      const { data, error } = await supabaseClient
+        .from('pipeline_logs')
+        .select('*')
+        .order('executed_at', { ascending: false })
+        .limit(20);
 
-      // Registrar inicio de orden manual en pipeline_logs
-      const { error } = await supabaseClient.from('pipeline_logs').insert([{
-        executed_at: new Date().toISOString(),
-        status: 'running',
-        notes: 'Invocación manual iniciada desde el Panel de Control Admin (v3.0 Engine)'
-      }]);
+      const tbody = document.getElementById('pipelineLogsTable');
 
-      if (!error) {
-        showToast('✅ Solicitud de refinación enviada. El Pipeline v3.0 está procesando en segundo plano.', 'success', 5000);
-        setTimeout(() => loadPipelineLogs(), 2000);
-      } else {
-        showToast('⚠️ Advertencia: No se pudo registrar la solicitud: ' + error.message, 'warning');
+      if (error || !data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">Sin ejecuciones registradas</td></tr>';
+        return;
       }
 
-      setTimeout(() => {
-        if (btn) btn.innerText = '🚀 EJECUTAR REFINADOR DE DATA COMPLETO';
-      }, 3000);
+      const statusColors = {
+        'success': 'badge-active',
+        'partial_success': 'badge-hot',
+        'error': 'badge-inactive',
+        'running': 'badge-new'
+      };
+
+      tbody.innerHTML = data.map(l => `
+        <tr>
+          <td><small>${l.executed_at ? new Date(l.executed_at).toLocaleString('es-VE') : '-'}</small></td>
+          <td><span class="badge ${statusColors[l.status] || 'badge-new'}">${l.status || '-'}</span></td>
+          <td>${(l.slots_fetched || 0).toLocaleString()}</td>
+          <td>${(l.slots_total || 0).toLocaleString()}</td>
+          <td style="color:#3fb950;">+${l.slots_added || 0}</td>
+          <td>${l.slots_modified || 0}</td>
+          <td style="color:${(l.slots_deactivated || 0) > 0 ? '#f85149' : 'inherit'}">${l.slots_deactivated || 0}</td>
+          <td style="color:#58a6ff;">+${l.providers_added || 0}</td>
+          <td>${l.duration_seconds || 0}s</td>
+          <td><span class="badge" style="background:#21262d; color:#8b949e;">${l.trigger_mode || 'auto'}</span></td>
+          <td><small style="color:var(--text-muted);">${l.backup_file ? '💾 ' + (l.backup_file.split('/').pop() || l.backup_file).substring(0,25) + '...' : '-'}</small></td>
+        </tr>
+      `).join('');
     }
+
+    // ─── EL BIBLIOTECARIO — MODO MANUAL (DISPARA GITHUB ACTIONS REAL) ───
+    // Doc. Madre §9.2: El Admin Panel llama a la API REST de GitHub
+    // para disparar el workflow_dispatch real. NO simula nada.
+    async function triggerBibliotecario() {
+      const btn = document.getElementById('triggerPipelineBtn');
+      const statusPanel = document.getElementById('bibliotecarioStatusPanel');
+
+      // 1. Obtener el GitHub PAT desde site_config de Supabase
+      let githubPat = null;
+      try {
+        const { data: configData } = await supabaseClient
+          .from('site_config')
+          .select('value')
+          .eq('key', 'github_pat')
+          .single();
+        if (configData && configData.value) {
+          githubPat = configData.value.trim();
+        }
+      } catch (e) {
+        // ignorar
+      }
+
+      if (!githubPat) {
+        showToast('⚠️ No hay GitHub PAT configurado. Ve a Configuración y añade la clave "github_pat".', 'error', 6000);
+        return;
+      }
+
+      // 2. Confirmar la acción
+      const confirmed = confirm(
+        '📚 ¿Ejecutar El Bibliotecario ahora?\n\n' +
+        '• Se disparará el workflow real en GitHub Actions\n' +
+        '• El proceso tomará ~10-15 minutos\n' +
+        '• Recibirás una notificación en Telegram al finalizar\n\n' +
+        '¿Confirmar ejecución manual?'
+      );
+      if (!confirmed) return;
+
+      // 3. Feedback visual inmediato
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = '⏳ Disparando workflow...';
+      }
+      showToast('📚 Enviando orden a GitHub Actions...', 'loading', 0);
+
+      // 4. Llamada a la API REST de GitHub para disparar el workflow
+      const GITHUB_REPO = 'moisesmolinapcv-debug/parley-slots';
+      const WORKFLOW_FILE = 'bibliotecario.yml';
+      const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`;
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `token ${githubPat}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ref: 'main',
+            inputs: { trigger: 'manual' }
+          })
+        });
+
+        if (response.status === 204) {
+          // 204 No Content = éxito en GitHub API
+          showToast('✅ ¡El Bibliotecario está corriendo en GitHub Actions! (~10-15 min)', 'success', 8000);
+
+          // Mostrar panel de estado
+          if (statusPanel) statusPanel.style.display = 'block';
+          document.getElementById('bibliotecarioStatusText').innerText =
+            '✅ Workflow disparado exitosamente — El Bibliotecario está procesando en GitHub Actions';
+          document.getElementById('bibliotecarioStatusDot').style.background = '#3fb950';
+
+          // Registrar intento en pipeline_logs
+          await supabaseClient.from('pipeline_logs').insert([{
+            executed_at: new Date().toISOString(),
+            status: 'running',
+            trigger_mode: 'manual',
+            notes: 'Invocación manual desde Admin Panel — El Bibliotecario v1.0'
+          }]);
+
+          // Refrescar logs después de 3s
+          setTimeout(() => loadPipelineLogs(), 3000);
+
+        } else if (response.status === 401) {
+          showToast('❌ GitHub PAT inválido o expirado. Actualiza la clave en Configuración.', 'error', 7000);
+        } else if (response.status === 404) {
+          showToast('❌ Workflow no encontrado. Verifica que bibliotecario.yml exista en el repo.', 'error', 7000);
+        } else if (response.status === 422) {
+          showToast('❌ Error 422: Verifica que el PAT tenga permisos de "workflow" y que el branch sea "main".', 'error', 7000);
+        } else {
+          const errText = await response.text();
+          showToast(`❌ Error GitHub API (${response.status}): ${errText.substring(0, 100)}`, 'error', 7000);
+        }
+
+      } catch (netError) {
+        showToast('❌ Error de red al contactar GitHub API: ' + netError.message, 'error', 6000);
+      } finally {
+        // Restaurar botón después de 5s
+        setTimeout(() => {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerText = '📚 EJECUTAR EL BIBLIOTECARIO';
+          }
+        }, 5000);
+      }
+    }
+
+    // ─── LABEL AMIGABLE PARA site_config (ACTUALIZADO) ───
+    const friendlyLabels = {
+      'initial_load_count': '🚀 Cantidad de Slots en Carga Inicial (Primer Render)',
+      'batch_size': '🔄 Cantidad de Slots por Scroll Infinito (Batch)',
+      'hot_threshold': '🔥 Umbral de Clics para Etiqueta HOT',
+      'new_threshold_days': '✨ Días de Antigüedad para Etiqueta NUEVO',
+      'site_title': '🌐 Título Principal del Sitio (Navegador)',
+      'site_description': '📝 Subtítulo / Descripción Principal del Sitio',
+      'maintenance_mode': '🚨 Modo Mantenimiento (true / false)',
+      'pipeline_schedule': '⏰ Hora de Ejecución del Bibliotecario Nocturno',
+      'pipeline_telegram_enabled': '📢 Notificaciones Telegram del Bibliotecario',
+      'github_pat': '🔑 GitHub Personal Access Token (para modo manual del Bibliotecario)',
+      'featured_slots_order': '🌟 Orden de Slots Destacados (JSON Array de IDs)'
+    };
   </script>
 </body>
 </html>
