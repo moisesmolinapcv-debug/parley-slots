@@ -326,6 +326,48 @@ input,select{font:inherit;color:inherit}
   font-weight: 700;
   color: var(--text-2);
   user-select: none;
+}
+.dd-option:hover{
+  background: rgba(253,216,53,0.14);
+  color: #fff;
+  text-shadow: 0 0 10px rgba(253,216,53,0.6);
+  transform: translateX(4px);
+}
+.dd-option.selected{
+  background: linear-gradient(90deg, rgba(253,216,53,0.22) 0%, rgba(229,28,35,0.12) 100%);
+  color: #fdd835;
+  border-left: 3px solid #fdd835;
+  font-weight: 800;
+}
+.dd-option input[type="checkbox"]{
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid rgba(253,216,53,0.5);
+  border-radius: 4px;
+  background: rgba(0,0,0,0.4);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: 0.2s ease;
+}
+.dd-option input[type="checkbox"]:checked{
+  background: #fdd835;
+  border-color: #fdd835;
+  box-shadow: 0 0 8px var(--gold-glow);
+}
+.dd-option input[type="checkbox"]:checked::after{
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  color: #030611;
+  font-size: 11px;
+  font-weight: 900;
+}
+
 /* Submenu navigation & transitions */
 .dd-submenu-enter{animation:submenuFadeIn 0.22s cubic-bezier(0.16,1,0.3,1) forwards}
 @keyframes submenuFadeIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
