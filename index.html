@@ -94,39 +94,13 @@ input,select{font:inherit;color:inherit}
 .logo-brand-yellow{color:#fdd835;text-shadow:0 0 14px rgba(253,216,53,0.7)}
 .logo-brand-red{color:#e51c23;text-shadow:0 0 14px rgba(229,28,35,0.7)}
 
-/* ── HERO BANNER TOP (OPCIÓN B: HEADER CON LOGO FLOTANTE) ── */
+/* ── HERO BANNER TOP ───────────────────────────────────────── */
 .hero-carousel-wrap {
   max-width: var(--max-w);
   margin: 10px auto 20px;
   padding: 0 16px;
   position: relative;
   z-index: 40;
-}
-.hero-brand-badge {
-  position: absolute;
-  top: 14px;
-  left: 28px;
-  z-index: 25;
-  display: flex;
-  align-items: center;
-  padding: 6px 14px;
-  background: rgba(3, 6, 17, 0.78);
-  border: 1.5px solid rgba(253, 216, 53, 0.4);
-  border-radius: 999px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.8), 0 0 15px rgba(253, 216, 53, 0.25);
-  transition: all 0.3s ease;
-}
-.hero-brand-badge:hover {
-  border-color: #fdd835;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.9), 0 0 25px var(--gold-glow);
-  transform: translateY(-2px);
-}
-.hero-brand-logo {
-  height: 36px;
-  width: auto;
-  filter: drop-shadow(0 0 10px rgba(253, 216, 53, 0.6));
 }
 .carousel-slide-link {
   display: block;
@@ -413,16 +387,15 @@ input,select{font:inherit;color:inherit}
 .carousel-arrow.next{right:14px}
 
 /* ══════════════════════════════════════════════════════════════
-   CARRUSEL DE SLOTS DESTACADOS — SIMETRÍA CENTRAL 3D & BLUR v3.1
+   CARRUSEL DE SLOTS DESTACADOS — DESPLAZAMIENTO LIBRE (TOUCH & DRAG)
    ══════════════════════════════════════════════════════════════ */
 .featured-slots-section {
   width: 100%;
-  max-width: 100vw;
+  max-width: var(--max-w);
   margin: 10px auto 14px;
-  padding: 0;
+  padding: 0 16px;
   position: relative;
   z-index: 85;
-  overflow: hidden;
 }
 
 .featured-slots-header {
@@ -451,32 +424,32 @@ input,select{font:inherit;color:inherit}
   text-shadow: 0 0 10px rgba(253,216,53,0.6);
 }
 
-.featured-carousel-stage {
-  position: relative;
+.featured-free-scroll-container {
   width: 100%;
-  max-width: 100vw;
-  overflow: hidden;
-  padding: 10px 0;
-  perspective: 1000px;
-  touch-action: pan-y;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  cursor: grab;
+  padding: 8px 4px 12px;
   user-select: none;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+}
+.featured-free-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+.featured-free-scroll-container.is-dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
 }
 
-.featured-carousel-track {
-  display: flex;
+.featured-free-track {
+  display: inline-flex;
+  gap: 14px;
   align-items: center;
-  transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1);
-  will-change: transform;
-  gap: 12px;
-  position: relative;
-  margin: 0;
-  left: 0;
+  white-space: nowrap;
 }
 
-/* TARJETAS DESTACADAS EN DESKTOP (PLANAS, NÍTIDAS, 100% ACCESIBLES) */
 .featured-card {
   flex: 0 0 120px;
   width: 120px;
@@ -489,11 +462,7 @@ input,select{font:inherit;color:inherit}
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(0,0,0,0.7);
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-  will-change: transform;
-  filter: none;
-  opacity: 1;
-  transform: none;
-  z-index: 2;
+  white-space: normal;
 }
 
 .featured-card:hover {
@@ -501,12 +470,6 @@ input,select{font:inherit;color:inherit}
   border-color: #fdd835;
   box-shadow: 0 0 20px var(--gold-glow), 0 10px 25px rgba(0,0,0,0.9);
   z-index: 6;
-}
-
-.featured-card.active-center {
-  border-color: #fdd835;
-  box-shadow: 0 0 20px var(--gold-glow), 0 8px 24px rgba(0,0,0,0.85);
-  cursor: pointer;
 }
 
 .featured-card-img-wrap {
@@ -525,7 +488,7 @@ input,select{font:inherit;color:inherit}
   transition: transform 0.4s ease;
 }
 
-.featured-card.active-center:hover .featured-card-img {
+.featured-card:hover .featured-card-img {
   transform: scale(1.06);
 }
 
@@ -566,7 +529,7 @@ input,select{font:inherit;color:inherit}
   line-height: 1.1;
 }
 
-.featured-card.active-center .featured-card-title {
+.featured-card:hover .featured-card-title {
   color: #fdd835;
   text-shadow: 0 0 8px rgba(253,216,53,0.5);
 }
@@ -611,73 +574,11 @@ input,select{font:inherit;color:inherit}
   background: linear-gradient(135deg, #fff59d 0%, #fdd835 100%);
 }
 
-.featured-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(8, 14, 28, 0.88);
-  border: 1.5px solid rgba(253, 216, 53, 0.5);
-  color: #fdd835;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 20;
-  transition: all 0.25s ease;
-  backdrop-filter: blur(8px);
-}
-
-.featured-arrow:hover {
-  background: rgba(253, 216, 53, 0.25);
-  color: #fff;
-  border-color: #fdd835;
-  transform: translateY(-50%) scale(1.1);
-  box-shadow: 0 0 14px var(--gold-glow);
-}
-
-.featured-arrow.prev { left: 6px; }
-.featured-arrow.next { right: 6px; }
-
-.featured-dots {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 6px;
-  margin: 8px auto 0;
-  width: 100%;
-  text-align: center;
-}
-
-.featured-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.featured-dot.active {
-  width: 18px;
-  border-radius: 999px;
-  background: #fdd835;
-  box-shadow: 0 0 8px var(--gold-glow);
-}
-
 @media (max-width: 768px) {
   .featured-card {
     flex: 0 0 100px;
     width: 100px;
     height: 135px;
-  }
-  .featured-arrow {
-    width: 28px;
-    height: 28px;
-    font-size: 0.85rem;
   }
 }
 
@@ -1616,53 +1517,54 @@ input,select{font:inherit;color:inherit}
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
-     1. HERO CAROUSEL HEADER — Banners Interactivos con Logo Flotante (Opción B)
+     1. HERO CAROUSEL HEADER — Banners Interactivos
      ══════════════════════════════════════════════════════════════ -->
 <header class="hero-carousel-wrap" id="heroCarouselWrap">
   <div class="hero-carousel" id="heroCarousel">
-    
-    <!-- Logo Parley Flotante como Marca de Agua / Insignia VIP (Opción B) -->
-    <div class="hero-brand-badge">
-      <a href="#" class="hero-brand-link" aria-label="Inicio Parley Slots">
-        <img src="ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png" alt="Parley.com.ve" class="hero-brand-logo"
-             onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex'">
-        <div class="logo-fallback-brand" style="display:none">
-          <span class="logo-brand-yellow">PaRleY</span><span class="logo-brand-red">.com.ve</span>
-        </div>
-      </a>
-    </div>
 
     <div class="carousel-slides" id="carouselSlides">
 
       <!-- Banner 1 -->
       <div class="carousel-slide">
-        <img class="carousel-banner-img"
-             src="BANNER/banner_1_desktop_hd.webp"
-             alt="Promociones Exclusivas Parley"
-             loading="eager"
-             fetchpriority="high"
-             decoding="async"
-             onerror="this.src='BANNER/public.avif'">
+        <a href="#" class="carousel-slide-link" title="Promociones Exclusivas Parley">
+          <picture>
+            <source media="(max-width: 600px)" srcset="BANNER/banner_1_mobile_hd.webp" type="image/webp">
+            <img class="carousel-banner-img"
+                 src="BANNER/banner_1_desktop_hd.webp"
+                 alt="Promociones Exclusivas Parley"
+                 loading="eager"
+                 fetchpriority="high"
+                 decoding="async"
+                 onerror="this.src='BANNER/public.avif'">
+          </picture>
+        </a>
       </div>
 
       <!-- Banner 2 -->
       <div class="carousel-slide">
-        <img class="carousel-banner-img"
-             src="BANNER/banner_2_desktop_hd.webp"
-             alt="Casino Premium Parley"
-             loading="lazy"
-             decoding="async"
-             onerror="this.src='BANNER/public.avif'">
+        <a href="#" class="carousel-slide-link" title="Casino Premium Parley">
+          <picture>
+            <source media="(max-width: 600px)" srcset="BANNER/banner_2_mobile_hd.webp" type="image/webp">
+            <img class="carousel-banner-img"
+                 src="BANNER/banner_2_desktop_hd.webp"
+                 alt="Casino Premium Parley"
+                 loading="lazy"
+                 decoding="async"
+                 onerror="this.src='BANNER/public.avif'">
+          </picture>
+        </a>
       </div>
 
       <!-- Banner 3 -->
       <div class="carousel-slide">
-        <img class="carousel-banner-img"
-             src="BANNER/public%20(1).avif"
-             alt="Slots Exclusivos Parley"
-             loading="lazy"
-             decoding="async"
-             onerror="this.src='BANNER/public.avif'">
+        <a href="#" class="carousel-slide-link" title="Slots Exclusivos Parley">
+          <img class="carousel-banner-img"
+               src="BANNER/public%20(1).avif"
+               alt="Slots Exclusivos Parley"
+               loading="lazy"
+               decoding="async"
+               onerror="this.src='BANNER/public.avif'">
+        </a>
       </div>
 
     </div>
@@ -1684,20 +1586,17 @@ input,select{font:inherit;color:inherit}
 </header>
 
 <!-- ══════════════════════════════════════════════════════════════
-     2. CARRUSEL DE SLOTS DESTACADOS — DESKTOP NÍTIDO & FLUIDO
+     2. CARRUSEL DE SLOTS DESTACADOS — DESPLAZAMIENTO LIBRE (TOUCH & DRAG)
      ══════════════════════════════════════════════════════════════ -->
 <section class="featured-slots-section" id="featuredSlotsSection">
   <div class="featured-slots-header">
     <div class="featured-badge-title">★ SLOTS DESTACADOS ★</div>
   </div>
-  <div class="featured-carousel-stage" id="featuredCarouselStage">
-    <button class="featured-arrow prev" id="featuredPrevBtn" aria-label="Anterior">❮</button>
-    <div class="featured-carousel-track" id="featuredTrack">
+  <div class="featured-free-scroll-container" id="featuredScrollContainer">
+    <div class="featured-free-track" id="featuredTrack">
       <!-- Tarjetas renderizadas dinámicamente en JS -->
     </div>
-    <button class="featured-arrow next" id="featuredNextBtn" aria-label="Siguiente">❯</button>
   </div>
-  <div class="featured-dots" id="featuredDots"></div>
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════
@@ -2188,6 +2087,56 @@ input,select{font:inherit;color:inherit}
 
   let liveFeaturedSlotsOrder = null;
 
+  /* ── Motor de Clasificación Instantáneo en Tiempo Real (12 Tipos y 13 Temáticas) ── */
+  const THEME_KEYWORDS = {
+    'T01_Animales': ['animal', 'wolf', 'lobo', 'dog', 'perro', 'cat', 'gato', 'lion', 'leon', 'tiger', 'tigre', 'bear', 'oso', 'panda', 'bull', 'toro', 'buffalo', 'bufalo', 'rhino', 'rinoceronte', 'elephant', 'elefante', 'bird', 'pajaro', 'eagle', 'aguila', 'falcon', 'halcon', 'fish', 'pez', 'shark', 'tiburon', 'dolphin', 'delfin', 'whale', 'ballena', 'frog', 'rana', 'snake', 'serpiente', 'safari', 'wild', 'jungle', 'selva', 'forest', 'bosque', 'zoo', 'gorilla', 'monkey', 'mono', 'pig', 'cerdo', 'rabbit', 'conejo', 'sheep', 'oveja', 'horse', 'caballo', 'deer', 'ciervo', 'owl', 'lechuza', 'fox', 'zorro', 'dino', 'dinosaur'],
+    'T02_Mitologia': ['god', 'dios', 'zeus', 'thor', 'odin', 'poseidon', 'hades', 'apollo', 'hercules', 'olympus', 'olimpo', 'valhalla', 'asgard', 'ra', 'anubis', 'osiris', 'horus', 'egypt', 'egipto', 'pharaoh', 'faraon', 'cleopatra', 'sphinx', 'esfinge', 'myth', 'mitologia', 'titan', 'viking', 'vikingo', 'athena', 'loki', 'freya', 'scarab', 'escarabajo', 'pyramid', 'piramide', 'nile', 'nilo', 'atlantis', 'norse', 'greek', 'anunnaki'],
+    'T03_Aventura': ['quest', 'treasure', 'tesoro', 'gold', 'oro', 'mine', 'mina', 'miner', 'minero', 'bonanza', 'pirate', 'pirata', 'island', 'isla', 'explorer', 'explorador', 'adventure', 'aventura', 'tomb', 'tumba', 'relic', 'reliquia', 'lost', 'perdido', 'aztec', 'azteca', 'maya', 'incas', 'inca', 'temple', 'templo', 'journey', 'viaje', 'hunt', 'caza', 'dead', 'book of', 'expedition', 'expedicion', 'wild west', 'cowboy', 'sheriff', 'western', 'bandit', 'bandido', 'outlaw', 'saloon'],
+    'T04_Clasicos': ['fruit', 'fruta', 'cherry', 'cereza', 'lemon', 'limon', 'plum', 'ciruela', 'orange', 'naranja', 'watermelon', 'sandia', '777', 'seven', 'sevens', 'siete', 'bar', 'bell', 'campana', 'clover', 'trebol', 'classic', 'clasico', 'retro', 'hot', 'joker', 'diamond', 'diamante', 'star', 'estrella', 'dice', 'dados', 'burning', 'sizzle', 'blazing', 'respin', 'deluxe', 'crown', 'corona'],
+    'T05_Magia': ['magic', 'magia', 'magico', 'wizard', 'mago', 'witch', 'bruja', 'sorcerer', 'hechicero', 'spell', 'hechizo', 'potion', 'pocion', 'crystal', 'cristal', 'alchemist', 'alquimista', 'genie', 'genio', 'wishing', 'deseo', 'lamp', 'lampara', 'fairy', 'hada', 'enchanted', 'encantado', 'mystery', 'misterio', 'mystic', 'mistico', 'fortune', 'fortuna', 'oracle', 'oraculo', 'voodoo', 'tarot', 'alchemy', 'charm', 'amuleto', 'illusion', 'ilusion', 'arcane', 'arcano'],
+    'T06_Festividades': ['xmas', 'christmas', 'navidad', 'santa', 'noel', 'easter', 'pascua', 'halloween', 'spooky', 'pumpkin', 'calabaza', 'carnival', 'carnaval', 'fiesta', 'party', 'festival', 'new year', 'ano nuevo', 'oktoberfest', 'claus', 'carol', 'holiday', 'fireworks', 'fuegos', 'celebration', 'celebracion', 'san valentin', 'valentine', 'patricks', 'patrick'],
+    'T07_Lujo': ['diamond', 'diamante', 'vip', 'luxury', 'lujo', 'wealth', 'riqueza', 'rich', 'rico', 'riches', 'millionaire', 'millonario', 'cash', 'efectivo', 'money', 'dinero', 'bank', 'banco', 'vault', 'boveda', 'coin', 'moneda', 'gold', 'oro', 'jewel', 'joya', 'gem', 'gema', 'crown', 'corona', 'royalty', 'realeza', 'royal', 'king', 'rey', 'queen', 'reina', 'emperor', 'emperador', 'palace', 'palacio', 'monopoly', 'billionaire', 'jackpot', 'prestige', 'yacht', 'mansion'],
+    'T08_Deportes': ['football', 'futbol', 'soccer', 'basket', 'baloncesto', 'basketball', 'boxing', 'boxeo', 'box', 'mma', 'racing', 'carreras', 'race', 'car', 'auto', 'coche', 'speed', 'velocidad', 'turbo', 'motor', 'derby', 'champion', 'campeon', 'cup', 'copa', 'league', 'liga', 'tennis', 'tenis', 'golf', 'hockey', 'fight', 'lucha', 'punch', 'knockout', 'rugby', 'athlete', 'atleta', 'stadium', 'estadio', 'goal', 'gol'],
+    'T09_Fantasia': ['fantasy', 'fantasia', 'dragon', 'unicorn', 'unicornio', 'elf', 'elfo', 'fairy', 'hada', 'goblin', 'duende', 'orc', 'orco', 'knight', 'caballero', 'castle', 'castillo', 'sword', 'espada', 'kingdom', 'reino', 'realm', 'wonderland', 'maravillas', 'portal', 'monster', 'monstruo', 'alien', 'extraterrestre', 'space', 'espacio', 'galaxy', 'galaxia', 'medieval', 'dungeon', 'blade', 'valkyrie'],
+    'T10_Terror': ['horror', 'terror', 'zombie', 'vampire', 'vampiro', 'dracula', 'frankenstein', 'mummy', 'momia', 'ghost', 'fantasma', 'haunted', 'embrujado', 'blood', 'sangre', 'curse', 'maldicion', 'evil', 'mal', 'dark', 'oscuro', 'shadow', 'sombra', 'nightmare', 'pesadilla', 'dead', 'muerto', 'grave', 'tumba', 'skull', 'calavera', 'death', 'muerte', 'fear', 'miedo', 'killer', 'asesino', 'hell', 'infierno', 'demon', 'demonio'],
+    'T11_Antiguedad': ['rome', 'roma', 'roman', 'romano', 'caesar', 'cesar', 'gladiator', 'gladiador', 'sparta', 'esparta', 'greek', 'griego', 'greece', 'grecia', 'trojan', 'troyano', 'persia', 'persa', 'samurai', 'ninja', 'shogun', 'dynasty', 'dinastia', 'emperor', 'emperador', 'empire', 'imperio', 'ancient', 'antiguo', 'history', 'historia', 'colosseum', 'coliseo', 'legion', 'legionario', 'warrior', 'guerrero', 'olympia', 'orient', 'china', 'oriental'],
+    'T12_Anime_Pop': ['anime', 'manga', 'kawaii', 'tokyo', 'cyber', 'cyberpunk', 'retro', 'arcade', 'disco', 'rock', 'music', 'musica', 'band', 'banda', 'neon', 'pop', 'superhero', 'superheroe', 'comic', 'cinema', 'cine', 'movie', 'pelicula', 'superstar', 'synth', 'robot', 'future', 'futuro', 'club', 'dj', 'kpop', 'otaku', 'cosplay'],
+    'T13_Comida': ['candy', 'caramelo', 'sweet', 'dulce', 'sugar', 'azucar', 'cake', 'pastel', 'cookie', 'galleta', 'donut', 'dona', 'chocolate', 'fruit', 'fruta', 'bakery', 'panaderia', 'pizza', 'taco', 'burger', 'hamburguesa', 'chef', 'sushi', 'beer', 'cerveza', 'coffee', 'cafe', 'tea', 'te', 'cocktail', 'coctel', 'delight', 'delicia', 'honey', 'miel', 'jam', 'mermelada', 'bonanza', 'yummy', 'delicious', 'delicioso', 'treat', 'ice cream', 'helado']
+  };
+
+  function classifySlot(s) {
+    const text = normalize((s.name || '') + ' ' + (s.raw_game_url || '') + ' ' + (s.game_url || ''));
+
+    // 1. Tipo de juego
+    let typeId = 'GJ_VIDEOSLOTS';
+    if (/blackjack|black jack|\b21\b/i.test(text)) typeId = 'GJ_BLACKJACK';
+    else if (/poker|holdem|hold'em|texas/i.test(text)) typeId = 'GJ_POKER';
+    else if (/baccarat|punto banco/i.test(text)) typeId = 'GJ_BACCARAT';
+    else if (/roulette|ruleta/i.test(text)) typeId = 'GJ_ROULETTE';
+    else if (/bingo/i.test(text)) typeId = 'GJ_BINGO';
+    else if (/crash|aviator|jetx|spribe|mines|plinko|spaceman|blast|balloon|flyx|turbogames/i.test(text)) typeId = 'GJ_CRASH';
+    else if (/scratch|raspa/i.test(text)) typeId = 'GJ_SCRATCH';
+    else if (/keno/i.test(text)) typeId = 'GJ_KENO';
+    else if (/lottery|loto|loteria/i.test(text)) typeId = 'GJ_LOTTERY';
+    else if (/777|classic|fruit|retro|blazing 7|diamond 7/i.test(text)) typeId = 'GJ_CLASSIC';
+
+    // 2. Temáticas (pueden ser múltiples)
+    const matchedThemes = [];
+    for (const [themeId, keywords] of Object.entries(THEME_KEYWORDS)) {
+      for (const kw of keywords) {
+        if (text.includes(kw)) {
+          matchedThemes.push(themeId);
+          break;
+        }
+      }
+    }
+    if (matchedThemes.length === 0) {
+      matchedThemes.push('T04_Clasicos');
+    }
+
+    return { game_type_id: typeId, themes: matchedThemes };
+  }
+
   /** ⚡ Consulta relámpago a Supabase DB con Inversión Lógica para activos y site_config */
   async function fetchLiveOverrides() {
     try {
@@ -2401,7 +2350,12 @@ input,select{font:inherit;color:inherit}
       s._nameLower   = s._nameLower   || (s.name||'').toLowerCase();
       s._nameNorm    = normalize(s.name||'');
       s._createdTs   = (s.created_at ? new Date(s.created_at).getTime() : 0);
-      /* Tipo de juego: del array game_types o del raw_game_url como fallback */
+      /* Clasificación algorítmica instantánea de Tipo de Juego y Temáticas */
+      const classification = classifySlot(s);
+      s.game_type_id = s.game_type_id || classification.game_type_id;
+      s.themes       = (s.themes && s.themes.length > 0) ? s.themes : classification.themes;
+      s._theme       = s.themes[0] || null;
+      /* Tipo de juego legible */
       s._gameType    = (s.game_types&&s.game_types.length>0) ? s.game_types[0] : ((s.raw_game_url||s.game_url||'').split(',')[0]||'Video Slots');
       /* Tags especiales del campo pre-procesado */
       s._tags        = s.special_tags || (s.raw_game_url||s.game_url||'').split(',').slice(1).map(p=>p.trim());
@@ -2409,8 +2363,6 @@ input,select{font:inherit;color:inherit}
       s._providerDisplay = s.provider_display || PROV_NAMES[s.provider] || s.provider || 'Slot';
       /* is_new: del campo pre-computado */
       s._isNew       = s.is_new || false;
-      /* Temática: usar el array themes[] del JSON. null si sin clasificar */
-      s._theme       = (s.themes&&s.themes.length>0&&s.themes[0]!=='T00_SinClasificar') ? s.themes[0] : null;
     });
     buildFilterDropdowns();
     bindEvents();
@@ -2953,35 +2905,9 @@ input,select{font:inherit;color:inherit}
   }
 
   /* ══════════════════════════════════════════════════════════════
-     FEATURED SLOTS 3D CAROUSEL LOGIC & MÁQUINA DE ESTADOS SÓLIDA v4.0
-     [PREVENCIÓN DE COLISIONES: AUTO-SLIDE + TOUCH SWIPE + TAB VISIBILITY]
+     FEATURED SLOTS — DESPLAZAMIENTO LIBRE CONTINUO (TOUCH & DRAG)
      ══════════════════════════════════════════════════════════════ */
-  const CarouselState = {
-    IDLE: 'IDLE',
-    AUTOPLAY: 'AUTOPLAY',
-    TOUCHING: 'TOUCHING',
-    TRANSITIONING: 'TRANSITIONING',
-    HIDDEN: 'HIDDEN'
-  };
-
-  let featuredState = CarouselState.IDLE;
   let featuredSlotsData = [];
-  let featuredVirtualIdx = 0;
-  let featuredAutoplayTimer = null;
-  let featuredTouchStartX = 0;
-  let featuredTouchEndX = 0;
-  let isFeaturedSnapping = false;
-
-  function setFeaturedState(newState) {
-    featuredState = newState;
-    if (newState === CarouselState.HIDDEN || newState === CarouselState.TOUCHING) {
-      stopFeaturedAutoplay();
-    } else if (newState === CarouselState.AUTOPLAY) {
-      if (!document.hidden) {
-        startFeaturedAutoplay();
-      }
-    }
-  }
 
   async function loadFeaturedSlotsConfig() {
     let order = liveFeaturedSlotsOrder;
@@ -3017,7 +2943,7 @@ input,select{font:inherit;color:inherit}
       const selected = [];
       order.forEach(idKey => {
         const keyStr = String(idKey).toLowerCase().trim();
-        if (map.has(keyStr) && selected.length < 8) {
+        if (map.has(keyStr) && selected.length < 24) {
           selected.push(map.get(keyStr));
         }
       });
@@ -3027,40 +2953,28 @@ input,select{font:inherit;color:inherit}
     return [...allSlots]
       .filter(s => s.is_active !== false)
       .sort((a, b) => (b._totalClicks || 0) - (a._totalClicks || 0))
-      .slice(0, 8);
+      .slice(0, 16);
   }
 
   async function initFeaturedSlotsCarousel() {
     featuredSlotsData = await loadFeaturedSlotsConfig();
     if (!featuredSlotsData || featuredSlotsData.length === 0) return;
 
-    const N = featuredSlotsData.length;
     renderFeaturedCards();
-    featuredVirtualIdx = 2 * N;
-    updateFeaturedPositions(featuredVirtualIdx, false);
-    setFeaturedState(CarouselState.AUTOPLAY);
-    bindFeaturedEvents();
+    initFeaturedFreeDrag();
   }
 
   function renderFeaturedCards() {
     const track = $('featuredTrack');
-    const dots = $('featuredDots');
     if (!track) return;
 
-    const quintuplePool = [
-      ...featuredSlotsData, 
-      ...featuredSlotsData, 
-      ...featuredSlotsData, 
-      ...featuredSlotsData, 
-      ...featuredSlotsData
-    ];
-
-    track.innerHTML = quintuplePool.map((s, idx) => {
+    track.innerHTML = featuredSlotsData.map((s, idx) => {
       const playUrl = isMobile ? (s.slot_url_movil || s.slot_desktop_movil || '#') : (s.slot_desktop_movil || '#');
       return `
-        <div class="featured-card" data-virtual-idx="${idx}">
+        <div class="featured-card" data-idx="${idx}">
+          <div class="featured-badge-star">★ VIP</div>
           <div class="featured-card-img-wrap">
-            <img src="${s.image_url}" alt="${s.name}" class="featured-card-img" onerror="this.src='BANNER/public.avif'">
+            <img src="${s.image_url}" alt="${s.name}" class="featured-card-img" onerror="this.src='BANNER/public.avif'" loading="lazy">
           </div>
           <div class="featured-card-body">
             <div class="featured-card-title">${s.name}</div>
@@ -3070,218 +2984,56 @@ input,select{font:inherit;color:inherit}
         </div>
       `;
     }).join('');
-
-    if (dots) {
-      dots.innerHTML = featuredSlotsData.map((_, idx) => `
-        <div class="featured-dot${idx === 0 ? ' active' : ''}" data-dot-idx="${idx}"></div>
-      `).join('');
-    }
   }
 
-  function updateFeaturedPositions(targetVirtualIdx, animate = true) {
-    if (!featuredSlotsData || featuredSlotsData.length === 0) return;
-    const N = featuredSlotsData.length;
-    featuredVirtualIdx = targetVirtualIdx;
+  function initFeaturedFreeDrag() {
+    const container = $('featuredScrollContainer');
+    if (!container || container.dataset.dragInited) return;
+    container.dataset.dragInited = 'true';
 
-    const realIdx = ((featuredVirtualIdx % N) + N) % N;
-    const cards = document.querySelectorAll('.featured-card');
-    const stage = $('featuredCarouselStage');
-    const track = $('featuredTrack');
-    if (!cards.length || !track || !stage) return;
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let isDraggingMotion = false;
 
-    if (!animate) {
-      track.style.transition = 'none';
-    } else {
-      track.style.transition = 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)';
-    }
+    container.addEventListener('mousedown', (e) => {
+      isDown = true;
+      isDraggingMotion = false;
+      container.classList.add('is-dragging');
+      startX = e.pageX - container.offsetLeft;
+      scrollLeft = container.scrollLeft;
+    });
 
-    cards.forEach((card, idx) => {
-      let diff = idx - featuredVirtualIdx;
-      card.classList.remove('active-center');
+    window.addEventListener('mouseup', () => {
+      if (!isDown) return;
+      isDown = false;
+      container.classList.remove('is-dragging');
+    });
 
-      if (!isMobile) {
-        // Desktop: Carrusel plano, 100% nítido, sin blur ni opacidad reducida
-        card.style.filter = 'none';
-        card.style.opacity = '1';
-        card.style.transform = 'none';
-        card.style.zIndex = '2';
-        if (diff === 0) {
-          card.classList.add('active-center');
-        }
-      } else {
-        // Mobile: Enfoque dinámico
-        if (diff === 0) {
-          card.classList.add('active-center');
-          card.style.filter = 'blur(0px) opacity(1) grayscale(0%)';
-          card.style.transform = 'scale(1.05) translateZ(0)';
-          card.style.zIndex = '10';
-        } else {
-          const absDiff = Math.abs(diff);
-          const blurAmt = Math.min(2 + absDiff * 1, 4);
-          const opacityAmt = Math.max(0.60 - absDiff * 0.1, 0.35);
-          const scaleAmt = Math.max(0.90 - absDiff * 0.05, 0.80);
+    container.addEventListener('mouseleave', () => {
+      if (!isDown) return;
+      isDown = false;
+      container.classList.remove('is-dragging');
+    });
 
-          card.style.filter = `blur(${blurAmt}px) opacity(${opacityAmt})`;
-          card.style.transform = `scale(${scaleAmt})`;
-          card.style.zIndex = `${10 - absDiff}`;
-        }
+    container.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - container.offsetLeft;
+      const walk = (x - startX) * 1.6;
+      if (Math.abs(walk) > 4) {
+        isDraggingMotion = true;
       }
+      container.scrollLeft = scrollLeft - walk;
     });
 
-    const stageWidth = stage.getBoundingClientRect().width;
-    const centerCard = cards[featuredVirtualIdx];
-    if (centerCard) {
-      const cardCenterInTrack = centerCard.offsetLeft + (centerCard.offsetWidth / 2);
-      const translateX = (stageWidth / 2) - cardCenterInTrack;
-      track.style.transform = `translateX(${translateX}px)`;
-    }
-
-    document.querySelectorAll('.featured-dot').forEach((d, j) => {
-      d.classList.toggle('active', j === realIdx);
-    });
-
-    if (animate && !isFeaturedSnapping) {
-      if (featuredVirtualIdx >= 4 * N || featuredVirtualIdx < N) {
-        isFeaturedSnapping = true;
-        setTimeout(() => {
-          const snappedVirtualIdx = (2 * N) + realIdx;
-          featuredVirtualIdx = snappedVirtualIdx;
-          
-          track.style.transition = 'none';
-          const snappedCenterCard = cards[snappedVirtualIdx];
-          if (snappedCenterCard) {
-            const snappedCenterInTrack = snappedCenterCard.offsetLeft + (snappedCenterCard.offsetWidth / 2);
-            const snappedTranslateX = (stageWidth / 2) - snappedCenterInTrack;
-            track.style.transform = `translateX(${snappedTranslateX}px)`;
-          }
-
-          cards.forEach((c, i) => {
-            let d = i - snappedVirtualIdx;
-            c.classList.toggle('active-center', d === 0);
-            if (!isMobile) {
-              c.style.filter = 'none';
-              c.style.opacity = '1';
-              c.style.transform = 'none';
-              c.style.zIndex = '2';
-            } else {
-              if (d === 0) {
-                c.style.filter = 'blur(0px) opacity(1) grayscale(0%)';
-                c.style.transform = 'scale(1.05) translateZ(0)';
-                c.style.zIndex = '10';
-              } else {
-                const absD = Math.abs(d);
-                const bAmt = Math.min(2 + absD * 1, 4);
-                const oAmt = Math.max(0.60 - absD * 0.1, 0.35);
-                const sAmt = Math.max(0.90 - absD * 0.05, 0.80);
-                c.style.filter = `blur(${bAmt}px) opacity(${oAmt})`;
-                c.style.transform = `scale(${sAmt})`;
-                c.style.zIndex = `${10 - absD}`;
-              }
-            }
-          });
-
-          void track.offsetHeight;
-
-          requestAnimationFrame(() => {
-            track.style.transition = 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)';
-            isFeaturedSnapping = false;
-          });
-        }, 450);
+    container.addEventListener('click', (e) => {
+      if (isDraggingMotion) {
+        e.preventDefault();
+        e.stopPropagation();
+        isDraggingMotion = false;
       }
-    }
-  }
-
-  function nextFeatured() {
-    if (featuredState === CarouselState.HIDDEN) return;
-    updateFeaturedPositions(featuredVirtualIdx + 1, true);
-  }
-
-  function prevFeatured() {
-    if (featuredState === CarouselState.HIDDEN) return;
-    updateFeaturedPositions(featuredVirtualIdx - 1, true);
-  }
-
-  function startFeaturedAutoplay() {
-    stopFeaturedAutoplay();
-    if (document.hidden) return;
-    featuredAutoplayTimer = setInterval(() => { nextFeatured(); }, 4000);
-  }
-
-  function stopFeaturedAutoplay() {
-    if (featuredAutoplayTimer) {
-      clearInterval(featuredAutoplayTimer);
-      featuredAutoplayTimer = null;
-    }
-  }
-
-  function bindFeaturedEvents() {
-    const stage = $('featuredCarouselStage');
-    const track = $('featuredTrack');
-    const dots = $('featuredDots');
-    const prevBtn = $('featuredPrevBtn');
-    const nextBtn = $('featuredNextBtn');
-
-    if (prevBtn) prevBtn.onclick = () => { prevFeatured(); setFeaturedState(CarouselState.AUTOPLAY); };
-    if (nextBtn) nextBtn.onclick = () => { nextFeatured(); setFeaturedState(CarouselState.AUTOPLAY); };
-
-    if (track) {
-      track.addEventListener('click', (e) => {
-        const card = e.target.closest('.featured-card');
-        if (card && card.dataset.virtualIdx !== undefined) {
-          const idx = parseInt(card.dataset.virtualIdx, 10);
-          if (idx !== featuredVirtualIdx) {
-            updateFeaturedPositions(idx, true);
-            setFeaturedState(CarouselState.AUTOPLAY);
-          }
-        }
-      });
-    }
-
-    if (dots) {
-      dots.addEventListener('click', (e) => {
-        const dot = e.target.closest('.featured-dot');
-        if (dot && dot.dataset.dotIdx !== undefined) {
-          const realIdx = parseInt(dot.dataset.dotIdx, 10);
-          const N = featuredSlotsData.length || 8;
-          updateFeaturedPositions((2 * N) + realIdx, true);
-          setFeaturedState(CarouselState.AUTOPLAY);
-        }
-      });
-    }
-
-    if (stage) {
-      stage.addEventListener('mouseenter', () => setFeaturedState(CarouselState.TOUCHING));
-      stage.addEventListener('mouseleave', () => setFeaturedState(CarouselState.AUTOPLAY));
-
-      stage.addEventListener('touchstart', (e) => {
-        setFeaturedState(CarouselState.TOUCHING);
-        if (e.touches && e.touches[0]) featuredTouchStartX = e.touches[0].clientX;
-      }, { passive: true });
-
-      stage.addEventListener('touchend', (e) => {
-        if (e.changedTouches && e.changedTouches[0]) {
-          featuredTouchEndX = e.changedTouches[0].clientX;
-          const diff = featuredTouchEndX - featuredTouchStartX;
-          if (diff < -35) nextFeatured();
-          else if (diff > 35) prevFeatured();
-        }
-        setFeaturedState(CarouselState.AUTOPLAY);
-      }, { passive: true });
-
-      stage.addEventListener('wheel', (e) => {
-        if (Math.abs(e.deltaX) > 15 || Math.abs(e.deltaY) > 15) {
-          e.preventDefault();
-          setFeaturedState(CarouselState.TOUCHING);
-          if (e.deltaX > 0 || e.deltaY > 0) nextFeatured();
-          else prevFeatured();
-          setFeaturedState(CarouselState.AUTOPLAY);
-        }
-      }, { passive: false });
-    }
-
-    window.addEventListener('resize', () => {
-      updateFeaturedPositions(featuredVirtualIdx, false);
-    });
+    }, true);
   }
 
   function filterByTag(t){activeTags.clear();activeTags.add(t);syncTagsUI();applyFilters();setTimeout(()=>grid.scrollIntoView({behavior:'smooth',block:'start'}),100)}
