@@ -14,6 +14,29 @@
   <link rel="preload" as="image" href="BANNER/banner_1_desktop_hd.webp" media="(min-width: 601px)" fetchpriority="high">
   <link rel="preload" as="image" href="BANNER/banner_1_mobile_hd.webp" media="(max-width: 600px)" fetchpriority="high">
 
+  <!-- ⚡ Bootstrap Global Temprano de App (Blindaje de Clics Inmediatos) -->
+  <script>
+    window.App = window.App || {
+      enterCasino: function() {
+        var splash = document.getElementById('welcomeSplash');
+        if (splash) {
+          splash.classList.add('hidden');
+          setTimeout(function() { splash.style.display = 'none'; }, 500);
+        }
+      },
+      goSlide: function(){},
+      nextSlide: function(){},
+      prevSlide: function(){},
+      filterByTag: function(){},
+      filterByPopular: function(){},
+      clearAll: function(){},
+      openFortune: function(){},
+      closeFortune: function(){},
+      spinFortune: function(){},
+      toggleAmbientAudio: function(){}
+    };
+  </script>
+
   <style>
 /* ══════════════════════════════════════════════════════════════
    PARLEY SLOTS — CATÁLOGO PREMIUM v2.2
@@ -1928,7 +1951,7 @@ input,select{font:inherit;color:inherit}
 /* ══════════════════════════════════════════════════════════════
    PARLEY SLOTS APP v2.2
    ══════════════════════════════════════════════════════════════ */
-  const App=(()=>{
+  window.App = Object.assign(window.App || {}, (() => {
   'use strict';
 
   /* ── Constantes y Configuración Dinámica ────────────────────── */
@@ -3610,7 +3633,8 @@ input,select{font:inherit;color:inherit}
 
   /* ── Public API ──────────────────────────────────────────────── */
   return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio,enterCasino,preloadCatalogAndImages};
-})();
+})());
+const App = window.App;
 </script>
 <script>
   if ('serviceWorker' in navigator) {
