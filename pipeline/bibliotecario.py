@@ -329,15 +329,11 @@ def process_data(api_slots, supabase_slots, supabase_providers, site_config):
             new_providers[prov_slug] = {
                 'name': prov_slug,
                 'display_name': PROVIDER_DISPLAY.get(prov_slug, prov_slug.title()),
-                'slot_product_id': row.get('slot_product_id'),
                 'slot_count': 0,
                 'is_active': True,
                 'created_at': now_utc.isoformat(),
                 'updated_at': now_utc.isoformat()
             }
-            
-        if prov_slug in new_providers:
-            new_providers[prov_slug]['slot_count'] += 1
             
         c_desc = int(row.get('clicks_desktop') or 0)
         c_mob = int(row.get('clicks_mobile') or 0)
@@ -445,6 +441,9 @@ def process_data(api_slots, supabase_slots, supabase_providers, site_config):
         if v['is_active']:
             slug = v['provider'].lower().strip()
             slug_counts[slug] = slug_counts.get(slug, 0) + 1
+
+    for prov_slug, p_data in new_providers.items():
+        p_data['slot_count'] = slug_counts.get(prov_slug, 0)
 
     for prov in supabase_providers:
         # Comparar en minúsculas para ser resiliente a diferencias de casing
