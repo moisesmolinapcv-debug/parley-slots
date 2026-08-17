@@ -428,7 +428,7 @@ input,select{font:inherit;color:inherit}
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   cursor: grab;
@@ -2905,9 +2905,15 @@ input,select{font:inherit;color:inherit}
   }
 
   /* ══════════════════════════════════════════════════════════════
-     FEATURED SLOTS — DESPLAZAMIENTO LIBRE CONTINUO (TOUCH & DRAG)
+     CARRUSEL DE SLOTS DESTACADOS (HASTA 20 SLOTS) — LOOP INFINITO Y AUTO-SCROLL
      ══════════════════════════════════════════════════════════════ */
   let featuredSlotsData = [];
+  let featuredAutoScrollActive = true;
+  let featuredScrollPauseTimer = null;
+  let featuredRafId = null;
+  let isFeaturedUserInteracting = false;
+  const FEATURED_BREAK_MS = 45000; // 45 segundos de break post-interacción
+  const FEATURED_AUTO_SPEED = 0.7; // px por frame para desplazamiento suave y continuo
 
   async function loadFeaturedSlotsConfig() {
     let order = liveFeaturedSlotsOrder;
@@ -2933,27 +2939,44 @@ input,select{font:inherit;color:inherit}
       } catch(e) {}
     }
 
+    const map = new Map();
+    allSlots.forEach(s => {
+      if (s.id) map.set(String(s.id), s);
+      if (s.external_id) map.set(String(s.external_id), s);
+      if (s.name) map.set(s.name.toLowerCase().trim(), s);
+    });
+
+    const activeSlots = allSlots.filter(s => s.is_active !== false);
+
+    let selected = [];
     if (Array.isArray(order) && order.length > 0) {
-      const map = new Map();
-      allSlots.forEach(s => {
-        if (s.id) map.set(String(s.id), s);
-        if (s.external_id) map.set(String(s.external_id), s);
-        if (s.name) map.set(s.name.toLowerCase().trim(), s);
-      });
-      const selected = [];
       order.forEach(idKey => {
         const keyStr = String(idKey).toLowerCase().trim();
-        if (map.has(keyStr) && selected.length < 24) {
-          selected.push(map.get(keyStr));
+        if (map.has(keyStr) && selected.length < 20) {
+          const item = map.get(keyStr);
+          if (!selected.some(ex => (ex.external_id || ex.id) === (item.external_id || item.id))) {
+            selected.push(item);
+          }
         }
       });
-      if (selected.length > 0) return selected;
     }
 
-    return [...allSlots]
-      .filter(s => s.is_active !== false)
-      .sort((a, b) => (b._totalClicks || 0) - (a._totalClicks || 0))
-      .slice(0, 16);
+    // Si la lista está vacía o tiene menos de 20 slots, completar de forma ALEATORIA
+    if (selected.length < 20 && activeSlots.length > 0) {
+      const remainingCandidates = activeSlots.filter(s => 
+        !selected.some(sel => (sel.external_id || sel.id) === (s.external_id || s.id))
+      );
+      for (let i = remainingCandidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remainingCandidates[i], remainingCandidates[j]] = [remainingCandidates[j], remainingCandidates[i]];
+      }
+      for (const slot of remainingCandidates) {
+        if (selected.length >= 20) break;
+        selected.push(slot);
+      }
+    }
+
+    return selected.slice(0, 20);
   }
 
   async function initFeaturedSlotsCarousel() {
@@ -2962,16 +2985,20 @@ input,select{font:inherit;color:inherit}
 
     renderFeaturedCards();
     initFeaturedFreeDrag();
+    startFeaturedAutoScroll();
   }
 
   function renderFeaturedCards() {
     const track = $('featuredTrack');
     if (!track) return;
 
-    track.innerHTML = featuredSlotsData.map((s, idx) => {
+    // Duplicación simétrica exacta para garantizar un loop infinito sin cortes (Set A + Set B)
+    const renderList = [...featuredSlotsData, ...featuredSlotsData];
+
+    track.innerHTML = renderList.map((s, idx) => {
       const playUrl = isMobile ? (s.slot_url_movil || s.slot_desktop_movil || '#') : (s.slot_desktop_movil || '#');
       return `
-        <div class="featured-card" data-idx="${idx}">
+        <div class="featured-card" data-idx="${idx % featuredSlotsData.length}">
           <div class="featured-badge-star">★ VIP</div>
           <div class="featured-card-img-wrap">
             <img src="${s.image_url}" alt="${s.name}" class="featured-card-img" onerror="this.src='BANNER/public.avif'" loading="lazy">
@@ -2986,47 +3013,151 @@ input,select{font:inherit;color:inherit}
     }).join('');
   }
 
+  function startFeaturedAutoScroll() {
+    if (featuredRafId) cancelAnimationFrame(featuredRafId);
+
+    function loop() {
+      const container = $('featuredScrollContainer');
+      const track = $('featuredTrack');
+      if (container && track && featuredAutoScrollActive && !isFeaturedUserInteracting) {
+        const halfWidth = track.scrollWidth / 2;
+        if (halfWidth > 0) {
+          container.scrollLeft += FEATURED_AUTO_SPEED;
+          if (container.scrollLeft >= halfWidth) {
+            container.scrollLeft -= halfWidth;
+          }
+        }
+      }
+      featuredRafId = requestAnimationFrame(loop);
+    }
+    featuredRafId = requestAnimationFrame(loop);
+  }
+
+  function pauseFeaturedAutoScroll() {
+    isFeaturedUserInteracting = true;
+    featuredAutoScrollActive = false;
+    if (featuredScrollPauseTimer) {
+      clearTimeout(featuredScrollPauseTimer);
+      featuredScrollPauseTimer = null;
+    }
+  }
+
+  function scheduleFeaturedResume() {
+    isFeaturedUserInteracting = false;
+    if (featuredScrollPauseTimer) {
+      clearTimeout(featuredScrollPauseTimer);
+    }
+    featuredScrollPauseTimer = setTimeout(() => {
+      featuredAutoScrollActive = true;
+    }, FEATURED_BREAK_MS);
+  }
+
   function initFeaturedFreeDrag() {
     const container = $('featuredScrollContainer');
-    if (!container || container.dataset.dragInited) return;
+    const track = $('featuredTrack');
+    if (!container || !track || container.dataset.dragInited) return;
     container.dataset.dragInited = 'true';
 
     let isDown = false;
     let startX = 0;
-    let scrollLeft = 0;
+    let startScrollLeft = 0;
     let isDraggingMotion = false;
 
+    function checkInfiniteBounds() {
+      const halfWidth = track.scrollWidth / 2;
+      if (halfWidth <= 0) return;
+      if (container.scrollLeft >= halfWidth) {
+        container.scrollLeft -= halfWidth;
+        startScrollLeft -= halfWidth;
+      } else if (container.scrollLeft <= 0) {
+        container.scrollLeft += halfWidth;
+        startScrollLeft += halfWidth;
+      }
+    }
+
+    // Eventos de Ratón (Desktop Drag)
     container.addEventListener('mousedown', (e) => {
+      pauseFeaturedAutoScroll();
       isDown = true;
       isDraggingMotion = false;
       container.classList.add('is-dragging');
       startX = e.pageX - container.offsetLeft;
-      scrollLeft = container.scrollLeft;
+      startScrollLeft = container.scrollLeft;
     });
 
     window.addEventListener('mouseup', () => {
       if (!isDown) return;
       isDown = false;
       container.classList.remove('is-dragging');
+      scheduleFeaturedResume();
     });
 
     container.addEventListener('mouseleave', () => {
       if (!isDown) return;
       isDown = false;
       container.classList.remove('is-dragging');
+      scheduleFeaturedResume();
     });
 
     container.addEventListener('mousemove', (e) => {
       if (!isDown) return;
       e.preventDefault();
       const x = e.pageX - container.offsetLeft;
-      const walk = (x - startX) * 1.6;
+      const walk = (x - startX) * 1.5;
       if (Math.abs(walk) > 4) {
         isDraggingMotion = true;
       }
-      container.scrollLeft = scrollLeft - walk;
+      container.scrollLeft = startScrollLeft - walk;
+      checkInfiniteBounds();
     });
 
+    // Eventos Táctiles (Mobile Drag / Swipe)
+    container.addEventListener('touchstart', (e) => {
+      pauseFeaturedAutoScroll();
+      isDown = true;
+      isDraggingMotion = false;
+      const touch = e.touches[0];
+      startX = touch.pageX - container.offsetLeft;
+      startScrollLeft = container.scrollLeft;
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+      if (!isDown) return;
+      const touch = e.touches[0];
+      const x = touch.pageX - container.offsetLeft;
+      const walk = (x - startX) * 1.5;
+      if (Math.abs(walk) > 4) {
+        isDraggingMotion = true;
+      }
+      container.scrollLeft = startScrollLeft - walk;
+      checkInfiniteBounds();
+    }, { passive: true });
+
+    container.addEventListener('touchend', () => {
+      if (!isDown) return;
+      isDown = false;
+      scheduleFeaturedResume();
+    });
+
+    container.addEventListener('touchcancel', () => {
+      if (!isDown) return;
+      isDown = false;
+      scheduleFeaturedResume();
+    });
+
+    // Hover (Pausa al posar el cursor, reanuda tras salir con break de 45s)
+    container.addEventListener('mouseenter', () => {
+      pauseFeaturedAutoScroll();
+    });
+
+    // Rueda del ratón / Trackpad scroll horizontal
+    container.addEventListener('wheel', () => {
+      pauseFeaturedAutoScroll();
+      checkInfiniteBounds();
+      scheduleFeaturedResume();
+    }, { passive: true });
+
+    // Prevenir activación no deseada de clics durante arrastre
     container.addEventListener('click', (e) => {
       if (isDraggingMotion) {
         e.preventDefault();

@@ -600,25 +600,30 @@
         </div>
       </section>
 
-      <!-- TAB DESTACADOS: GESTOR DE SLOTS DESTACADOS (MÁXIMO 8) -->
+      <!-- TAB DESTACADOS: GESTOR DE SLOTS DESTACADOS (MÁXIMO 20) -->
       <section id="tab-featured" class="tab-content">
         <div class="page-header">
           <div>
-            <h1 class="page-title">🌟 Gestor de Slots Destacados (Máximo 8)</h1>
+            <h1 class="page-title">🌟 Gestor de Slots Destacados (Máximo 20)</h1>
             <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">
-              Selecciona y reordena los 8 slots destacados del carrusel 3D de la página principal.
+              Selecciona, reordena y personaliza los 20 slots destacados del carrusel infinito de la página principal.
             </p>
           </div>
-          <button class="btn btn-gold" style="width:auto; font-size:14px; padding:10px 24px;" onclick="saveFeaturedSlotsAdmin()">
-            💾 Guardar Slots Destacados
-          </button>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button class="btn" style="width:auto; font-size:13px; padding:10px 16px; background:#21262d; color:#fff;" onclick="fillRandomFeaturedAdmin()">
+              🎲 Rellenar 20 Aleatorios
+            </button>
+            <button class="btn btn-gold" style="width:auto; font-size:14px; padding:10px 24px;" onclick="saveFeaturedSlotsAdmin()">
+              💾 Guardar Slots Destacados
+            </button>
+          </div>
         </div>
 
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:24px;">
-          <!-- COLUMNA 1: LISTA ORDENADA ACTUAL (1 A 8) -->
+          <!-- COLUMNA 1: LISTA ORDENADA ACTUAL (1 A 20) -->
           <div class="card-panel">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-              <h3 style="color:#fdd835;">📋 Lista Ordenada de Destacados <span id="featuredCountBadge" style="background:#21262d; border-radius:999px; padding:2px 10px; font-size:12px; color:#fff;">[ 0 / 8 ]</span></h3>
+              <h3 style="color:#fdd835;">📋 Lista Ordenada de Destacados <span id="featuredCountBadge" style="background:#21262d; border-radius:999px; padding:2px 10px; font-size:12px; color:#fff;">[ 0 / 20 ]</span></h3>
             </div>
             <div id="featuredListAdmin" style="display:flex; flex-direction:column; gap:10px; min-height:200px;">
               <div style="text-align:center; color:var(--text-muted); padding:30px;">Cargando slots destacados desde Supabase...</div>
@@ -941,7 +946,7 @@
       }
     }
 
-    // ─── GESTOR DE SLOTS DESTACADOS (HASTA 8 SLOTS) ───
+    // ─── GESTOR DE SLOTS DESTACADOS (HASTA 20 SLOTS) ───
     let adminFeaturedSlots = [];
 
     async function loadFeaturedSlotsAdmin() {
@@ -966,14 +971,21 @@
             slotsData.forEach(s => map.set(String(s.external_id || s.id), s));
             adminFeaturedSlots = [];
             order.forEach(id => {
-              if (map.has(String(id))) adminFeaturedSlots.push(map.get(String(id)));
+              if (map.has(String(id)) && adminFeaturedSlots.length < 20) {
+                adminFeaturedSlots.push(map.get(String(id)));
+              }
             });
           }
         }
 
         if (adminFeaturedSlots.length === 0) {
-          const { data: topSlots } = await supabaseClient.from('slots').select('*').eq('is_active', true).order('total_clicks', { ascending: false }).limit(8);
-          adminFeaturedSlots = topSlots || [];
+          const { data: activeSlots } = await supabaseClient.from('slots').select('*').eq('is_active', true).limit(60);
+          if (activeSlots && activeSlots.length > 0) {
+            const shuffled = [...activeSlots].sort(() => Math.random() - 0.5);
+            adminFeaturedSlots = shuffled.slice(0, 20);
+          } else {
+            adminFeaturedSlots = [];
+          }
         }
 
         renderFeaturedSlotsAdmin();
@@ -982,29 +994,48 @@
       }
     }
 
+    async function fillRandomFeaturedAdmin() {
+      showToast('Seleccionando 20 slots aleatorios...', 'loading', 1500);
+      try {
+        const { data: slotsPool, error } = await supabaseClient.from('slots').select('*').eq('is_active', true).limit(100);
+        if (error || !slotsPool || slotsPool.length === 0) {
+          showToast('No se pudieron obtener slots activos.', 'error');
+          return;
+        }
+        const shuffled = [...slotsPool].sort(() => Math.random() - 0.5);
+        adminFeaturedSlots = shuffled.slice(0, 20);
+        renderFeaturedSlotsAdmin();
+        const searchInput = document.getElementById('featuredSearchInput');
+        if (searchInput && searchInput.value) searchSlotsForFeatured(searchInput.value);
+        showToast('✅ 20 Slots seleccionados aleatoriamente. Recuerda hacer clic en "Guardar".', 'success', 3500);
+      } catch (e) {
+        showToast('Error al obtener aleatorios: ' + e.message, 'error');
+      }
+    }
+
     function renderFeaturedSlotsAdmin() {
       const container = document.getElementById('featuredListAdmin');
       const countBadge = document.getElementById('featuredCountBadge');
       if (!container) return;
 
-      if (countBadge) countBadge.innerText = `[ ${adminFeaturedSlots.length} / 8 ]`;
+      if (countBadge) countBadge.innerText = `[ ${adminFeaturedSlots.length} / 20 ]`;
 
       if (adminFeaturedSlots.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px;">No hay slots destacados seleccionados. Usa el buscador para añadir hasta 8.</div>';
+        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px;">No hay slots destacados seleccionados. Usa el buscador o el botón de aleatorios para añadir hasta 20.</div>';
         return;
       }
 
       container.innerHTML = adminFeaturedSlots.map((s, idx) => `
         <div style="display:flex; align-items:center; justify-content:space-between; background:#161b22; border:1px solid #30363d; border-radius:10px; padding:10px 14px; gap:12px;">
-          <div style="display:flex; align-items:center; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px; overflow:hidden;">
             <span style="font-weight:900; color:#fdd835; font-size:16px; min-width:28px;">#${idx + 1}</span>
-            <img src="${s.image_url}" style="width:42px; height:42px; border-radius:8px; object-fit:cover;" onerror="this.src='../BANNER/public.avif'">
-            <div>
-              <div style="font-weight:700; font-size:14px; color:#fff;">${s.name}</div>
+            <img src="${s.image_url}" style="width:42px; height:42px; border-radius:8px; object-fit:cover; flex-shrink:0;" onerror="this.src='../BANNER/public.avif'">
+            <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              <div style="font-weight:700; font-size:14px; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.name}</div>
               <div style="font-size:12px; color:var(--text-muted);">${s.provider || ''}</div>
             </div>
           </div>
-          <div style="display:flex; align-items:center; gap:6px;">
+          <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
             <button class="btn" style="padding:4px 8px; font-size:12px; background:#21262d; color:#fff;" onclick="moveFeaturedAdmin(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲ Subir</button>
             <button class="btn" style="padding:4px 8px; font-size:12px; background:#21262d; color:#fff;" onclick="moveFeaturedAdmin(${idx}, 1)" ${idx === adminFeaturedSlots.length - 1 ? 'disabled' : ''}>▼ Bajar</button>
             <button class="btn" style="padding:4px 8px; font-size:12px; background:var(--danger); color:#fff;" onclick="removeFeaturedAdmin(${idx})">✕</button>
@@ -1025,6 +1056,8 @@
     function removeFeaturedAdmin(index) {
       adminFeaturedSlots.splice(index, 1);
       renderFeaturedSlotsAdmin();
+      const searchInput = document.getElementById('featuredSearchInput');
+      if (searchInput && searchInput.value) searchSlotsForFeatured(searchInput.value);
     }
 
     let featuredSearchTimeout = null;
@@ -1038,7 +1071,7 @@
         }
 
         resultsDiv.innerHTML = '<div style="text-align:center; padding:10px;">Buscando slots...</div>';
-        const { data, error } = await supabaseClient.from('slots').select('*').ilike('name', `%${query.trim()}%`).limit(15);
+        const { data, error } = await supabaseClient.from('slots').select('*').ilike('name', `%${query.trim()}%`).limit(25);
         
         if (error || !data || data.length === 0) {
           resultsDiv.innerHTML = '<div style="color:var(--danger); text-align:center; padding:10px;">No se encontraron slots.</div>';
@@ -1049,17 +1082,17 @@
           const isAlreadyAdded = adminFeaturedSlots.some(f => (f.external_id || f.id) === (s.external_id || s.id));
           return `
             <div style="display:flex; align-items:center; justify-content:space-between; background:#0d1117; border:1px solid var(--border-color); border-radius:8px; padding:8px 12px;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <img src="${s.image_url}" style="width:36px; height:36px; border-radius:6px; object-fit:cover;" onerror="this.src='../BANNER/public.avif'">
-                <div>
-                  <div style="font-weight:600; font-size:13px; color:#fff;">${s.name}</div>
-                  <div style="font-size:11px; color:var(--text-muted);">${s.provider}</div>
+              <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                <img src="${s.image_url}" style="width:36px; height:36px; border-radius:6px; object-fit:cover; flex-shrink:0;" onerror="this.src='../BANNER/public.avif'">
+                <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  <div style="font-weight:600; font-size:13px; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.name}</div>
+                  <div style="font-size:11px; color:var(--text-muted);">${s.provider || ''}</div>
                 </div>
               </div>
-              <button class="btn btn-gold" style="padding:4px 10px; font-size:11px; width:auto;" 
+              <button class="btn btn-gold" style="padding:4px 10px; font-size:11px; width:auto; flex-shrink:0;" 
                       onclick="addFeaturedAdmin('${s.external_id || s.id}')" 
-                      ${isAlreadyAdded || adminFeaturedSlots.length >= 8 ? 'disabled' : ''}>
-                ${isAlreadyAdded ? '✓ Añadido' : (adminFeaturedSlots.length >= 8 ? 'Límite (8)' : '＋ Añadir')}
+                      ${isAlreadyAdded || adminFeaturedSlots.length >= 20 ? 'disabled' : ''}>
+                ${isAlreadyAdded ? '✓ Añadido' : (adminFeaturedSlots.length >= 20 ? 'Límite (20)' : '＋ Añadir')}
               </button>
             </div>
           `;
@@ -1068,8 +1101,8 @@
     }
 
     async function addFeaturedAdmin(slotId) {
-      if (adminFeaturedSlots.length >= 8) {
-        showToast('Límite alcanzado: Máximo 8 slots destacados.', 'warning');
+      if (adminFeaturedSlots.length >= 20) {
+        showToast('Límite alcanzado: Máximo 20 slots destacados.', 'warning');
         return;
       }
       showToast('Obteniendo información del slot...', 'loading', 1000);
@@ -1079,7 +1112,7 @@
           adminFeaturedSlots.push(data);
           renderFeaturedSlotsAdmin();
           const searchInput = document.getElementById('featuredSearchInput');
-          if (searchInput) searchSlotsForFeatured(searchInput.value);
+          if (searchInput && searchInput.value) searchSlotsForFeatured(searchInput.value);
           showToast(`✅ Slot "${data.name}" añadido a destacados`, 'success');
         }
       }
