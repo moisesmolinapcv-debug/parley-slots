@@ -535,11 +535,14 @@ input,select{font:inherit;color:inherit}
   overflow-x: auto;
   overflow-y: hidden;
   scroll-behavior: auto;
-  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   cursor: grab;
   padding: 10px 4px 14px;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
   /* Máscara de niebla lateral para entrada y salida ultra-armónica */
   -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 36px, #000 calc(100% - 36px), transparent 100%);
   mask-image: linear-gradient(to right, transparent 0%, #000 36px, #000 calc(100% - 36px), transparent 100%);
@@ -2919,13 +2922,39 @@ input,select{font:inherit;color:inherit}
     }).join('');
   }
 
+  // Estado del motor de arrastre táctil 1:1 e inercia física
+  let isFeaturedDragging = false;
+  let hasMovedSignificantly = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragScrollStartX = 0;
+  let lastMoveX = 0;
+  let lastMoveTime = 0;
+  let velocityX = 0;
+  let momentumRafId = null;
+
+  function wrapFeaturedBounds() {
+    const container = $('featuredScrollContainer');
+    const track = $('featuredTrack');
+    if (!container || !track) return;
+    const halfWidth = track.scrollWidth / 2;
+    if (halfWidth <= 0) return;
+    if (container.scrollLeft >= halfWidth) {
+      container.scrollLeft -= halfWidth;
+      if (isFeaturedDragging) dragScrollStartX -= halfWidth;
+    } else if (container.scrollLeft <= 0) {
+      container.scrollLeft += halfWidth;
+      if (isFeaturedDragging) dragScrollStartX += halfWidth;
+    }
+  }
+
   function startFeaturedAutoScroll() {
     if (featuredRafId) cancelAnimationFrame(featuredRafId);
 
     function loop() {
       const container = $('featuredScrollContainer');
       const track = $('featuredTrack');
-      if (container && track && featuredAutoScrollActive && !isFeaturedUserInteracting) {
+      if (container && track && featuredAutoScrollActive && !isFeaturedUserInteracting && !isFeaturedDragging) {
         const halfWidth = track.scrollWidth / 2;
         if (halfWidth > 0) {
           container.scrollLeft += FEATURED_AUTO_SPEED;
@@ -2946,6 +2975,10 @@ input,select{font:inherit;color:inherit}
       clearTimeout(featuredScrollPauseTimer);
       featuredScrollPauseTimer = null;
     }
+    if (momentumRafId) {
+      cancelAnimationFrame(momentumRafId);
+      momentumRafId = null;
+    }
   }
 
   function scheduleFeaturedResume() {
@@ -2958,117 +2991,123 @@ input,select{font:inherit;color:inherit}
     }, FEATURED_BREAK_MS);
   }
 
+  function runMomentumGliding() {
+    const container = $('featuredScrollContainer');
+    if (!container) return;
+
+    function step() {
+      if (Math.abs(velocityX) > 0.25 && !isFeaturedDragging) {
+        container.scrollLeft -= velocityX;
+        wrapFeaturedBounds();
+        velocityX *= 0.94; // Decaimiento suave de fricción
+        momentumRafId = requestAnimationFrame(step);
+      } else {
+        momentumRafId = null;
+        scheduleFeaturedResume();
+      }
+    }
+    momentumRafId = requestAnimationFrame(step);
+  }
+
   function initFeaturedFreeDrag() {
     const container = $('featuredScrollContainer');
     const track = $('featuredTrack');
     if (!container || !track || container.dataset.dragInited) return;
     container.dataset.dragInited = 'true';
 
-    let isDown = false;
-    let startX = 0;
-    let startScrollLeft = 0;
-    let isDraggingMotion = false;
+    // Manejador Unificado con Física 1:1 Absoluta
+    function onStart(e) {
+      pauseFeaturedAutoScroll();
+      isFeaturedDragging = true;
+      hasMovedSignificantly = false;
+      container.classList.add('is-dragging');
+      
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      dragStartX = clientX;
+      dragStartY = clientY;
+      dragScrollStartX = container.scrollLeft;
+      lastMoveX = clientX;
+      lastMoveTime = performance.now();
+      velocityX = 0;
+    }
 
-    function checkInfiniteBounds() {
-      const halfWidth = track.scrollWidth / 2;
-      if (halfWidth <= 0) return;
-      if (container.scrollLeft >= halfWidth) {
-        container.scrollLeft -= halfWidth;
-        startScrollLeft -= halfWidth;
-      } else if (container.scrollLeft <= 0) {
-        container.scrollLeft += halfWidth;
-        startScrollLeft += halfWidth;
+    function onMove(e) {
+      if (!isFeaturedDragging) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      const deltaX = clientX - dragStartX;
+      const deltaY = clientY - dragStartY;
+
+      // Si el movimiento es horizontal, evitar scroll vertical de página
+      if (Math.abs(deltaX) > Math.abs(deltaY) && e.cancelable) {
+        e.preventDefault();
+      }
+
+      if (Math.abs(deltaX) > 3) {
+        hasMovedSignificantly = true;
+      }
+
+      // Adherencia 1:1 directa milimétrica
+      container.scrollLeft = dragScrollStartX - deltaX;
+      wrapFeaturedBounds();
+
+      // Medición de velocidad instantánea
+      const now = performance.now();
+      const dt = now - lastMoveTime;
+      if (dt > 10) {
+        velocityX = (clientX - lastMoveX) / (dt / 16);
+        lastMoveX = clientX;
+        lastMoveTime = now;
       }
     }
 
-    // Eventos de Ratón (Desktop Drag)
-    container.addEventListener('mousedown', (e) => {
-      pauseFeaturedAutoScroll();
-      isDown = true;
-      isDraggingMotion = false;
-      container.classList.add('is-dragging');
-      startX = e.pageX - container.offsetLeft;
-      startScrollLeft = container.scrollLeft;
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (!isDown) return;
-      isDown = false;
+    function onEnd() {
+      if (!isFeaturedDragging) return;
+      isFeaturedDragging = false;
       container.classList.remove('is-dragging');
-      scheduleFeaturedResume();
+
+      if (Math.abs(velocityX) > 1.0) {
+        runMomentumGliding();
+      } else {
+        scheduleFeaturedResume();
+      }
+    }
+
+    // Eventos Touch (Móviles y Tablets)
+    container.addEventListener('touchstart', onStart, { passive: false });
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd, { passive: true });
+    window.addEventListener('touchcancel', onEnd, { passive: true });
+
+    // Eventos Mouse (Desktop)
+    container.addEventListener('mousedown', onStart);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+
+    // Hover (Pausa al leer sobre desktop, reanuda tras salir)
+    container.addEventListener('mouseenter', () => {
+      if (!isFeaturedDragging) pauseFeaturedAutoScroll();
     });
 
     container.addEventListener('mouseleave', () => {
-      if (!isDown) return;
-      isDown = false;
-      container.classList.remove('is-dragging');
-      scheduleFeaturedResume();
+      if (!isFeaturedDragging) scheduleFeaturedResume();
     });
 
-    container.addEventListener('mousemove', (e) => {
-      if (!isDown) return;
-      e.preventDefault();
-      const x = e.pageX - container.offsetLeft;
-      const walk = (x - startX) * 1.5;
-      if (Math.abs(walk) > 4) {
-        isDraggingMotion = true;
-      }
-      container.scrollLeft = startScrollLeft - walk;
-      checkInfiniteBounds();
-    });
-
-    // Eventos Táctiles (Mobile Drag / Swipe)
-    container.addEventListener('touchstart', (e) => {
-      pauseFeaturedAutoScroll();
-      isDown = true;
-      isDraggingMotion = false;
-      const touch = e.touches[0];
-      startX = touch.pageX - container.offsetLeft;
-      startScrollLeft = container.scrollLeft;
-    }, { passive: true });
-
-    container.addEventListener('touchmove', (e) => {
-      if (!isDown) return;
-      const touch = e.touches[0];
-      const x = touch.pageX - container.offsetLeft;
-      const walk = (x - startX) * 1.5;
-      if (Math.abs(walk) > 4) {
-        isDraggingMotion = true;
-      }
-      container.scrollLeft = startScrollLeft - walk;
-      checkInfiniteBounds();
-    }, { passive: true });
-
-    container.addEventListener('touchend', () => {
-      if (!isDown) return;
-      isDown = false;
-      scheduleFeaturedResume();
-    });
-
-    container.addEventListener('touchcancel', () => {
-      if (!isDown) return;
-      isDown = false;
-      scheduleFeaturedResume();
-    });
-
-    // Hover (Pausa al posar el cursor, reanuda tras salir con break de 45s)
-    container.addEventListener('mouseenter', () => {
-      pauseFeaturedAutoScroll();
-    });
-
-    // Rueda del ratón / Trackpad scroll horizontal
+    // Rueda del ratón / Trackpad
     container.addEventListener('wheel', () => {
       pauseFeaturedAutoScroll();
-      checkInfiniteBounds();
+      wrapFeaturedBounds();
       scheduleFeaturedResume();
     }, { passive: true });
 
-    // Prevenir activación no deseada de clics durante arrastre
+    // Prevenir activación accidental de clics al arrastrar
     container.addEventListener('click', (e) => {
-      if (isDraggingMotion) {
+      if (hasMovedSignificantly) {
         e.preventDefault();
         e.stopPropagation();
-        isDraggingMotion = false;
+        hasMovedSignificantly = false;
       }
     }, true);
   }
