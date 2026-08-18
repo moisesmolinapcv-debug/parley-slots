@@ -14,6 +14,21 @@
   <link rel="preload" as="image" href="BANNER/banner_1_desktop_hd.webp" media="(min-width: 601px)" fetchpriority="high">
   <link rel="preload" as="image" href="BANNER/banner_1_mobile_hd.webp" media="(max-width: 600px)" fetchpriority="high">
 
+  <!-- ⚡ Inicialización Temprana de Tema (Anti-Parpadeo FOUC) -->
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('parley_theme');
+        var isLight = savedTheme === 'light' || (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+        if (isLight) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
+
   <!-- ⚡ Bootstrap Global Temprano de App (Blindaje de Clics Inmediatos) -->
   <script>
     window.App = window.App || {
@@ -33,45 +48,101 @@
       openFortune: function(){},
       closeFortune: function(){},
       spinFortune: function(){},
-      toggleAmbientAudio: function(){}
+      toggleAmbientAudio: function(){},
+      toggleTheme: function(){},
+      quickTournamentFilter: function(){}
     };
   </script>
 
   <style>
 /* ══════════════════════════════════════════════════════════════
-   PARLEY SLOTS — CATÁLOGO PREMIUM v2.2
-   Correcciones: 
-   - IMÁGENES: Suavizado HD nativo con aceleración por GPU
-   - MODAL SUERTE: Corrección de pantalla negra, reseteo total al reabrir, eliminación de pantalla LCD, Blindaje Responsive Universal
+   PARLEY SLOTS — CATÁLOGO PREMIUM v3.0 (PRODUCTION STANDARD)
+   - Sistema Dual de Tema: Modo Oscuro VIP & Modo Claro Ivory & Royal Gold
+   - Atajo Flotante a Torneos Especiales con Scroll Cinemático
+   - Badges de Proveedor de Ajuste Milimétrico y Truncado Seguro
+   - Blindaje Anti-Fallas en Renderizado Móvil & Aceleración GPU 60-120 FPS
    ══════════════════════════════════════════════════════════════ */
 
 /* ── RESET ────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{overflow-x:hidden;max-width:100vw;width:100%;margin:0;padding:0}
 
-/* ── DESIGN TOKENS ────────────────────────────────────────── */
+/* ── DESIGN TOKENS (MODO OSCURO / DEFAULT) ──────────────────── */
 :root {
   --gold: #fdd835;
   --gold-metallic: linear-gradient(180deg, #ffe885 0%, #fdd835 40%, #c59b27 75%, #7a580a 100%);
+  --gold-accent: #f59e0b;
   --red: #e51c23;
   --dark: #030611;
+  --bg-page: #030611;
   --surface: rgba(13, 20, 38, 0.92);
   --surface-solid: #0d1426;
-  --gold-glow: rgba(253,216,53,0.45);
-  --red-glow: rgba(229,28,35,0.55);
+  --card-bg: rgba(13, 20, 38, 0.88);
+  --card-border: rgba(212, 175, 55, 0.3);
+  --card-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  --card-hover-border: #fdd835;
+  --card-hover-shadow: 0 14px 36px rgba(0,0,0,0.8), 0 0 20px rgba(253,216,53,0.35);
+  --filter-bar-bg: rgba(3, 6, 17, 0.92);
+  --filter-btn-bg: linear-gradient(180deg, rgba(30,15,40,0.95) 0%, rgba(13,20,38,0.95) 100%);
+  --filter-btn-color: #e8d48b;
+  --filter-btn-border: rgba(253, 216, 53, 0.4);
+  --filter-dd-bg: linear-gradient(180deg, #121a30 0%, #0d1426 100%);
+  --filter-dd-border: rgba(253, 216, 53, 0.4);
+  --filter-dd-shadow: 0 24px 60px rgba(0,0,0,0.95), 0 0 40px rgba(0,0,0,0.5), 0 0 20px rgba(253,216,53,0.08);
+  --search-box-bg: rgba(255, 255, 255, 0.07);
+  --search-box-color: #ffffff;
+  --search-box-border: rgba(253, 216, 53, 0.4);
+  --search-focus-bg: rgba(255, 255, 255, 0.11);
+  --gold-glow: rgba(253, 216, 53, 0.45);
+  --red-glow: rgba(229, 28, 35, 0.55);
   --text-1: #ffffff;
-  --text-2: rgba(248,250,252,0.85);
-  --text-3: rgba(248,250,252,0.5);
+  --text-2: rgba(248, 250, 252, 0.85);
+  --text-3: rgba(248, 250, 252, 0.5);
+  --scrollbar-track: rgba(4, 7, 18, 0.9);
   --max-w: 1400px;
+}
+
+/* ── DESIGN TOKENS (MODO CLARO — TEMPLO GRIEGO IMPERIAL & AZUL MYKONOS) ────── */
+[data-theme="light"] {
+  --dark: #f8f7f2;
+  --bg-page: #f8f7f2;
+  --bg-gradient: radial-gradient(circle at 50% 0%, #fbfaf6 0%, #f4f0e6 45%, #ece7dc 100%);
+  --surface: rgba(255, 255, 255, 0.96);
+  --surface-solid: #ffffff;
+  --card-bg: #ffffff;
+  --card-border: rgba(197, 155, 39, 0.35);
+  --card-shadow: 0 6px 22px rgba(10, 37, 64, 0.07), 0 2px 6px rgba(197, 155, 39, 0.08);
+  --card-hover-border: #0038a8;
+  --card-hover-shadow: 0 14px 34px rgba(0, 56, 168, 0.14), 0 0 24px rgba(217, 119, 6, 0.28);
+  --filter-bar-bg: rgba(248, 247, 242, 0.95);
+  --filter-btn-bg: linear-gradient(180deg, #ffffff 0%, #f5f2e9 100%);
+  --filter-btn-color: #0a1b3a;
+  --filter-btn-border: rgba(0, 56, 168, 0.28);
+  --filter-dd-bg: #ffffff;
+  --filter-dd-border: rgba(0, 56, 168, 0.32);
+  --filter-dd-shadow: 0 22px 50px rgba(10, 37, 64, 0.16), 0 0 20px rgba(197, 155, 39, 0.14);
+  --search-box-bg: #ffffff;
+  --search-box-color: #0a1b3a;
+  --search-box-border: rgba(0, 56, 168, 0.35);
+  --search-focus-bg: #ffffff;
+  --gold-glow: rgba(217, 119, 6, 0.35);
+  --blue-mykonos: #0038a8;
+  --blue-mykonos-glow: rgba(0, 56, 168, 0.35);
+  --red-glow: rgba(214, 0, 28, 0.35);
+  --text-1: #0a1128;
+  --text-2: #2c3e55;
+  --text-3: #5a6e85;
+  --scrollbar-track: rgba(235, 230, 220, 0.95);
 }
 
 /* ── BASE ─────────────────────────────────────────────────── */
 body {
   font-family: 'Outfit', system-ui, sans-serif;
-  background-color: var(--dark);
+  background-color: var(--bg-page);
   color: var(--text-1);
   min-height: 100vh;
   line-height: 1.5;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 a{color:inherit;text-decoration:none}
 button{cursor:pointer;border:none;background:none;font:inherit;color:inherit}
@@ -80,7 +151,7 @@ input,select{font:inherit;color:inherit}
 
 /* ── SCROLLBAR ────────────────────────────────────────────── */
 ::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:rgba(4,7,18,0.9)}
+::-webkit-scrollbar-track{background:var(--scrollbar-track)}
 ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#fdd835 0%,#e51c23 100%);border-radius:4px}
 
 /* ── ATMÓSFERA VIP CASINO (OPCIÓN 1 - GPU ACCELERATED) ──────── */
@@ -149,15 +220,19 @@ input,select{font:inherit;color:inherit}
   animation: sweepShimmer 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Micro-chispas de Polvo de Oro VIP (100% CSS) */
-.gold-sparkle {
+/* Micro-chispas de Polvo Estelar Azul Oficial Parley (100% CSS) */
+.gold-sparkle, .parley-sparkle {
   position: absolute;
   border-radius: 50%;
-  background: #fff59d;
-  box-shadow: 0 0 6px #fdd835, 0 0 14px rgba(253, 216, 53, 0.9);
+  background: #93c5fd;
+  box-shadow: 0 0 6px #2f74ff, 0 0 14px rgba(0, 56, 168, 0.95), 0 0 22px rgba(47, 116, 255, 0.7);
   pointer-events: none;
   will-change: transform, opacity;
   animation: floatSparkle linear infinite;
+}
+[data-theme="light"] .gold-sparkle, [data-theme="light"] .parley-sparkle {
+  background: #0038a8;
+  box-shadow: 0 0 6px #2f74ff, 0 0 14px rgba(0, 56, 168, 0.65), 0 0 20px rgba(47, 116, 255, 0.4);
 }
 
 @keyframes orbitGold {
@@ -246,12 +321,15 @@ input,select{font:inherit;color:inherit}
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(3, 6, 17, 0.92);
+  background: var(--filter-bar-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.6);
   padding: 12px 0 10px;
-  transition: background 0.3s ease, backdrop-filter 0.3s ease;
+  transition: background 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease;
+}
+[data-theme="light"] .filter-bar-sticky-wrapper {
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.07);
 }
 .portal-search-wrap {
   display: flex;
@@ -267,11 +345,11 @@ input,select{font:inherit;color:inherit}
 .portal-search-box input {
   width: 100%;
   height: 48px;
-  background: rgba(255,255,255,0.07);
-  border: 1.5px solid rgba(253,216,53,0.4);
+  background: var(--search-box-bg);
+  border: 1.5px solid var(--search-box-border);
   border-radius: 999px;
   padding: 0 46px 0 48px;
-  color: #fff;
+  color: var(--search-box-color);
   font-size: 0.92rem;
   font-weight: 600;
   transition: 0.25s ease;
@@ -280,10 +358,14 @@ input,select{font:inherit;color:inherit}
   outline: none;
   border-color: #fdd835;
   box-shadow: 0 0 28px var(--gold-glow);
-  background: rgba(255,255,255,0.11);
+  background: var(--search-focus-bg);
+}
+[data-theme="light"] .portal-search-box input:focus {
+  border-color: #d97706;
 }
 .portal-search-box input::placeholder{color:var(--text-3)}
 .portal-search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#fdd835;pointer-events:none}
+[data-theme="light"] .portal-search-icon{color:#d97706}
 .search-clear-btn {
   position: absolute;
   right: 14px;
@@ -302,8 +384,13 @@ input,select{font:inherit;color:inherit}
   cursor: pointer;
   transition: background 0.2s ease;
 }
+[data-theme="light"] .search-clear-btn {
+  background: rgba(0,0,0,0.08);
+  color: #0a1128;
+}
 .search-clear-btn:hover {
   background: #e51c23;
+  color: #fff;
 }
 
 .filter-bar {
@@ -324,8 +411,8 @@ input,select{font:inherit;color:inherit}
   gap: 8px;
   padding: 9px 18px;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(30,15,40,0.95) 0%, rgba(13,20,38,0.95) 100%);
-  border: 1.5px solid rgba(253,216,53,0.4);
+  background: var(--filter-btn-bg);
+  border: 1.5px solid var(--filter-btn-border);
   font-family: 'Cinzel', serif;
   font-size: 0.88rem;
   font-weight: 800;
@@ -341,9 +428,13 @@ input,select{font:inherit;color:inherit}
   justify-content: center;
   line-height: 1.22;
   min-height: 44px;
-  color: #e8d48b;
+  color: var(--filter-btn-color);
   text-shadow: 0 0 12px rgba(253,216,53,0.3);
   box-shadow: 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+[data-theme="light"] .filter-btn {
+  text-shadow: none;
+  box-shadow: 0 3px 10px rgba(15,23,42,0.06);
 }
 .filter-btn:hover {
   border-color: #fdd835;
@@ -353,6 +444,13 @@ input,select{font:inherit;color:inherit}
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 20px rgba(253,216,53,0.15), inset 0 1px 0 rgba(255,255,255,0.12);
 }
+[data-theme="light"] .filter-btn:hover {
+  background: #ffffff;
+  border-color: #d97706;
+  color: #b45309;
+  text-shadow: none;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.1), 0 0 14px rgba(217,119,6,0.15);
+}
 .filter-btn.active {
   border-color: #fdd835;
   background: linear-gradient(180deg, rgba(60,30,10,0.98) 0%, rgba(40,20,5,0.95) 100%);
@@ -360,9 +458,19 @@ input,select{font:inherit;color:inherit}
   text-shadow: 0 0 18px rgba(253,216,53,0.7);
   box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 24px rgba(253,216,53,0.25), inset 0 1px 0 rgba(253,216,53,0.2);
 }
+[data-theme="light"] .filter-btn.active {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #d97706;
+  color: #b45309;
+  text-shadow: none;
+  box-shadow: 0 4px 16px rgba(217,119,6,0.25);
+}
 .filter-btn .filter-icon {
   font-size: 1.1rem;
   filter: drop-shadow(0 0 4px rgba(253,216,53,0.5));
+}
+[data-theme="light"] .filter-btn .filter-icon {
+  filter: drop-shadow(0 0 3px rgba(217,119,6,0.4));
 }
 .filter-btn .filter-arrow {
   font-size: 0.55rem;
@@ -394,12 +502,12 @@ input,select{font:inherit;color:inherit}
   transform: translateX(-50%);
   min-width: 240px;
   max-width: 320px;
-  background: linear-gradient(180deg, #121a30 0%, #0d1426 100%);
-  border: 1.5px solid rgba(253,216,53,0.4);
+  background: var(--filter-dd-bg);
+  border: 1.5px solid var(--filter-dd-border);
   border-radius: 16px;
   padding: 8px;
   z-index: 300;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.95), 0 0 40px rgba(0,0,0,0.5), 0 0 20px rgba(253,216,53,0.08);
+  box-shadow: var(--filter-dd-shadow);
   display: none;
   animation: dropdownIn 0.22s ease;
   max-height: 340px;
@@ -761,9 +869,12 @@ input,select{font:inherit;color:inherit}
 .results-bar{max-width:var(--max-w);margin:0 auto;padding:20px 24px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 .result-count{font-size:0.9rem;color:var(--text-2)}
 .result-count strong{color:#fdd835;font-weight:800}
+[data-theme="light"] .result-count strong{color:#b45309}
 .active-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(253,216,53,0.13);border:1px solid rgba(253,216,53,0.4);border-radius:999px;font-size:0.78rem;font-weight:700;color:#fdd835}
+[data-theme="light"] .chip{background:rgba(217,119,6,0.12);border-color:rgba(217,119,6,0.35);color:#b45309}
 .chip-x{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.18);font-size:0.65rem;cursor:pointer;transition:0.2s ease}
+[data-theme="light"] .chip-x{background:rgba(0,0,0,0.08);color:#0a1128}
 .chip-x:hover{background:#e51c23;color:#fff}
 .chip--clear-all{background:rgba(229,28,35,0.15);border-color:rgba(229,28,35,0.5);color:#e51c23;cursor:pointer}
 .chip--clear-all:hover{background:rgba(229,28,35,0.3)}
@@ -771,7 +882,7 @@ input,select{font:inherit;color:inherit}
 /* ══════════════════════════════════════════════════════════════
    SLOTS GRID — Experimento 35% Micro-Cards (7 cols Desktop / 3 cols Móvil)
    ══════════════════════════════════════════════════════════════ */
-.grid-wrap{max-width:var(--max-w);margin:0 auto;padding:8px 20px 80px}
+.grid-wrap{max-width:var(--max-w);margin:0 auto;padding:8px 20px 140px}
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px}
 
 @media(max-width:1400px){
@@ -783,21 +894,40 @@ input,select{font:inherit;color:inherit}
 
 /* ── CARD 35% MICRO-SCALE ─────────────────────────────────── */
 .card {
-  background: rgba(13,20,38,0.88);
-  border: 1px solid rgba(212,175,55,0.3);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 10px;
   overflow: hidden;
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   position: relative;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.55);
-  animation: cardAppear 0.35s ease both;
+  box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 230px;
+  contain: layout paint style;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
-.card:hover{transform:translateY(-5px) scale(1.03);border-color:#fdd835;box-shadow:0 14px 36px rgba(0,0,0,0.8),0 0 20px rgba(253,216,53,0.35)}
+.card.card-enter {
+  animation: cardAppear 0.35s ease both;
+}
+.card:hover{
+  transform:translateY(-5px) scale(1.03);
+  border-color:var(--card-hover-border);
+  box-shadow:var(--card-hover-shadow);
+}
 @keyframes cardAppear{from{opacity:0;transform:translateY(16px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ── BLINDAJE DE FLUIDEZ 120 FPS EN SCROLLBAR RÁPIDO ───────── */
+html {
+  scroll-behavior: auto !important;
+}
+body.is-fast-scrolling .grid,
+body.is-fast-scrolling .card {
+  pointer-events: none !important;
+}
+body.is-fast-scrolling .card {
+  transition: none !important;
+}
 
 /* [CORRECCIÓN IMÁGENES] 1:1 Image Wrapper — Suavizado HD por GPU */
 .card-img-wrap {
@@ -806,6 +936,9 @@ input,select{font:inherit;color:inherit}
   background: #090e1a;
   overflow: hidden;
   flex-shrink: 0;
+}
+[data-theme="light"] .card-img-wrap {
+  background: #e2e8f0;
 }
 .card-img {
   width: 100%;
@@ -820,22 +953,50 @@ input,select{font:inherit;color:inherit}
   transition: transform 0.45s ease, opacity 0.3s ease;
 }
 .card:hover .card-img{transform:scale(1.06) translateZ(0)}
+
+/* 🎰 Placeholder de Lujo Blindado (Fallback 404 o Red Lenta) */
 .card-img-placeholder {
   position: absolute;
   inset: 0;
   display: none;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1e1b4b 0%, #31103f 100%);
-  color: var(--text-2);
+  gap: 4px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #31103f 100%);
+  color: #fdd835;
   font-size: 0.65rem;
-  font-weight: 700;
+  font-weight: 800;
   text-align: center;
   padding: 8px;
   z-index: 1;
+  border: 1px dashed rgba(253,216,53,0.3);
+}
+[data-theme="light"] .card-img-placeholder {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+  color: #b45309;
+  border: 1px dashed rgba(197,155,39,0.4);
+}
+.card-img-placeholder-icon {
+  font-size: 1.6rem;
+  filter: drop-shadow(0 0 8px rgba(253,216,53,0.5));
+}
+.card-img-placeholder-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  color: #ffffff;
+  line-height: 1.18;
+  max-width: 90%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+[data-theme="light"] .card-img-placeholder-title {
+  color: #0a1128;
 }
 
-/* Provider & Status Badges — Flexbox Bar con Truncado Dinámico (0 Solapamientos) */
+/* Provider & Status Badges — Flexbox Bar con Ajuste Milimétrico y 0 Solapamientos */
 .card-badges-bar {
   position: absolute;
   top: 5px;
@@ -853,12 +1014,13 @@ input,select{font:inherit;color:inherit}
   position: relative;
   top: auto;
   left: auto;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  max-width: fit-content;
   min-width: 0;
   background: rgba(5,10,24,0.94);
   border: 1px solid rgba(253,216,53,0.65);
   border-radius: 999px;
-  padding: 1.8px 6px;
+  padding: 1.8px 7px;
   font-size: 0.52rem;
   font-weight: 800;
   color: #ffffff;
@@ -882,13 +1044,13 @@ input,select{font:inherit;color:inherit}
 
 /* Card body — Micro-escalado y simetría perfecta */
 .card-body{padding:6px 8px 8px;display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
-.card-name{font-size:clamp(0.68rem, 0.9vw, 0.75rem);font-weight:700;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25;min-height:2.2em;transition:color 0.22s ease}
+.card-name{font-size:clamp(0.68rem, 0.9vw, 0.75rem);font-weight:700;color:var(--text-1);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25;min-height:2.2em;transition:color 0.22s ease}
 .card:hover .card-name{color:#fdd835}
+[data-theme="light"] .card:hover .card-name{color:#b45309}
 
 /* JUGAR button — siempre visible en micro-escala */
 .btn-play-always{display:block;width:100%;padding:5.5px 0;background:linear-gradient(135deg,#e51c23 0%,#b70911 100%);color:#fff;border-radius:999px;font-size:0.65rem;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;text-align:center;box-shadow:0 2.5px 12px rgba(229,28,35,0.4);border:1px solid rgba(255,255,255,0.25);transition:0.25s ease}
 .btn-play-always:hover{transform:scale(1.03);box-shadow:0 4px 18px rgba(229,28,35,0.8)}
-.btn-play-always:hover{transform:scale(1.04);box-shadow:0 5px 24px rgba(229,28,35,0.8)}
 
 /* ── EMPTY STATE ──────────────────────────────────────────── */
 .empty-state{text-align:center;padding:60px 24px;color:var(--text-3);display:none}
@@ -903,13 +1065,224 @@ input,select{font:inherit;color:inherit}
 .scroll-spinner{width:22px;height:22px;border:3px solid rgba(253,216,53,0.3);border-top-color:#fdd835;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ── THEME TOGGLE WIDGET 3D (MODO CLARO / OSCURO) ────────── */
+.theme-toggle-widget {
+  position: fixed;
+  top: 58px;
+  left: 16px;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(30, 42, 74, 0.95), rgba(13, 20, 38, 0.98));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(253, 216, 53, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 14px rgba(253, 216, 53, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s, box-shadow 0.25s, background 0.3s;
+}
+.theme-toggle-widget:hover {
+  transform: translate3d(0, -2px, 0) scale(1.12);
+  border-color: #fdd835;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.7), 0 0 22px rgba(253, 216, 53, 0.5), inset 0 2px 5px rgba(255, 255, 255, 0.6);
+}
+.theme-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 2px rgba(253, 216, 53, 0.4));
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.theme-toggle-widget:active .theme-icon-wrap {
+  transform: rotate(180deg) scale(0.85);
+}
+[data-theme="light"] .theme-toggle-widget {
+  background: radial-gradient(circle at 35% 35%, #ffffff, #eae6d9);
+  border-color: rgba(0, 56, 168, 0.6);
+  box-shadow: 0 6px 18px rgba(10, 37, 64, 0.16), 0 0 14px rgba(0, 56, 168, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.9), inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+[data-theme="light"] .theme-icon-wrap {
+  filter: drop-shadow(0 2px 4px rgba(10, 37, 64, 0.4));
+}
+
 /* ══════════════════════════════════════════════════════════════
-   FAB — SELECTOR ALEATORIO
+   FABS 3D DE ÉLITE — IDENTIDAD OFICIAL PARLEY.COM.VE (AZUL Y ROJO)
    ══════════════════════════════════════════════════════════════ */
-.fab-random{position:fixed;bottom:28px;right:28px;z-index:998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#fdd835 0%,#e51c23 100%);color:#fff;font-size:1.5rem;box-shadow:0 6px 28px rgba(229,28,35,0.6),0 0 30px rgba(253,216,53,0.4),inset 0 2px 4px rgba(255,255,255,0.3);border:3px solid rgba(255,255,255,0.35);cursor:pointer;transition:0.25s ease;animation:fabPulse 2.5s ease-in-out infinite}
-.fab-random:hover{transform:scale(1.12) translateY(-3px);box-shadow:0 10px 40px rgba(229,28,35,0.9),0 0 50px rgba(253,216,53,0.7);animation:none}
-.fab-label{font-family:'Space Grotesk',sans-serif;font-size:0.5rem;font-weight:900;letter-spacing:1px;color:rgba(255,255,255,0.9);text-transform:uppercase;line-height:1}
-@keyframes fabPulse{0%,100%{box-shadow:0 6px 28px rgba(229,28,35,0.6),0 0 20px rgba(253,216,53,0.3)}50%{box-shadow:0 6px 36px rgba(229,28,35,0.9),0 0 40px rgba(253,216,53,0.7),0 0 60px rgba(253,216,53,0.2)}}
+
+/* 🏆 FAB TORNEOS — AZUL ROYAL OFICIAL PARLEY 3D */
+.fab-tournament {
+  position: fixed;
+  bottom: 110px;
+  right: 28px;
+  z-index: 998;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #2f74ff 0%, #0038a8 55%, #001952 100%);
+  color: #fff;
+  font-size: 1.55rem;
+  box-shadow: 0 10px 32px rgba(0, 56, 168, 0.7), 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(255, 255, 255, 0.7), inset 0 -3px 6px rgba(0, 0, 0, 0.5);
+  border: 3.5px solid rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  animation: fabTourn3DPulse 3s ease-in-out infinite;
+  user-select: none;
+}
+.fab-tournament:hover {
+  transform: scale(1.12) translateY(-4px);
+  box-shadow: 0 14px 44px rgba(0, 56, 168, 0.95), 0 0 35px rgba(47, 116, 255, 0.8), inset 0 3px 6px rgba(255, 255, 255, 0.85);
+  animation: none;
+}
+.fab-tournament:active {
+  transform: scale(0.96) translateY(0);
+}
+.fab-tournament .fab-emoji {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.75)) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.4));
+  line-height: 1;
+}
+.fab-tournament .fab-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 1.1px;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1;
+  text-shadow: 0 1px 3px #000, 0 0 1px #000, 0 0 4px rgba(0, 0, 0, 0.9);
+}
+@keyframes fabTourn3DPulse {
+  0%, 100% { box-shadow: 0 10px 30px rgba(0, 56, 168, 0.65), 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 3px 5px rgba(255, 255, 255, 0.6), inset 0 -3px 6px rgba(0, 0, 0, 0.5); }
+  50% { box-shadow: 0 10px 40px rgba(0, 56, 168, 0.9), 0 0 30px rgba(47, 116, 255, 0.65), inset 0 3px 5px rgba(255, 255, 255, 0.8), inset 0 -3px 6px rgba(0, 0, 0, 0.5); }
+}
+
+/* 🎰 FAB SUERTE — ROJO PASIÓN OFICIAL PARLEY 3D */
+.fab-random {
+  position: fixed;
+  bottom: 26px;
+  right: 28px;
+  z-index: 998;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff2a42 0%, #d6001c 55%, #7a000f 100%);
+  color: #fff;
+  font-size: 1.6rem;
+  box-shadow: 0 10px 32px rgba(214, 0, 28, 0.7), 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(255, 255, 255, 0.7), inset 0 -3px 6px rgba(0, 0, 0, 0.5);
+  border: 3.5px solid rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  animation: fabRandom3DPulse 2.8s ease-in-out infinite;
+  user-select: none;
+}
+.fab-random:hover {
+  transform: scale(1.12) translateY(-4px);
+  box-shadow: 0 14px 44px rgba(214, 0, 28, 0.95), 0 0 35px rgba(255, 42, 66, 0.8), inset 0 3px 6px rgba(255, 255, 255, 0.85);
+  animation: none;
+}
+.fab-random:active {
+  transform: scale(0.96) translateY(0);
+}
+.fab-random .fab-emoji {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.75)) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.4));
+  line-height: 1;
+}
+.fab-random .fab-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1;
+  text-shadow: 0 1px 3px #000, 0 0 1px #000, 0 0 4px rgba(0, 0, 0, 0.9);
+}
+@keyframes fabRandom3DPulse {
+  0%, 100% { box-shadow: 0 10px 30px rgba(214, 0, 28, 0.65), 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 3px 5px rgba(255, 255, 255, 0.6), inset 0 -3px 6px rgba(0, 0, 0, 0.5); }
+  50% { box-shadow: 0 10px 40px rgba(214, 0, 28, 0.9), 0 0 32px rgba(255, 42, 66, 0.7), inset 0 3px 5px rgba(255, 255, 255, 0.8), inset 0 -3px 6px rgba(0, 0, 0, 0.5); }
+}
+
+/* ── FLECHAS LATERALES DE CONTROL — CARRUSEL DESTACADOS (SOLO PC) ── */
+.featured-carousel-outer {
+  position: relative;
+  width: 100%;
+  max-width: var(--max-w);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+}
+.featured-arrow {
+  display: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(30, 42, 74, 0.94), rgba(13, 20, 38, 0.98));
+  border: 2px solid rgba(253, 216, 53, 0.7);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 16px rgba(0, 56, 168, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fdd835;
+  font-size: 1.35rem;
+  font-weight: 900;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+.featured-arrow-prev {
+  left: 10px;
+}
+.featured-arrow-next {
+  right: 10px;
+}
+.featured-arrow:hover {
+  transform: translateY(-50%) scale(1.15);
+  border-color: #ffffff;
+  color: #ffffff;
+  background: radial-gradient(circle at 35% 35%, #2a3a60, #10172e);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.9), 0 0 24px rgba(253, 216, 53, 0.7), inset 0 2px 5px rgba(255, 255, 255, 0.7);
+}
+.featured-arrow:active {
+  transform: translateY(-50%) scale(0.95);
+}
+[data-theme="light"] .featured-arrow {
+  background: radial-gradient(circle at 35% 35%, #ffffff, #ece7dc);
+  border-color: rgba(0, 56, 168, 0.6);
+  color: #0038a8;
+  box-shadow: 0 6px 20px rgba(10, 37, 64, 0.2), 0 0 14px rgba(0, 56, 168, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.95);
+}
+[data-theme="light"] .featured-arrow:hover {
+  background: #ffffff;
+  border-color: #0038a8;
+  color: #d6001c;
+  box-shadow: 0 10px 28px rgba(0, 56, 168, 0.35), 0 0 20px rgba(214, 0, 28, 0.4);
+}
+@media (min-width: 901px) {
+  .featured-arrow {
+    display: flex;
+  }
+}
 
 /* ══════════════════════════════════════════════════════════════
    MODAL — BASE OVERLAY
@@ -1161,7 +1534,7 @@ input,select{font:inherit;color:inherit}
   .carousel-slide{height:200px}
   .carousel-nav{left:50%;transform:translateX(-50%);bottom:10px;right:auto;padding:3px 8px;gap:6px}
   .results-bar{padding:14px 12px 10px;flex-direction:column;align-items:flex-start}
-  .grid-wrap{padding:8px 12px 70px}
+  .grid-wrap{padding:8px 12px 160px}
   /* C-02: Filter Bar — grid 2×2 + 1 centrado (móvil) */
   .filter-bar{padding:10px 12px;gap:8px;display:grid;grid-template-columns:repeat(2,1fr);justify-content:unset}
   .filter-btn-wrap{width:100%;position:relative}
@@ -1190,7 +1563,11 @@ input,select{font:inherit;color:inherit}
   .fortune-result-img{width:120px;height:120px}
   .cabinet-coin-tray{padding:4px 14px 8px}
 
+  .fab-tournament{bottom:88px;right:20px;width:60px;height:60px;font-size:1.2rem}
   .fab-random{bottom:20px;right:20px;width:60px;height:60px;font-size:1.2rem}
+}
+@media(max-width:600px){
+  .theme-toggle-widget{top:52px;left:12px}
 }
 @media(max-width:599px){
   .grid{grid-template-columns:repeat(3,1fr);gap:8px}
@@ -1679,6 +2056,13 @@ input,select{font:inherit;color:inherit}
   </div>
 </div>
 
+<!-- ☀️/🌙 Switch de Modo Claro / Oscuro VIP -->
+<button class="theme-toggle-widget" id="themeToggleWidget" onclick="App.toggleTheme()" title="Cambiar tema Claro / Oscuro" aria-label="Cambiar tema">
+  <div class="theme-icon-wrap" id="themeIconWrap">
+    <span class="theme-icon" id="themeIcon">☀️</span>
+  </div>
+</button>
+
 <!-- ══════════════════════════════════════════════════════════════
      1. HERO CAROUSEL HEADER — Banners Interactivos
      ══════════════════════════════════════════════════════════════ -->
@@ -1755,10 +2139,14 @@ input,select{font:inherit;color:inherit}
   <div class="featured-slots-header">
     <div class="featured-badge-title">★ SLOTS DESTACADOS ★</div>
   </div>
-  <div class="featured-free-scroll-container" id="featuredScrollContainer">
-    <div class="featured-free-track" id="featuredTrack">
-      <!-- Tarjetas renderizadas dinámicamente en JS -->
+  <div class="featured-carousel-outer">
+    <button class="featured-arrow featured-arrow-prev" id="featuredArrowPrev" onclick="App.scrollFeatured('prev')" aria-label="Desplazar destacados a la izquierda">&#10094;</button>
+    <div class="featured-free-scroll-container" id="featuredScrollContainer">
+      <div class="featured-free-track" id="featuredTrack">
+        <!-- Tarjetas renderizadas dinámicamente en JS -->
+      </div>
     </div>
+    <button class="featured-arrow featured-arrow-next" id="featuredArrowNext" onclick="App.scrollFeatured('next')" aria-label="Desplazar destacados a la derecha">&#10095;</button>
   </div>
 </section>
 
@@ -1857,10 +2245,17 @@ input,select{font:inherit;color:inherit}
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════
-     FAB — SELECTOR ALEATORIO
+     FABS — ATAJO TORNEOS & SELECTOR ALEATORIO
      ══════════════════════════════════════════════════════════════ -->
-<button class="fab-random" id="fabRandom" onclick="App.openFortune()" title="¡PARLEY FORTUNE!">
-  🎰<span class="fab-label">SUERTE</span>
+<!-- 🏆 FAB — Acceso Rápido a Torneos & Especiales -->
+<button class="fab-tournament" id="fabTournament" onclick="App.quickTournamentFilter()" title="🏆 ¡TORNEOS Y ESPECIALES!" aria-label="Torneos y especiales">
+  <span class="fab-emoji">🏆</span>
+  <span class="fab-label">TORNEOS</span>
+</button>
+
+<button class="fab-random" id="fabRandom" onclick="App.openFortune()" title="¡PARLEY FORTUNE!" aria-label="Probar mi suerte">
+  <span class="fab-emoji">🎰</span>
+  <span class="fab-label">SUERTE</span>
 </button>
 
 <!-- ══════════════════════════════════════════════════════════════
@@ -2289,6 +2684,7 @@ input,select{font:inherit;color:inherit}
       /* is_new: del campo pre-computado */
       s._isNew       = s.is_new || false;
     });
+    initTheme();
     buildFilterDropdowns();
     bindEvents();
     initInfiniteScroll();
@@ -2532,7 +2928,8 @@ input,select{font:inherit;color:inherit}
     const slots = filtered.slice(startIndex, displayedCount);
     slots.forEach((s,i)=>{
       const card=document.createElement('article');
-      card.className='card';card.style.animationDelay=`${Math.min(i*30,400)}ms`;
+      card.className=reset?'card card-enter':'card';
+      if(reset)card.style.animationDelay=`${Math.min(i*25,300)}ms`;
       const url = isMobile ? (s.slot_url_movil || s.slot_url_app || s.slot_desktop_movil || '#') : (s.slot_desktop_movil || '#');
       const hot = (s._totalClicks || 0) >= HOT_THRESHOLD;
       const newCutoffMs = NEW_THRESHOLD_DAYS * 86400000;
@@ -2546,7 +2943,10 @@ input,select{font:inherit;color:inherit}
           </div>
           <img class="card-img" data-src="${s.image_url}" alt="${s.name}" decoding="async"
                onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex'">
-          <div class="card-img-placeholder">🎰 ${s.name}</div>
+          <div class="card-img-placeholder">
+            <span class="card-img-placeholder-icon">🎰</span>
+            <span class="card-img-placeholder-title">${s.name}</span>
+          </div>
         </div>
         <div class="card-body">
           <div class="card-name" title="${s.name}">${s.name}</div>
@@ -2561,17 +2961,48 @@ input,select{font:inherit;color:inherit}
   function hideSentinel(){if(sentinel)sentinel.style.display='none'}
   function showSentinel(){if(sentinel)sentinel.style.display='block'}
 
-  /* ── Infinite Scroll ────────────────────────────────────────── */
+  /* ── Infinite Scroll & High-Speed Fast-Drag Handling ────────── */
+  let isFastScrolling = false;
+  let scrollThrottleTimer = null;
+  let loadMoreRaf = null;
+
   function initInfiniteScroll(){
     if(!('IntersectionObserver' in window))return;
     infiniteObserver=new IntersectionObserver(entries=>{
-      for(const e of entries){if(e.isIntersecting&&!isLoadingMore&&displayedCount<filtered.length)loadMore()}
-    },{rootMargin:'150px',threshold:0.1});
+      for(const e of entries){
+        if(e.isIntersecting&&!isLoadingMore&&displayedCount<filtered.length){
+          loadMore();
+        }
+      }
+    },{rootMargin:'400px',threshold:0.01});
     if(sentinel)infiniteObserver.observe(sentinel);
-  }
-  function loadMore(){isLoadingMore=true;scrollLoading.style.display='flex';setTimeout(()=>{displayedCount=Math.min(displayedCount+BATCH_SIZE,filtered.length);renderCards(false);scrollLoading.style.display='none';isLoadingMore=false},150)}
 
-  /* ── Lazy Image Loading ─────────────────────────────────────── */
+    window.addEventListener('scroll',()=>{
+      if(!document.body.classList.contains('is-fast-scrolling')){
+        document.body.classList.add('is-fast-scrolling');
+      }
+      if(scrollThrottleTimer)clearTimeout(scrollThrottleTimer);
+      scrollThrottleTimer=setTimeout(()=>{
+        document.body.classList.remove('is-fast-scrolling');
+        isFastScrolling=false;
+      },70);
+    },{passive:true});
+  }
+
+  function loadMore(){
+    if(isLoadingMore)return;
+    isLoadingMore=true;
+    if(scrollLoading)scrollLoading.style.display='flex';
+    if(loadMoreRaf)cancelAnimationFrame(loadMoreRaf);
+    loadMoreRaf=requestAnimationFrame(()=>{
+      displayedCount=Math.min(displayedCount+BATCH_SIZE,filtered.length);
+      renderCards(false);
+      if(scrollLoading)scrollLoading.style.display='none';
+      isLoadingMore=false;
+    });
+  }
+
+  /* ── Lazy Image Loading (GPU Smooth Batched) ───────────────── */
   let imgObserver=null;
   function initImgObserver(){
     if(!('IntersectionObserver' in window))return;
@@ -2579,15 +3010,33 @@ input,select{font:inherit;color:inherit}
       for(const e of entries){
         if(e.isIntersecting){
           const img=e.target,src=img.dataset.src;
-          if(src){img.src=src;img.removeAttribute('data-src');img.addEventListener('load',()=>{const ph=img.parentElement.querySelector('.card-img-placeholder');if(ph)ph.style.display='none'},{once:true})}
+          if(src){
+            img.src=src;
+            img.removeAttribute('data-src');
+            img.addEventListener('load',()=>{
+              const ph=img.parentElement?img.parentElement.querySelector('.card-img-placeholder'):null;
+              if(ph)ph.style.display='none';
+            },{once:true});
+          }
           imgObserver.unobserve(img);
         }
       }
-    },{rootMargin:'300px'});
+    },{rootMargin:'400px'});
   }
   function observeImages(){
-    if(!imgObserver){grid.querySelectorAll('img[data-src]').forEach(img=>{img.src=img.dataset.src;img.removeAttribute('data-src');img.addEventListener('load',()=>{const ph=img.parentElement.querySelector('.card-img-placeholder');if(ph)ph.style.display='none'},{once:true})});return}
-    grid.querySelectorAll('img[data-src]').forEach(img=>imgObserver.observe(img));
+    const unobserved=grid.querySelectorAll('img[data-src]');
+    if(!imgObserver){
+      unobserved.forEach(img=>{
+        img.src=img.dataset.src;
+        img.removeAttribute('data-src');
+        img.addEventListener('load',()=>{
+          const ph=img.parentElement?img.parentElement.querySelector('.card-img-placeholder'):null;
+          if(ph)ph.style.display='none';
+        },{once:true});
+      });
+      return;
+    }
+    unobserved.forEach(img=>imgObserver.observe(img));
   }
 
   /* ── Result Count ───────────────────────────────────────────── */
@@ -3128,6 +3577,18 @@ input,select{font:inherit;color:inherit}
     }, true);
   }
 
+  function scrollFeatured(dir) {
+    const container = $('featuredScrollContainer');
+    if (!container) return;
+    pauseFeaturedAutoScroll();
+    const scrollAmount = (dir === 'next' ? 1 : -1) * 320;
+    container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    setTimeout(() => {
+      wrapFeaturedBounds();
+      scheduleFeaturedResume();
+    }, 450);
+  }
+
   function filterByTag(t){activeTags.clear();activeTags.add(t);syncTagsUI();applyFilters();setTimeout(()=>grid.scrollIntoView({behavior:'smooth',block:'start'}),100)}
   function filterByPopular(){sortMode='popular';syncSortUI();applyFilters();setTimeout(()=>grid.scrollIntoView({behavior:'smooth',block:'start'}),100)}
 
@@ -3623,11 +4084,99 @@ input,select{font:inherit;color:inherit}
     localStorage.setItem('parley_ambient_audio', 'enabled');
   }
 
+  /* ══════════════════════════════════════════════════════════════
+     ☀️/🌙 MODO CLARO / OSCURO DINÁMICO & SISTEMA DE TEMAS VIP
+     ══════════════════════════════════════════════════════════════ */
+  let currentTheme = 'dark';
+
+  function initTheme() {
+    try {
+      const saved = localStorage.getItem('parley_theme');
+      if (saved === 'light' || saved === 'dark') {
+        setTheme(saved, false);
+      } else {
+        const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        setTheme(prefersLight ? 'light' : 'dark', false);
+      }
+
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+          if (!localStorage.getItem('parley_theme')) {
+            setTheme(e.matches ? 'light' : 'dark', false);
+          }
+        });
+      }
+    } catch(e) {
+      setTheme('dark', false);
+    }
+  }
+
+  function setTheme(theme, save = true) {
+    currentTheme = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    if (document.body) document.body.setAttribute('data-theme', currentTheme);
+    if (save) {
+      localStorage.setItem('parley_theme', currentTheme);
+    }
+    updateThemeUI();
+  }
+
+  function toggleTheme() {
+    const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme, true);
+  }
+
+  function updateThemeUI() {
+    const icon = $('themeIcon');
+    const widget = $('themeToggleWidget');
+    if (icon) {
+      icon.textContent = currentTheme === 'light' ? '🌙' : '☀️';
+    }
+    if (widget) {
+      widget.title = currentTheme === 'light' ? 'Cambiar a Modo Oscuro VIP' : 'Cambiar a Modo Claro VIP';
+      widget.setAttribute('aria-label', widget.title);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     🏆 ATAJO RÁPIDO A TORNEOS & ESPECIALES
+     ══════════════════════════════════════════════════════════════ */
+  function quickTournamentFilter() {
+    let targetTag = null;
+
+    if (specialCollections && Array.isArray(specialCollections) && specialCollections.length > 0) {
+      targetTag = specialCollections[0].id || specialCollections[0].name;
+    } else if (SPECIAL_TAGS && SPECIAL_TAGS.length > 0) {
+      targetTag = SPECIAL_TAGS.find(t => /torneo|tournament|drop/i.test(t)) || SPECIAL_TAGS[0];
+    }
+
+    if (!targetTag) targetTag = 'Torneo';
+
+    activeTags.clear();
+    activeTags.add(targetTag);
+
+    syncTagsUI();
+    applyFilters();
+
+    setTimeout(() => {
+      const targetElement = $('filterBarStickyWrapper') || $('filterBarWrap') || $('slotsGrid');
+      if (targetElement) {
+        const headerOffset = 65;
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 60);
+  }
+
   /* ── Boot ────────────────────────────────────────────────────── */
   init();
 
   /* ── Public API ──────────────────────────────────────────────── */
-  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio,enterCasino,preloadCatalogAndImages};
+  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio,enterCasino,preloadCatalogAndImages,toggleTheme,setTheme,quickTournamentFilter,scrollFeatured};
 })());
 const App = window.App;
 </script>
