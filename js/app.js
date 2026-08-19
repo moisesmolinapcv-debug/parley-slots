@@ -126,9 +126,32 @@ const SlotsApp = (() => {
 
   const SUPABASE_API_URL = "https://zofknbvkoxwoqtrcwpas.supabase.co/rest/v1";
   const SUPABASE_PUBLIC_KEY = "sb_publishable_EilryQ89HDbmfGDWmlKQ1A_Ch-aSEQC";
+  const SUPABASE_CACHE_KEY = 'parley_live_overrides_cache_v5';
+  const SUPABASE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos de validez
 
-  /** ⚡ Consulta relámpago a Supabase (~100ms) con Inversión Lógica para activos y site_config */
+  /** ⚡ Consulta relámpago a Supabase (~100ms) con Inversión Lógica, Resiliencia y Caché TTL (5 min) */
   async function fetchLiveOverrides() {
+    // ── 1. Snapshot en almacenamiento local fresco (< 5 min) ──
+    try {
+      const cachedRaw = localStorage.getItem(SUPABASE_CACHE_KEY) || sessionStorage.getItem(SUPABASE_CACHE_KEY);
+      if (cachedRaw) {
+        const cached = JSON.parse(cachedRaw);
+        if (cached && cached.ts && (Date.now() - cached.ts < SUPABASE_CACHE_TTL_MS)) {
+          if (Array.isArray(cached.banners) && cached.banners.length > 0) {
+            renderDynamicBanners(cached.banners);
+          }
+          if (cached.config) {
+            applyLiveSiteConfig(cached.config);
+          }
+          return {
+            activeProvs: cached.activeProvs && cached.activeProvs.length > 0 ? new Set(cached.activeProvs) : null,
+            inactiveSlotIds: cached.inactiveSlotIds ? new Set(cached.inactiveSlotIds) : new Set()
+          };
+        }
+      }
+    } catch(e) {}
+
+    // ── 2. Consulta a Supabase si no hay caché válida ──
     try {
       const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
       const [resProvActive, resSlotsInactive, resBanners, resConfig] = await Promise.all([
@@ -140,45 +163,71 @@ const SlotsApp = (() => {
 
       // ⚡ 1. Proveedores ACTIVOS devueltos por Supabase
       const activeProvs = new Set();
+      let activeProvsArr = [];
       if (resProvActive && resProvActive.ok) {
         const provData = await resProvActive.json();
         provData.forEach(p => {
-          if (p.name) activeProvs.add(p.name.toLowerCase().trim());
-          if (p.display_name) activeProvs.add(p.display_name.toLowerCase().trim());
+          if (p.name) { activeProvs.add(p.name.toLowerCase().trim()); activeProvsArr.push(p.name.toLowerCase().trim()); }
+          if (p.display_name) { activeProvs.add(p.display_name.toLowerCase().trim()); activeProvsArr.push(p.display_name.toLowerCase().trim()); }
         });
       }
 
       // ⚡ 2. Coincidencia Triple Redundante (ID DB, External ID, Nombre) para Slots Inactivos
       const inactiveSlotIds = new Set();
+      let inactiveSlotIdsArr = [];
       if (resSlotsInactive && resSlotsInactive.ok) {
         const slotData = await resSlotsInactive.json();
         slotData.forEach(s => {
-          if (s.id) inactiveSlotIds.add(String(s.id));
-          if (s.external_id) inactiveSlotIds.add(String(s.external_id));
-          if (s.name) inactiveSlotIds.add(s.name.toLowerCase().trim());
+          if (s.id) { inactiveSlotIds.add(String(s.id)); inactiveSlotIdsArr.push(String(s.id)); }
+          if (s.external_id) { inactiveSlotIds.add(String(s.external_id)); inactiveSlotIdsArr.push(String(s.external_id)); }
+          if (s.name) { inactiveSlotIds.add(s.name.toLowerCase().trim()); inactiveSlotIdsArr.push(s.name.toLowerCase().trim()); }
         });
       }
 
       // ⚡ 3. Banners dinámicos
+      let bannersArr = [];
       if (resBanners && resBanners.ok) {
         const bannerData = await resBanners.json();
         if (Array.isArray(bannerData) && bannerData.length > 0) {
+          bannersArr = bannerData;
           renderDynamicBanners(bannerData);
         }
       }
 
       // ⚙️ 4. Configuraciones dinámicas de site_config
+      let configMap = {};
       if (resConfig && resConfig.ok) {
         const configList = await resConfig.json();
         if (Array.isArray(configList)) {
-          const configMap = {};
           configList.forEach(item => { if (item.key) configMap[item.key] = item.value; });
           applyLiveSiteConfig(configMap);
         }
       }
 
+      // ── 3. Guardar snapshot fresco en caché local ──
+      try {
+        const cachePayload = {
+          ts: Date.now(),
+          activeProvs: activeProvsArr,
+          inactiveSlotIds: inactiveSlotIdsArr,
+          banners: bannersArr,
+          config: configMap
+        };
+        localStorage.setItem(SUPABASE_CACHE_KEY, JSON.stringify(cachePayload));
+      } catch(e) {}
+
       return { activeProvs, inactiveSlotIds };
     } catch (e) {
+      try {
+        const fallbackRaw = localStorage.getItem(SUPABASE_CACHE_KEY);
+        if (fallbackRaw) {
+          const fb = JSON.parse(fallbackRaw);
+          return {
+            activeProvs: fb.activeProvs && fb.activeProvs.length > 0 ? new Set(fb.activeProvs) : null,
+            inactiveSlotIds: fb.inactiveSlotIds ? new Set(fb.inactiveSlotIds) : new Set()
+          };
+        }
+      } catch(e2) {}
       return { activeProvs: null, inactiveSlotIds: new Set() };
     }
   }

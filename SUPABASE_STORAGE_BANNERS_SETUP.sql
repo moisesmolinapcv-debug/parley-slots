@@ -31,19 +31,22 @@ CREATE POLICY "Public Banners Access"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'banners');
 
--- B) Permitir que el panel de administración suba nuevas imágenes
+-- B) Permitir que el panel de administración autenticado suba nuevas imágenes
 CREATE POLICY "Public Banners Upload"
 ON storage.objects FOR INSERT
+TO authenticated
 WITH CHECK (bucket_id = 'banners');
 
--- C) Permitir actualización / sobreescritura de imágenes
+-- C) Permitir actualización / sobreescritura de imágenes a administradores autenticados
 CREATE POLICY "Public Banners Update"
 ON storage.objects FOR UPDATE
+TO authenticated
 USING (bucket_id = 'banners');
 
--- D) Permitir eliminación de imágenes antiguas
+-- D) Permitir eliminación de imágenes a administradores autenticados
 CREATE POLICY "Public Banners Delete"
 ON storage.objects FOR DELETE
+TO authenticated
 USING (bucket_id = 'banners');
 
 -- 4. Confirmación

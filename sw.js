@@ -1,4 +1,4 @@
-const CACHE_NAME = 'parley-slots-v6-2k-hd';
+const CACHE_NAME = 'parley-slots-v7-prod';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
