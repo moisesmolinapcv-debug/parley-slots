@@ -727,6 +727,7 @@ input,select{font:inherit;color:inherit}
   gap: 14px;
   align-items: center;
   white-space: nowrap;
+  padding: 8px 4px;
 }
 
 .featured-card {
@@ -740,18 +741,31 @@ input,select{font:inherit;color:inherit}
   position: relative;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(0,0,0,0.7);
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
   white-space: normal;
-  will-change: transform;
+  will-change: transform, box-shadow;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
 
-.featured-card:hover {
-  transform: translateY(-4px) scale(1.03);
+.featured-card.in-spotlight {
+  transform: scale(1.10) translateY(-4px);
   border-color: #fdd835;
-  box-shadow: 0 0 20px var(--gold-glow), 0 10px 25px rgba(0,0,0,0.9);
-  z-index: 6;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.9), 0 0 24px rgba(253, 216, 53, 0.7);
+  z-index: 10;
+}
+
+.featured-card.in-spotlight .featured-badge-star {
+  background: linear-gradient(135deg, #fdd835 0%, #ffb300 100%);
+  color: #000;
+  box-shadow: 0 0 12px rgba(253, 216, 53, 0.9);
+}
+
+.featured-card:hover {
+  transform: translateY(-4px) scale(1.08);
+  border-color: #fdd835;
+  box-shadow: 0 0 22px var(--gold-glow), 0 10px 25px rgba(0,0,0,0.9);
+  z-index: 11;
 }
 
 .featured-card-img-wrap {
@@ -3258,15 +3272,16 @@ body.is-fast-scrolling .card {
   }
 
   /* ══════════════════════════════════════════════════════════════
-     CARRUSEL DE SLOTS DESTACADOS (HASTA 20 SLOTS) — LOOP INFINITO Y AUTO-SCROLL
+     CARRUSEL DE SLOTS DESTACADOS (HASTA 20 SLOTS) — MODO BÚMERAN & SPOTLIGHT
      ══════════════════════════════════════════════════════════════ */
   let featuredSlotsData = [];
   let featuredAutoScrollActive = true;
   let featuredScrollPauseTimer = null;
   let featuredRafId = null;
   let isFeaturedUserInteracting = false;
-  const FEATURED_BREAK_MS = 5000; // 5 segundos de break tras soltar la interacción manual
-  const FEATURED_AUTO_SPEED = 0.65; // px por frame para desplazamiento continuo ultra-armónico y suave
+  let featuredScrollDirection = 1; // 1 = avance a la derecha, -1 = retroceso a la izquierda
+  const FEATURED_BREAK_MS = 2000; // 2 segundos exactos tras soltar interacción
+  const FEATURED_AUTO_SPEED = 0.70; // px por frame para oscilación constante, suave y armónica
 
   async function loadFeaturedSlotsConfig() {
     let order = liveFeaturedSlotsOrder;
@@ -3345,13 +3360,11 @@ body.is-fast-scrolling .card {
     const track = $('featuredTrack');
     if (!track) return;
 
-    // Duplicación simétrica exacta para garantizar un loop infinito sin cortes (Set A + Set B)
-    const renderList = [...featuredSlotsData, ...featuredSlotsData];
-
-    track.innerHTML = renderList.map((s, idx) => {
+    // Renderizado limpio de los 20 slots reales (sin duplicación artificial)
+    track.innerHTML = featuredSlotsData.map((s, idx) => {
       const playUrl = isMobile ? (s.slot_url_movil || s.slot_desktop_movil || '#') : (s.slot_desktop_movil || '#');
       return `
-        <div class="featured-card" data-idx="${idx % featuredSlotsData.length}">
+        <div class="featured-card" data-idx="${idx}">
           <div class="featured-badge-star">★ VIP</div>
           <div class="featured-card-img-wrap">
             <img src="${s.image_url}" alt="${s.name}" class="featured-card-img" onerror="this.onerror=null;this.src='ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png';this.style.objectFit='contain';this.style.padding='10px'" loading="lazy">
@@ -3364,6 +3377,40 @@ body.is-fast-scrolling .card {
         </div>
       `;
     }).join('');
+
+    // Calcular el spotlight inicial
+    requestAnimationFrame(updateFeaturedSpotlight);
+  }
+
+  /* ── Detección del Rango de Atención Máxima (Spotlight Central — Cero Forced Reflow O(1)) ── */
+  let lastSpotlightCard = null;
+  const FEATURED_CARD_PITCH = 134; // 120px de ancho + 14px de gap
+  const FEATURED_TRACK_PAD = 4;
+
+  function updateFeaturedSpotlight() {
+    const container = $('featuredScrollContainer');
+    const track = $('featuredTrack');
+    if (!container || !track) return;
+
+    const cards = track.children;
+    if (!cards || cards.length === 0) return;
+
+    // Cálculo aritmético O(1) sin consultar getBoundingClientRect (0ms de coste GPU/CPU)
+    const centerPos = container.scrollLeft + (container.clientWidth / 2);
+    const targetIdx = Math.round((centerPos - FEATURED_TRACK_PAD - 60) / FEATURED_CARD_PITCH);
+
+    const closestCard = (targetIdx >= 0 && targetIdx < cards.length) ? cards[targetIdx] : null;
+
+    if (closestCard) {
+      if (lastSpotlightCard !== closestCard) {
+        if (lastSpotlightCard) lastSpotlightCard.classList.remove('in-spotlight');
+        closestCard.classList.add('in-spotlight');
+        lastSpotlightCard = closestCard;
+      }
+    } else if (lastSpotlightCard) {
+      lastSpotlightCard.classList.remove('in-spotlight');
+      lastSpotlightCard = null;
+    }
   }
 
   // Estado del motor de arrastre táctil 1:1 e inercia física
@@ -3377,34 +3424,24 @@ body.is-fast-scrolling .card {
   let velocityX = 0;
   let momentumRafId = null;
 
-  function wrapFeaturedBounds() {
-    const container = $('featuredScrollContainer');
-    const track = $('featuredTrack');
-    if (!container || !track) return;
-    const halfWidth = track.scrollWidth / 2;
-    if (halfWidth <= 0) return;
-    if (container.scrollLeft >= halfWidth) {
-      container.scrollLeft -= halfWidth;
-      if (isFeaturedDragging) dragScrollStartX -= halfWidth;
-    } else if (container.scrollLeft <= 0) {
-      container.scrollLeft += halfWidth;
-      if (isFeaturedDragging) dragScrollStartX += halfWidth;
-    }
-  }
-
   function startFeaturedAutoScroll() {
     if (featuredRafId) cancelAnimationFrame(featuredRafId);
 
     function loop() {
       const container = $('featuredScrollContainer');
-      const track = $('featuredTrack');
-      if (container && track && featuredAutoScrollActive && !isFeaturedUserInteracting && !isFeaturedDragging) {
-        const halfWidth = track.scrollWidth / 2;
-        if (halfWidth > 0) {
-          container.scrollLeft += FEATURED_AUTO_SPEED;
-          if (container.scrollLeft >= halfWidth) {
-            container.scrollLeft -= halfWidth;
+      if (container && featuredAutoScrollActive && !isFeaturedUserInteracting && !isFeaturedDragging) {
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        if (maxScroll > 1) {
+          container.scrollLeft += FEATURED_AUTO_SPEED * featuredScrollDirection;
+
+          // Modo Búmeran: oscilación continua suave al llegar a los topes
+          if (container.scrollLeft >= maxScroll - 1) {
+            featuredScrollDirection = -1;
+          } else if (container.scrollLeft <= 1) {
+            featuredScrollDirection = 1;
           }
+
+          updateFeaturedSpotlight();
         }
       }
       featuredRafId = requestAnimationFrame(loop);
@@ -3442,7 +3479,17 @@ body.is-fast-scrolling .card {
     function step() {
       if (Math.abs(velocityX) > 0.25 && !isFeaturedDragging) {
         container.scrollLeft -= velocityX;
-        wrapFeaturedBounds();
+        updateFeaturedSpotlight();
+
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        if (container.scrollLeft >= maxScroll - 1) {
+          featuredScrollDirection = -1;
+          velocityX = 0;
+        } else if (container.scrollLeft <= 1) {
+          featuredScrollDirection = 1;
+          velocityX = 0;
+        }
+
         velocityX *= 0.94; // Decaimiento suave de fricción
         momentumRafId = requestAnimationFrame(step);
       } else {
@@ -3495,7 +3542,7 @@ body.is-fast-scrolling .card {
 
       // Adherencia 1:1 directa milimétrica
       container.scrollLeft = dragScrollStartX - deltaX;
-      wrapFeaturedBounds();
+      updateFeaturedSpotlight();
 
       // Medición de velocidad instantánea
       const now = performance.now();
@@ -3542,7 +3589,7 @@ body.is-fast-scrolling .card {
     // Rueda del ratón / Trackpad
     container.addEventListener('wheel', () => {
       pauseFeaturedAutoScroll();
-      wrapFeaturedBounds();
+      updateFeaturedSpotlight();
       scheduleFeaturedResume();
     }, { passive: true });
 
@@ -3563,7 +3610,7 @@ body.is-fast-scrolling .card {
     const scrollAmount = (dir === 'next' ? 1 : -1) * 320;
     container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     setTimeout(() => {
-      wrapFeaturedBounds();
+      updateFeaturedSpotlight();
       scheduleFeaturedResume();
     }, 450);
   }
