@@ -740,32 +740,53 @@ input,select{font:inherit;color:inherit}
   overflow: hidden;
   position: relative;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.7);
-  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
   white-space: normal;
-  will-change: transform, box-shadow;
-  transform: translateZ(0);
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* 🌟 Halo dorado de alto rendimiento mediante pseudo-elemento ::after con GPU compositing puro (0ms repaint) */
+.featured-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  border: 1.5px solid #fdd835;
+  box-shadow: 0 0 18px rgba(253, 216, 53, 0.75), inset 0 0 10px rgba(253, 216, 53, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  will-change: opacity;
 }
 
 .featured-card.in-spotlight {
-  transform: scale(1.10) translateY(-4px);
+  transform: scale(1.09) translateY(-4px) translateZ(0);
   border-color: #fdd835;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.9), 0 0 24px rgba(253, 216, 53, 0.7);
   z-index: 10;
+}
+
+.featured-card.in-spotlight::after {
+  opacity: 1;
 }
 
 .featured-card.in-spotlight .featured-badge-star {
   background: linear-gradient(135deg, #fdd835 0%, #ffb300 100%);
   color: #000;
-  box-shadow: 0 0 12px rgba(253, 216, 53, 0.9);
+  box-shadow: 0 0 10px rgba(253, 216, 53, 0.9);
 }
 
 .featured-card:hover {
-  transform: translateY(-4px) scale(1.08);
+  transform: translateY(-4px) scale(1.07) translateZ(0);
   border-color: #fdd835;
-  box-shadow: 0 0 22px var(--gold-glow), 0 10px 25px rgba(0,0,0,0.9);
   z-index: 11;
+}
+
+.featured-card:hover::after {
+  opacity: 0.85;
 }
 
 .featured-card-img-wrap {
@@ -3272,7 +3293,7 @@ body.is-fast-scrolling .card {
   }
 
   /* ══════════════════════════════════════════════════════════════
-     CARRUSEL DE SLOTS DESTACADOS (HASTA 20 SLOTS) — MODO BÚMERAN & SPOTLIGHT
+     CARRUSEL DE SLOTS DESTACADOS — FÍSICA DELTA-TIME & SPOTLIGHT ELÁSTICO
      ══════════════════════════════════════════════════════════════ */
   let featuredSlotsData = [];
   let featuredAutoScrollActive = true;
@@ -3280,8 +3301,9 @@ body.is-fast-scrolling .card {
   let featuredRafId = null;
   let isFeaturedUserInteracting = false;
   let featuredScrollDirection = 1; // 1 = avance a la derecha, -1 = retroceso a la izquierda
+  let lastFrameTimestamp = 0;
   const FEATURED_BREAK_MS = 2000; // 2 segundos exactos tras soltar interacción
-  const FEATURED_AUTO_SPEED = 0.70; // px por frame para oscilación constante, suave y armónica
+  const FEATURED_SPEED_PX_SEC = 38; // 38 píxeles por segundo constante uniforme (Delta-Time real)
 
   async function loadFeaturedSlotsConfig() {
     let order = liveFeaturedSlotsOrder;
@@ -3360,11 +3382,11 @@ body.is-fast-scrolling .card {
     const track = $('featuredTrack');
     if (!track) return;
 
-    // Renderizado limpio de los 20 slots reales (sin duplicación artificial)
+    // Renderizado limpio de los 20 slots reales
     track.innerHTML = featuredSlotsData.map((s, idx) => {
       const playUrl = isMobile ? (s.slot_url_movil || s.slot_desktop_movil || '#') : (s.slot_desktop_movil || '#');
       return `
-        <div class="featured-card" data-idx="${idx}">
+        <div class="featured-card ${idx === 0 ? 'in-spotlight' : ''}" data-idx="${idx}">
           <div class="featured-badge-star">★ VIP</div>
           <div class="featured-card-img-wrap">
             <img src="${s.image_url}" alt="${s.name}" class="featured-card-img" onerror="this.onerror=null;this.src='ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png';this.style.objectFit='contain';this.style.padding='10px'" loading="lazy">
@@ -3378,14 +3400,12 @@ body.is-fast-scrolling .card {
       `;
     }).join('');
 
-    // Calcular el spotlight inicial
+    lastSpotlightCard = track.children[0] || null;
     requestAnimationFrame(updateFeaturedSpotlight);
   }
 
-  /* ── Detección del Rango de Atención Máxima (Spotlight Central — Cero Forced Reflow O(1)) ── */
+  /* ── Detección del Rango de Atención Máxima (Sensor de Centro Elástico & Clamp Seguro) ── */
   let lastSpotlightCard = null;
-  const FEATURED_CARD_PITCH = 134; // 120px de ancho + 14px de gap
-  const FEATURED_TRACK_PAD = 4;
 
   function updateFeaturedSpotlight() {
     const container = $('featuredScrollContainer');
@@ -3395,21 +3415,28 @@ body.is-fast-scrolling .card {
     const cards = track.children;
     if (!cards || cards.length === 0) return;
 
-    // Cálculo aritmético O(1) sin consultar getBoundingClientRect (0ms de coste GPU/CPU)
-    const centerPos = container.scrollLeft + (container.clientWidth / 2);
-    const targetIdx = Math.round((centerPos - FEATURED_TRACK_PAD - 60) / FEATURED_CARD_PITCH);
+    // Medición elástica adaptada a cualquier DPR y ancho móvil
+    const firstCard = cards[0];
+    const cardWidth = (firstCard && firstCard.offsetWidth > 0) ? firstCard.offsetWidth : 120;
+    const gap = 14;
+    const pitch = cardWidth + gap;
 
-    const closestCard = (targetIdx >= 0 && targetIdx < cards.length) ? cards[targetIdx] : null;
+    // Centro visual exacto del viewport visible
+    const visibleCenter = container.scrollLeft + (container.clientWidth / 2);
+    
+    // Índice de la tarjeta matemáticamente más cercana al centro
+    let targetIdx = Math.round((visibleCenter - (cardWidth / 2)) / pitch);
+    
+    // Clamp estricto: SIEMPRE debe haber 1 tarjeta activa (garantía anti-desactivación)
+    if (targetIdx < 0) targetIdx = 0;
+    if (targetIdx >= cards.length) targetIdx = cards.length - 1;
 
-    if (closestCard) {
-      if (lastSpotlightCard !== closestCard) {
-        if (lastSpotlightCard) lastSpotlightCard.classList.remove('in-spotlight');
-        closestCard.classList.add('in-spotlight');
-        lastSpotlightCard = closestCard;
-      }
-    } else if (lastSpotlightCard) {
-      lastSpotlightCard.classList.remove('in-spotlight');
-      lastSpotlightCard = null;
+    const closestCard = cards[targetIdx];
+
+    if (closestCard && lastSpotlightCard !== closestCard) {
+      if (lastSpotlightCard) lastSpotlightCard.classList.remove('in-spotlight');
+      closestCard.classList.add('in-spotlight');
+      lastSpotlightCard = closestCard;
     }
   }
 
@@ -3426,18 +3453,26 @@ body.is-fast-scrolling .card {
 
   function startFeaturedAutoScroll() {
     if (featuredRafId) cancelAnimationFrame(featuredRafId);
+    lastFrameTimestamp = performance.now();
 
-    function loop() {
+    function loop(now) {
+      if (!lastFrameTimestamp) lastFrameTimestamp = now;
+      const dt = Math.min((now - lastFrameTimestamp) / 1000, 0.05); // Límite de 50ms para evitar saltos
+      lastFrameTimestamp = now;
+
       const container = $('featuredScrollContainer');
       if (container && featuredAutoScrollActive && !isFeaturedUserInteracting && !isFeaturedDragging) {
         const maxScroll = container.scrollWidth - container.clientWidth;
         if (maxScroll > 1) {
-          container.scrollLeft += FEATURED_AUTO_SPEED * featuredScrollDirection;
+          const deltaMove = FEATURED_SPEED_PX_SEC * dt * featuredScrollDirection;
+          container.scrollLeft += deltaMove;
 
-          // Modo Búmeran: oscilación continua suave al llegar a los topes
-          if (container.scrollLeft >= maxScroll - 1) {
+          // Modo Búmeran: oscilación elástica continua al llegar a los topes
+          if (container.scrollLeft >= maxScroll - 0.5) {
+            container.scrollLeft = maxScroll;
             featuredScrollDirection = -1;
-          } else if (container.scrollLeft <= 1) {
+          } else if (container.scrollLeft <= 0.5) {
+            container.scrollLeft = 0;
             featuredScrollDirection = 1;
           }
 
@@ -3468,6 +3503,7 @@ body.is-fast-scrolling .card {
       clearTimeout(featuredScrollPauseTimer);
     }
     featuredScrollPauseTimer = setTimeout(() => {
+      lastFrameTimestamp = performance.now();
       featuredAutoScrollActive = true;
     }, FEATURED_BREAK_MS);
   }
