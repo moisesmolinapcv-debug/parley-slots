@@ -10,9 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-  <!-- 🚀 Precarga prioritaria en red para Banner 2K Ultra HD -->
-  <link rel="preload" as="image" href="BANNER/banner_1_desktop_hd.webp" media="(min-width: 601px)" fetchpriority="high">
-  <link rel="preload" as="image" href="BANNER/banner_1_mobile_hd.webp" media="(max-width: 600px)" fetchpriority="high">
+
 
   <!-- ⚡ Inicialización Temprana de Tema (Anti-Parpadeo FOUC) -->
   <script>
@@ -29,16 +27,24 @@
     })();
   </script>
 
+  <!-- ⚡ Revelación Atómica Suave (Anti-Parpadeo FOUC & Cero Saltos) -->
+  <script>
+    (function() {
+      function markReady() {
+        if (document.body) document.body.classList.add('app-ready');
+      }
+      if (document.readyState === 'interactive' || document.readyState === 'complete') {
+        setTimeout(markReady, 10);
+      } else {
+        document.addEventListener('DOMContentLoaded', markReady);
+      }
+      setTimeout(markReady, 250);
+    })();
+  </script>
+
   <!-- ⚡ Bootstrap Global Temprano de App (Blindaje de Clics Inmediatos) -->
   <script>
     window.App = window.App || {
-      enterCasino: function() {
-        var splash = document.getElementById('welcomeSplash');
-        if (splash) {
-          splash.classList.add('hidden');
-          setTimeout(function() { splash.style.display = 'none'; }, 500);
-        }
-      },
       goSlide: function(){},
       nextSlide: function(){},
       prevSlide: function(){},
@@ -50,7 +56,8 @@
       spinFortune: function(){},
       toggleAmbientAudio: function(){},
       toggleTheme: function(){},
-      quickTournamentFilter: function(){}
+      quickTournamentFilter: function(){},
+      closeWelcomePopup: function(){}
     };
   </script>
 
@@ -66,6 +73,8 @@
 /* ── RESET ────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{overflow-x:hidden;max-width:100vw;width:100%;margin:0;padding:0}
+body{opacity:0;transition:opacity 0.22s ease-in-out}
+body.app-ready{opacity:1}
 
 /* ── DESIGN TOKENS (MODO OSCURO / DEFAULT) ──────────────────── */
 :root {
@@ -220,19 +229,20 @@ input,select{font:inherit;color:inherit}
   animation: sweepShimmer 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Micro-chispas de Polvo Estelar Azul Oficial Parley (100% CSS) */
+/* Micro-chispas de Polvo Estelar — Rojo Rubí (Modo Oscuro VIP) & Azul Royale (Modo Claro) */
 .gold-sparkle, .parley-sparkle {
   position: absolute;
   border-radius: 50%;
-  background: #93c5fd;
-  box-shadow: 0 0 6px #2f74ff, 0 0 14px rgba(0, 56, 168, 0.95), 0 0 22px rgba(47, 116, 255, 0.7);
+  background: #ff3344;
+  box-shadow: 0 0 6px #ff1744, 0 0 14px rgba(229, 28, 35, 0.95), 0 0 22px rgba(213, 0, 0, 0.75);
   pointer-events: none;
   will-change: transform, opacity;
   animation: floatSparkle linear infinite;
+  transition: background 0.4s ease, box-shadow 0.4s ease;
 }
 [data-theme="light"] .gold-sparkle, [data-theme="light"] .parley-sparkle {
-  background: #0038a8;
-  box-shadow: 0 0 6px #2f74ff, 0 0 14px rgba(0, 56, 168, 0.65), 0 0 20px rgba(47, 116, 255, 0.4);
+  background: #1d4ed8;
+  box-shadow: 0 0 6px #3b82f6, 0 0 14px rgba(29, 78, 216, 0.85), 0 0 20px rgba(30, 58, 138, 0.55);
 }
 
 @keyframes orbitGold {
@@ -586,11 +596,14 @@ input,select{font:inherit;color:inherit}
 .dd-option.dd-has-sub:hover{background:rgba(253,216,53,0.1);color:#fff}
 
 /* ══════════════════════════════════════════════════════════════
-   HERO CAROUSEL — MARCO DORADO RESPONSIVE Y FLUIDO FULL-FRAME
+   HERO CAROUSEL — MARCO DORADO RESPONSIVE Y FLUIDO FULL-FRAME (ZERO-CLS)
    ══════════════════════════════════════════════════════════════ */
 .hero-carousel-wrap{max-width:var(--max-w);margin:20px auto 0;padding:0 24px;width:100%}
 .hero-carousel{
   position:relative;
+  width:100%;
+  height:360px;
+  min-height:360px;
   border-radius:20px;
   overflow:hidden;
   border:2px solid rgba(253,216,53,0.75);
@@ -598,14 +611,33 @@ input,select{font:inherit;color:inherit}
   animation:bannerGlowPulse 4s ease-in-out infinite;
   touch-action:pan-y;
   user-select:none;
+  background:radial-gradient(circle at center, #151d38 0%, #070c1d 100%);
 }
 @keyframes bannerGlowPulse{
   0%,100%{border-color:rgba(253,216,53,0.75)}
   50%{border-color:rgba(253,216,53,0.95)}
 }
-.carousel-slides{display:flex;width:100%;transition:transform 0.5s cubic-bezier(0.25,1,0.5,1);will-change:transform}
-.carousel-slide{flex:0 0 100%;width:100%;min-width:100%;max-width:100%;height:360px;position:relative;overflow:hidden;display:block;padding:0}
-.carousel-banner-img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;user-select:none;-webkit-user-drag:none}
+.carousel-skeleton{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(253,216,53,0.06) 50%, rgba(255,255,255,0) 100%);
+  background-size:200% 100%;
+  animation:skeletonShimmer 2.2s infinite ease-in-out;
+  z-index:2;
+  pointer-events:none;
+}
+@keyframes skeletonShimmer{
+  0%{background-position:-200% 0}
+  100%{background-position:200% 0}
+}
+.carousel-slides{display:flex;width:100%;height:100%;transition:transform 0.5s cubic-bezier(0.25,1,0.5,1);will-change:transform}
+.carousel-slide{flex:0 0 100%;width:100%;min-width:100%;max-width:100%;height:100%;position:relative;overflow:hidden;display:block;padding:0}
+.carousel-banner-img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;user-select:none;-webkit-user-drag:none;transition:opacity 0.25s ease}
 
 /* Sombra gradiente inferior para legibilidad */
 .carousel-overlay-bottom{position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to top,rgba(3,6,17,0.75) 0%,rgba(3,6,17,0) 100%);pointer-events:none;z-index:5}
@@ -1285,6 +1317,135 @@ body.is-fast-scrolling .card {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   POP-UP MODAL COMERCIAL DE ENTRADA — FORMATO 4:5 VIP (CINEMATIC)
+   ══════════════════════════════════════════════════════════════ */
+.welcome-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 6, 17, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.38s ease;
+  will-change: opacity, backdrop-filter;
+}
+
+.welcome-popup-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.welcome-popup-overlay.closing {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.welcome-popup-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  aspect-ratio: 4 / 5;
+  max-height: 85vh;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 2.5px solid #fdd835;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.95), 0 0 50px rgba(253, 216, 53, 0.45);
+  transform: scale(0.88) translateY(28px);
+  opacity: 0;
+  filter: blur(4px);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1), filter 0.38s ease;
+  background: #080c1a;
+  display: flex;
+  flex-direction: column;
+  will-change: transform, opacity, filter;
+}
+
+.welcome-popup-overlay.active .welcome-popup-card {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  filter: blur(0);
+}
+
+.welcome-popup-overlay.closing .welcome-popup-card {
+  transform: scale(0.95) translateY(-12px);
+  opacity: 0;
+  filter: blur(3px);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, filter 0.25s ease;
+}
+
+.welcome-popup-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(8, 12, 24, 0.88);
+  border: 1.5px solid rgba(253, 216, 53, 0.7);
+  color: #fdd835;
+  font-size: 1.15rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 15;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+}
+
+.welcome-popup-close:hover {
+  transform: scale(1.12);
+  background: #e51c23;
+  color: #ffffff;
+  border-color: #ff5252;
+  box-shadow: 0 0 16px rgba(229, 28, 35, 0.8);
+}
+
+.welcome-popup-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.welcome-popup-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+@media (max-width: 480px) {
+  .welcome-popup-card {
+    max-width: 90vw;
+    max-height: 82vh;
+    border-radius: 18px;
+  }
+  .welcome-popup-close {
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
    MODAL — BASE OVERLAY
    ══════════════════════════════════════════════════════════════ */
 .modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.3s ease;overflow-y:auto}
@@ -1517,21 +1678,21 @@ body.is-fast-scrolling .card {
 @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(calc(100vh)) rotate(720deg);opacity:0}}
 
 /* ══════════════════════════════════════════════════════════════
-   BLINDAJE RESPONSIVE UNIVERSAL
+   BLINDAJE RESPONSIVE UNIVERSAL (ZERO-CLS)
    ══════════════════════════════════════════════════════════════ */
 @media(max-width:1024px){
   .grid{grid-template-columns:repeat(3,1fr)}
   .cabinet-lever{display:none}
-  /* C-04: altura carousel tablet */
-  .carousel-slide{height:270px}
+  /* C-04: altura carousel tablet bloqueada */
+  .hero-carousel{height:270px;min-height:270px}
 }
 @media(max-width:768px){
   .portal-header{padding:18px 16px 0}
   .portal-logo-wrap img{height:42px}
   .portal-search-box input{height:46px;font-size:0.88rem;padding:0 16px 0 46px}
-  /* C-04: carousel full-frame móvil */
+  /* C-04: carousel full-frame móvil bloqueado */
   .hero-carousel-wrap{padding:0 12px;margin-top:14px}
-  .carousel-slide{height:200px}
+  .hero-carousel{height:200px;min-height:200px}
   .carousel-nav{left:50%;transform:translateX(-50%);bottom:10px;right:auto;padding:3px 8px;gap:6px}
   .results-bar{padding:14px 12px 10px;flex-direction:column;align-items:flex-start}
   .grid-wrap{padding:8px 12px 160px}
@@ -1582,8 +1743,8 @@ body.is-fast-scrolling .card {
   .reel-symbol img{width:100%;height:100%;border-radius:8px}
   .spin-btn{font-size:0.95rem;padding:12px 0;max-width:100%}
   .fortune-result-name{font-size:0.95rem}
-  /* C-05: Carousel mínimo iPhone SE */
-  .carousel-slide{height:170px}
+  /* C-05: Carousel mínimo iPhone SE bloqueado */
+  .hero-carousel{height:170px;min-height:170px}
 }
 @media(max-height:650px){
   .fortune-cabinet{max-height:96vh}
@@ -1736,285 +1897,12 @@ body.is-fast-scrolling .card {
   }
 }
 
-/* 🎰 Welcome Splash Modal (Opción 1 Marquesina Casino VIP 360°) */
-@font-face {
-  font-family: 'Beaufort for LoL';
-  src: local('Beaufort for LoL'), local('BeaufortforLoL-Bold'), local('BeaufortforLoL-Regular');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
 
-.welcome-splash-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 999999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at center, rgba(18, 24, 46, 0.96) 0%, rgba(4, 7, 16, 0.98) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 20px;
-  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.welcome-splash-overlay.hidden {
-  opacity: 0;
-  transform: scale(1.05);
-  pointer-events: none;
-}
-
-/* Cuadro con marco perimetral marquesina de 360° */
-.welcome-marquee-frame {
-  position: relative;
-  background: linear-gradient(145deg, rgba(22, 28, 52, 0.97), rgba(8, 12, 24, 0.99));
-  border: 3px solid #fdd835;
-  box-shadow: 0 0 40px rgba(253, 216, 53, 0.5), inset 0 0 25px rgba(253, 216, 53, 0.2), 0 25px 70px rgba(0, 0, 0, 0.85);
-  border-radius: 24px;
-  padding: 24px 20px 28px;
-  max-width: 440px;
-  width: 100%;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-family: 'Beaufort for LoL', 'Outfit', 'Montserrat', 'Cinzel', serif, sans-serif;
-  animation: welcomePop 0.55s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes welcomePop {
-  0% { transform: scale(0.88) translateY(20px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-/* Focos de marquesina bordes horizontales (superior e inferior) */
-.welcome-bulbs-horizontal {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  padding: 0 4px;
-  margin-bottom: 12px;
-}
-
-.welcome-bulbs-horizontal.bottom {
-  margin-top: 16px;
-  margin-bottom: 0;
-}
-
-/* Focos de marquesina bordes verticales (izquierdo y derecho) */
-.welcome-content-row {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 12px;
-}
-
-.welcome-bulbs-vertical {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  height: 100%;
-  gap: 14px;
-}
-
-.welcome-inner-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Efecto de título fluido cambiando ÚNICAMENTE entre Rojos y Dorados */
-@keyframes fluidRedGold {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.welcome-title {
-  font-family: 'Beaufort for LoL', 'Outfit', 'Montserrat', 'Cinzel', serif, sans-serif;
-  font-size: clamp(0.95rem, 5.2vw, 1.55rem);
-  font-weight: 900;
-  letter-spacing: clamp(0.5px, 0.4vw, 2px);
-  white-space: nowrap; /* 🛡️ Cero corte de línea: '★ CASINO PARLEY VIP ★' siempre corrido */
-  text-transform: uppercase;
-  margin-bottom: 8px;
-  background: linear-gradient(90deg, #fdd835, #ffb300, #ff3d00, #e51c23, #d50000, #ffb300, #fdd835);
-  background-size: 300% 300%;
-  animation: fluidRedGold 3.5s ease infinite;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 10px rgba(253, 216, 53, 0.35));
-}
-
-.welcome-logo {
-  max-width: 165px;
-  height: auto;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
-}
-
-.welcome-subtitle {
-  font-family: 'Beaufort for LoL', 'Roboto', 'Montserrat', sans-serif;
-  font-size: clamp(0.78rem, 3.2vw, 0.92rem);
-  color: #e2e8f0;
-  font-weight: 600;
-  line-height: 1.4;
-  margin-bottom: 22px;
-  max-width: 320px;
-}
-
-.welcome-enter-btn {
-  width: 100%;
-  padding: 8px 10px;
-  font-family: 'Beaufort for LoL', 'Outfit', 'Montserrat', sans-serif;
-  font-size: clamp(0.85rem, 4vw, 1.15rem);
-  font-weight: 900;
-  letter-spacing: clamp(0.5px, 0.3vw, 1.5px);
-  white-space: nowrap; /* 🛡️ Cero corte de línea: 'ENTRAR AL CASINO' siempre corrido */
-  color: #fff;
-  background: linear-gradient(135deg, #fdd835 0%, #e51c23 100%);
-  border: 1.5px solid #fdd835;
-  border-radius: 999px;
-  cursor: pointer;
-  box-shadow: 0 8px 25px rgba(229, 28, 35, 0.5), 0 0 20px rgba(253, 216, 53, 0.5);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 🌟 Cápsula con Borde Resplandeciente para Enmarcar Emoji y Texto */
-.welcome-btn-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 6px 18px;
-  border: 1.8px solid rgba(255, 255, 255, 0.95);
-  border-radius: 999px;
-  background: rgba(10, 14, 26, 0.35);
-  box-shadow: inset 0 0 12px rgba(253, 216, 53, 0.5), 0 0 10px rgba(0, 0, 0, 0.7);
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9), 0 0 3px #000;
-  width: 100%;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.welcome-enter-btn:hover .welcome-btn-pill {
-  border-color: #ffffff;
-  background: rgba(10, 14, 26, 0.5);
-  box-shadow: inset 0 0 16px rgba(253, 216, 53, 0.75), 0 0 14px rgba(255, 255, 255, 0.6);
-  transform: scale(1.01);
-}
-
-.welcome-emoji {
-  font-size: 1.2em;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
-}
-
-.welcome-enter-btn:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 12px 32px rgba(229, 28, 35, 0.7), 0 0 28px rgba(253, 216, 53, 0.6);
-}
-
-.welcome-enter-btn:active {
-  transform: translateY(1px) scale(0.99);
-}
-
-@media (max-width: 480px) {
-  .welcome-splash-overlay {
-    padding: 10px;
-  }
-  .welcome-marquee-frame {
-    padding: 16px 8px 20px;
-    max-width: 96vw;
-  }
-  .welcome-content-row {
-    gap: 4px;
-  }
-  .welcome-bulbs-vertical {
-    gap: 8px;
-  }
-  .welcome-logo {
-    max-width: 130px;
-    margin-bottom: 8px;
-  }
-  .welcome-subtitle {
-    margin-bottom: 16px;
-  }
-  .welcome-enter-btn {
-    padding: 6px 6px;
-  }
-  .welcome-btn-pill {
-    padding: 5px 12px;
-  }
-}
   </style>
 </head>
 <body>
 
-<!-- 🎰 Welcome Splash Modal (Opción 1 Marquesina Casino VIP 360°) -->
-<div class="welcome-splash-overlay" id="welcomeSplash">
-  <div class="welcome-marquee-frame">
-    
-    <!-- Marquesina Borde Superior (Horizontal) -->
-    <div class="welcome-bulbs-horizontal">
-      <div class="b-bulb gold"></div><div class="b-bulb red"></div>
-      <div class="b-bulb gold"></div><div class="b-bulb red"></div>
-      <div class="b-bulb gold"></div><div class="b-bulb red"></div>
-      <div class="b-bulb gold"></div><div class="b-bulb red"></div>
-      <div class="b-bulb gold"></div>
-    </div>
 
-    <!-- Cuerpo Central con Bordes Izquierdo y Derecho (Verticales) -->
-    <div class="welcome-content-row">
-      
-      <!-- Marquesina Borde Izquierdo (Vertical) -->
-      <div class="welcome-bulbs-vertical">
-        <div class="b-bulb red"></div>
-        <div class="b-bulb gold"></div>
-        <div class="b-bulb red"></div>
-        <div class="b-bulb gold"></div>
-        <div class="b-bulb red"></div>
-      </div>
-
-      <div class="welcome-inner-body">
-        <img class="welcome-logo" src="ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png" alt="Parley.com.ve"
-             onerror="this.style.display='none'">
-        
-        <h2 class="welcome-title">★ CASINO PARLEY VIP ★</h2>
-        <p class="welcome-subtitle">¡Bienvenido al Casino VIP de Parley!</p>
-        
-        <button class="welcome-enter-btn" id="welcomeEnterBtn" onclick="App.enterCasino()">
-          <span class="welcome-btn-pill">
-            <span class="welcome-emoji">🎰</span> ENTRAR AL CASINO
-          </span>
-        </button>
-      </div>
-
-      <!-- Marquesina Borde Derecho (Vertical) -->
-      <div class="welcome-bulbs-vertical">
-        <div class="b-bulb gold"></div>
-        <div class="b-bulb red"></div>
-        <div class="b-bulb gold"></div>
-        <div class="b-bulb red"></div>
-        <div class="b-bulb gold"></div>
-      </div>
-
-    </div>
-
-    <!-- Marquesina Borde Inferior (Horizontal) -->
-    <div class="welcome-bulbs-horizontal bottom">
-      <div class="b-bulb red"></div><div class="b-bulb gold"></div>
-      <div class="b-bulb red"></div><div class="b-bulb gold"></div>
-      <div class="b-bulb red"></div><div class="b-bulb gold"></div>
-      <div class="b-bulb red"></div><div class="b-bulb gold"></div>
-      <div class="b-bulb red"></div>
-    </div>
-
-  </div>
-</div>
 
 <!-- ══════════════════════════════════════════════════════════════
      ATMÓSFERA VIP CASINO — NEBULOSAS ORBITALES, HAZ DE LUZ Y POLVO DE ORO (100% GPU)
@@ -2063,57 +1951,15 @@ body.is-fast-scrolling .card {
   </div>
 </button>
 
+
 <!-- ══════════════════════════════════════════════════════════════
-     1. HERO CAROUSEL HEADER — Banners Interactivos
+     1. HERO CAROUSEL HEADER — Banners Dinámicos (100% Supabase)
      ══════════════════════════════════════════════════════════════ -->
 <header class="hero-carousel-wrap" id="heroCarouselWrap">
   <div class="hero-carousel" id="heroCarousel">
 
     <div class="carousel-slides" id="carouselSlides">
-
-      <!-- Banner 1 -->
-      <div class="carousel-slide">
-        <a href="#" class="carousel-slide-link" title="Promociones Exclusivas Parley">
-          <picture>
-            <source media="(max-width: 600px)" srcset="BANNER/banner_1_mobile_hd.webp" type="image/webp">
-            <img class="carousel-banner-img"
-                 src="BANNER/banner_1_desktop_hd.webp"
-                 alt="Promociones Exclusivas Parley"
-                 loading="eager"
-                 fetchpriority="high"
-                 decoding="async"
-                 onerror="this.src='BANNER/public.avif'">
-          </picture>
-        </a>
-      </div>
-
-      <!-- Banner 2 -->
-      <div class="carousel-slide">
-        <a href="#" class="carousel-slide-link" title="Casino Premium Parley">
-          <picture>
-            <source media="(max-width: 600px)" srcset="BANNER/banner_2_mobile_hd.webp" type="image/webp">
-            <img class="carousel-banner-img"
-                 src="BANNER/banner_2_desktop_hd.webp"
-                 alt="Casino Premium Parley"
-                 loading="lazy"
-                 decoding="async"
-                 onerror="this.src='BANNER/public.avif'">
-          </picture>
-        </a>
-      </div>
-
-      <!-- Banner 3 -->
-      <div class="carousel-slide">
-        <a href="#" class="carousel-slide-link" title="Slots Exclusivos Parley">
-          <img class="carousel-banner-img"
-               src="BANNER/public%20(1).avif"
-               alt="Slots Exclusivos Parley"
-               loading="lazy"
-               decoding="async"
-               onerror="this.src='BANNER/public.avif'">
-        </a>
-      </div>
-
+      <div class="carousel-skeleton" id="carouselSkeleton"></div>
     </div>
 
     <!-- Sombra gradiente inferior para legibilidad -->
@@ -2123,14 +1969,11 @@ body.is-fast-scrolling .card {
     <button class="carousel-arrow prev" onclick="App.prevSlide()" aria-label="Banner anterior">&#10094;</button>
     <button class="carousel-arrow next" onclick="App.nextSlide()" aria-label="Banner siguiente">&#10095;</button>
 
-    <!-- Dots de navegación — centrados -->
-    <div class="carousel-nav" id="carouselNav">
-      <div class="carousel-dot active" onclick="App.goSlide(0)"></div>
-      <div class="carousel-dot" onclick="App.goSlide(1)"></div>
-      <div class="carousel-dot" onclick="App.goSlide(2)"></div>
-    </div>
+    <!-- Dots de navegación — generados dinámicamente con los banners -->
+    <div class="carousel-nav" id="carouselNav"></div>
   </div>
 </header>
+
 
 <!-- ══════════════════════════════════════════════════════════════
      2. CARRUSEL DE SLOTS DESTACADOS — DESPLAZAMIENTO LIBRE (TOUCH & DRAG)
@@ -2257,6 +2100,18 @@ body.is-fast-scrolling .card {
   <span class="fab-emoji">🎰</span>
   <span class="fab-label">SUERTE</span>
 </button>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL — BANNER POP-UP DE BIENVENIDA (COMERCIAL 4:5 VIP)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="welcome-popup-overlay" id="welcomePopupOverlay" style="display:none;" onclick="App.closeWelcomePopup(event)">
+  <div class="welcome-popup-card" onclick="event.stopPropagation()">
+    <button class="welcome-popup-close" onclick="App.closeWelcomePopup()" aria-label="Cerrar banner">✕</button>
+    <a id="welcomePopupLink" href="#" class="welcome-popup-link" target="_blank" rel="noopener noreferrer">
+      <img id="welcomePopupImg" class="welcome-popup-img" src="" alt="Promoción Exclusiva Parley" loading="eager">
+    </a>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════════
      MODAL — PARLEY FORTUNE · Gabinete Realista
@@ -2525,6 +2380,61 @@ body.is-fast-scrolling .card {
     }
   }
 
+  /* ══════════════════════════════════════════════════════════════
+     🎁 MODAL COMERCIAL DE ENTRADA — FORMATO 4:5 VIP (CINEMATIC)
+     ══════════════════════════════════════════════════════════════ */
+  let welcomePopupActive = false;
+  let welcomePopupDismissedThisSession = false;
+
+  function showWelcomePopup(data) {
+    if (!data || !data.image_url || welcomePopupDismissedThisSession) return;
+    const overlay = $('welcomePopupOverlay');
+    const img = $('welcomePopupImg');
+    const link = $('welcomePopupLink');
+    if (!overlay || !img || !link) return;
+
+    img.src = data.image_url;
+    if (data.link_url && data.link_url.length > 0) {
+      link.href = data.link_url;
+      link.style.pointerEvents = 'auto';
+      link.style.cursor = 'pointer';
+    } else {
+      link.removeAttribute('href');
+      link.style.pointerEvents = 'none';
+      link.style.cursor = 'default';
+    }
+
+    overlay.classList.remove('closing');
+    overlay.style.display = 'flex';
+    requestAnimationFrame(() => {
+      overlay.classList.add('active');
+    });
+    welcomePopupActive = true;
+  }
+
+  function hideWelcomePopup() {
+    const overlay = $('welcomePopupOverlay');
+    if (overlay && overlay.classList.contains('active')) {
+      overlay.classList.add('closing');
+      overlay.classList.remove('active');
+      setTimeout(() => {
+        if (!welcomePopupActive) {
+          overlay.style.display = 'none';
+          overlay.classList.remove('closing');
+        }
+      }, 300);
+    }
+  }
+
+  function closeWelcomePopup(e) {
+    if (e && e.target && e.target.closest && e.target.closest('.welcome-popup-card') && !e.target.closest('.welcome-popup-close')) {
+      return;
+    }
+    welcomePopupDismissedThisSession = true;
+    welcomePopupActive = false;
+    hideWelcomePopup();
+  }
+
   function applyLiveSiteConfig(configMap) {
     if (configMap.site_title) {
       document.title = configMap.site_title;
@@ -2570,12 +2480,37 @@ body.is-fast-scrolling .card {
         hero.parentNode.insertBefore(m, hero);
       }
     }
+
+    // 🎁 Modal Comercial de Entrada (Pop-up 4:5 VIP)
+    const isWelcomeBannerEnabled = configMap.welcome_banner_enabled === 'true';
+    const welcomeBannerImg = (configMap.welcome_banner_image_url || '').trim();
+    const welcomeBannerLink = (configMap.welcome_banner_link_url || '').trim();
+
+    const welcomePopupData = {
+      enabled: isWelcomeBannerEnabled && welcomeBannerImg.length > 0,
+      image_url: welcomeBannerImg,
+      link_url: welcomeBannerLink
+    };
+
+    try {
+      localStorage.setItem('parley_cached_welcome_popup', JSON.stringify(welcomePopupData));
+    } catch(e) {}
+
+    if (welcomePopupData.enabled) {
+      showWelcomePopup(welcomePopupData);
+    } else {
+      hideWelcomePopup();
+    }
   }
 
   function renderDynamicBanners(banners) {
     const track = document.getElementById('carouselSlides');
     const nav = document.getElementById('carouselNav');
-    if (!track) return;
+    if (!track || !Array.isArray(banners) || banners.length === 0) return;
+
+    try {
+      localStorage.setItem('parley_cached_banners', JSON.stringify(banners));
+    } catch(e) {}
 
     let slidesHtml = '';
     let dotsHtml = '';
@@ -2610,7 +2545,7 @@ body.is-fast-scrolling .card {
                  alt="${b.title || 'Banner Parley'}"
                  ${idx === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}
                  decoding="async"
-                 onerror="this.src='BANNER/public.avif'">
+                 onerror="this.style.opacity='0'">
           </picture>
           ${wrapClose}
         </div>`;
@@ -2621,69 +2556,87 @@ body.is-fast-scrolling .card {
     if (nav) nav.innerHTML = dotsHtml;
   }
 
-  /* ── Bootstrapping con Inversión Lógica de Supabase DB ────────── */
-  async function init(){
-    showSkeletons();
-    const overrides = await fetchLiveOverrides();
 
+  /* ── Bootstrapping con Inversión Lógica de Supabase DB ────────── */
+  /* ⚡ CARGA EN PARALELO: Renderiza inmediatamente con datos locales,
+     Supabase se carga en segundo plano y actualiza cuando responde. */
+  async function init(){
+    // ── 0A. Hidratar banners inmediatamente desde caché si existen ──
+    try {
+      const cached = localStorage.getItem('parley_cached_banners');
+      if (cached) {
+        const parsedBanners = JSON.parse(cached);
+        if (Array.isArray(parsedBanners) && parsedBanners.length > 0) {
+          renderDynamicBanners(parsedBanners);
+        }
+      }
+    } catch(e) {}
+
+    // ── 0B. Hidratar Pop-up de Entrada inmediatamente si existe en caché ──
+    try {
+      const cachedPopup = localStorage.getItem('parley_cached_welcome_popup');
+      if (cachedPopup) {
+        const parsedPopup = JSON.parse(cachedPopup);
+        if (parsedPopup && parsedPopup.enabled && parsedPopup.image_url) {
+          showWelcomePopup(parsedPopup);
+        }
+      }
+    } catch(e) {}
+
+    showSkeletons();
+
+    // ── 1. Lanzar Supabase en paralelo (no bloqueante) ────────────
+    const overridesPromise = fetchLiveOverrides();
+
+    // ── 2. Usar datos locales inmediatamente (sin esperar red) ────
     const localData = (typeof SLOTS_DATA !== 'undefined') ? SLOTS_DATA : (window.SLOTS_DATA || null);
     let rawData = localData;
 
-    if(!rawData || !Array.isArray(rawData) || rawData.length === 0){
-      try{const r=await fetch('data/slots.json');if(r.ok)rawData=await r.json()}catch(e){}
+    if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
+      try { const r = await fetch('data/slots.json'); if (r.ok) rawData = await r.json(); } catch(e) {}
     }
 
-    if (rawData && Array.isArray(rawData)) {
-      allSlots = rawData.filter(s => {
+    function processSlots(data, overrides) {
+      if (!data || !Array.isArray(data)) return [];
+      return data.filter(s => {
         if (s.is_active === false) return false;
-        
-        // 🛡️ Coincidencia de 3 Capas para Desactivación Individual de Slots (ID, ExtID, Nombre)
-        const slotId = String(s.id || '');
-        const extId = String(s.external_id || s.slot_product_id || '');
+        const slotId   = String(s.id || '');
+        const extId    = String(s.external_id || s.slot_product_id || '');
         const slotName = (s.name || '').toLowerCase().trim();
-
-        if (overrides.inactiveSlotIds && (
-            (slotId && overrides.inactiveSlotIds.has(slotId)) ||
-            (extId && overrides.inactiveSlotIds.has(extId)) ||
+        if (overrides && overrides.inactiveSlotIds && (
+            (slotId   && overrides.inactiveSlotIds.has(slotId))   ||
+            (extId    && overrides.inactiveSlotIds.has(extId))    ||
             (slotName && overrides.inactiveSlotIds.has(slotName))
-        )) {
-          return false;
-        }
-
-        // ⚡ INVERSIÓN LÓGICA DE PROVEEDORES ACTIVOS EN SUPABASE DB (<10ms)
-        if (overrides.activeProvs && overrides.activeProvs.size > 0) {
+        )) return false;
+        if (overrides && overrides.activeProvs && overrides.activeProvs.size > 0) {
           const provName = (s.provider || '').toLowerCase().trim();
           const provDisp = (s.provider_display || '').toLowerCase().trim();
-          const isProvActive = overrides.activeProvs.has(provName) || overrides.activeProvs.has(provDisp);
-          if (!isProvActive) return false;
+          if (!overrides.activeProvs.has(provName) && !overrides.activeProvs.has(provDisp)) return false;
         }
-
         return true;
       });
-    } else {
-      allSlots = [];
     }
 
-    allSlots.forEach(s=>{
-      /* Usar campos pre-computados del JSON refinado cuando existen */
-      s._totalClicks = s.total_clicks || ((s.clicks_desktop||0)+(s.clicks_mobile||0));
-      s._nameLower   = s._nameLower   || (s.name||'').toLowerCase();
-      s._nameNorm    = normalize(s.name||'');
-      s._createdTs   = (s.created_at ? new Date(s.created_at).getTime() : 0);
-      /* Clasificación algorítmica instantánea de Tipo de Juego y Temáticas */
-      const classification = classifySlot(s);
-      s.game_type_id = s.game_type_id || classification.game_type_id;
-      s.themes       = (s.themes && s.themes.length > 0) ? s.themes : classification.themes;
-      s._theme       = s.themes[0] || null;
-      /* Tipo de juego legible */
-      s._gameType    = (s.game_types&&s.game_types.length>0) ? s.game_types[0] : ((s.raw_game_url||s.game_url||'').split(',')[0]||'Video Slots');
-      /* Tags especiales del campo pre-procesado */
-      s._tags        = s.special_tags || (s.raw_game_url||s.game_url||'').split(',').slice(1).map(p=>p.trim());
-      /* Provider display: usar el campo del JSON refinado primero */
-      s._providerDisplay = s.provider_display || PROV_NAMES[s.provider] || s.provider || 'Slot';
-      /* is_new: del campo pre-computado */
-      s._isNew       = s.is_new || false;
-    });
+    function enrichSlots(slots) {
+      slots.forEach(s => {
+        s._totalClicks     = s.total_clicks || ((s.clicks_desktop||0)+(s.clicks_mobile||0));
+        s._nameLower       = s._nameLower   || (s.name||'').toLowerCase();
+        s._nameNorm        = normalize(s.name||'');
+        s._createdTs       = (s.created_at ? new Date(s.created_at).getTime() : 0);
+        const cls          = classifySlot(s);
+        s.game_type_id     = s.game_type_id || cls.game_type_id;
+        s.themes           = (s.themes && s.themes.length > 0) ? s.themes : cls.themes;
+        s._theme           = s.themes[0] || null;
+        s._gameType        = (s.game_types&&s.game_types.length>0) ? s.game_types[0] : ((s.raw_game_url||s.game_url||'').split(',')[0]||'Video Slots');
+        s._tags            = s.special_tags || (s.raw_game_url||s.game_url||'').split(',').slice(1).map(p=>p.trim());
+        s._providerDisplay = s.provider_display || PROV_NAMES[s.provider] || s.provider || 'Slot';
+        s._isNew           = s.is_new || false;
+      });
+    }
+
+    // ── 3. Renderizar catálogo inmediatamente con datos locales ────
+    allSlots = processSlots(rawData, null); // sin filtros de Supabase todavía
+    enrichSlots(allSlots);
     initTheme();
     buildFilterDropdowns();
     bindEvents();
@@ -2695,7 +2648,28 @@ body.is-fast-scrolling .card {
     restoreFromURL();
     preloadCatalogAndImages();
     initAmbientPlayer();
+
+    // ── Revelación atómica: el layout está completamente listo ────
+    if (document.body) {
+      document.body.classList.add('app-ready');
+    }
+
+    // ── 4. Supabase responde → aplicar overrides sin bloquear ─────
+    overridesPromise.then(overrides => {
+      if (!overrides) return;
+      const hasProvFilter = overrides.activeProvs && overrides.activeProvs.size > 0;
+      const hasInactive   = overrides.inactiveSlotIds && overrides.inactiveSlotIds.size > 0;
+      if (!hasProvFilter && !hasInactive) return; // nada que filtrar, no re-renderizar
+
+      allSlots = processSlots(rawData, overrides);
+      enrichSlots(allSlots);
+      displayedCount = INITIAL_LOAD;
+      buildFilterDropdowns();
+      applyFilters();
+      initFeaturedSlotsCarousel();
+    }).catch(() => {});
   }
+
 
   /* ══════════════════════════════════════════════════════════════
      FILTER DROPDOWNS — Build & Logic
@@ -2941,7 +2915,7 @@ body.is-fast-scrolling .card {
             <span class="card-provider-badge" title="${s._providerDisplay}">${s._providerDisplay}</span>
             ${statusBadge}
           </div>
-          <img class="card-img" data-src="${s.image_url}" alt="${s.name}" decoding="async"
+          <img class="card-img" src="${s.image_url}" alt="${s.name}" loading="lazy" decoding="async"
                onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex'">
           <div class="card-img-placeholder">
             <span class="card-img-placeholder-icon">🎰</span>
@@ -2954,7 +2928,7 @@ body.is-fast-scrolling .card {
         </div>`;
       frag.appendChild(card);
     });
-    grid.appendChild(frag);observeImages();
+    grid.appendChild(frag);
     renderResultCount();
     if(displayedCount>=filtered.length)hideSentinel();else showSentinel();
   }
@@ -3193,9 +3167,14 @@ body.is-fast-scrolling .card {
       }
       syncTagsUI();applyFilters();
     });
-    $('ddOrdenar').addEventListener('click',e=>{const o=e.target.closest('.dd-option');if(!o||!o.dataset.sort)return;sortMode=o.dataset.sort;syncSortUI();closeAllDropdowns();applyFilters()});
-
     $('fortuneModal').addEventListener('click',e=>{if(e.target===$('fortuneModal'))closeFortune()});
+    const wOverlay = $('welcomePopupOverlay');
+    if (wOverlay) wOverlay.addEventListener('click', e => { if (e.target === wOverlay) closeWelcomePopup(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && welcomePopupActive) {
+        closeWelcomePopup();
+      }
+    });
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -3375,7 +3354,7 @@ body.is-fast-scrolling .card {
         <div class="featured-card" data-idx="${idx % featuredSlotsData.length}">
           <div class="featured-badge-star">★ VIP</div>
           <div class="featured-card-img-wrap">
-            <img src="${s.image_url}" alt="${s.name}" class="featured-card-img" onerror="this.src='BANNER/public.avif'" loading="lazy">
+            <img src="${s.image_url}" alt="${s.name}" class="featured-card-img" onerror="this.onerror=null;this.src='ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png';this.style.objectFit='contain';this.style.padding='10px'" loading="lazy">
           </div>
           <div class="featured-card-body">
             <div class="featured-card-title">${s.name}</div>
@@ -3888,13 +3867,14 @@ body.is-fast-scrolling .card {
     const pref = localStorage.getItem('parley_ambient_audio');
     
     // Función robusta de primera interacción en ventana
+    // COMPORTAMIENTO: Solo auto-activa si el usuario ya eligió 'enabled' antes.
+    // Usuarios nuevos (sin preferencia guardada) arrancan silenciados → activan con el widget.
     const enableOnFirstTouch = (e) => {
       if (e && e.target && e.target.closest && e.target.closest('#ambientWidget')) return;
       
       const currentPref = localStorage.getItem('parley_ambient_audio');
-      if (currentPref !== 'disabled' && !isAmbientPlaying) {
+      if (currentPref === 'enabled' && !isAmbientPlaying) {
         playAmbientAudio(true, 1000);
-        localStorage.setItem('parley_ambient_audio', 'enabled');
       }
       cleanupFirstTouchListeners();
     };
@@ -3907,13 +3887,14 @@ body.is-fast-scrolling .card {
       window.removeEventListener('scroll', enableOnFirstTouch, true);
     };
 
-    if (pref !== 'disabled') {
+    if (pref === 'enabled') {
       window.addEventListener('pointerdown', enableOnFirstTouch, { once: true, capture: true });
       window.addEventListener('click', enableOnFirstTouch, { once: true, capture: true });
       window.addEventListener('touchstart', enableOnFirstTouch, { once: true, capture: true });
       window.addEventListener('keydown', enableOnFirstTouch, { once: true, capture: true });
       window.addEventListener('scroll', enableOnFirstTouch, { once: true, capture: true });
     }
+
 
     // Auto-Pausa inteligente cuando el usuario hace clic en "▶ JUGAR" en cualquier slot
     document.addEventListener('click', (e) => {
@@ -4074,15 +4055,7 @@ body.is-fast-scrolling .card {
     }
   }
 
-  function enterCasino() {
-    const splash = $('welcomeSplash');
-    if (splash) {
-      splash.classList.add('hidden');
-      setTimeout(() => { splash.style.display = 'none'; }, 500);
-    }
-    playAmbientAudio(true, 1000);
-    localStorage.setItem('parley_ambient_audio', 'enabled');
-  }
+
 
   /* ══════════════════════════════════════════════════════════════
      ☀️/🌙 MODO CLARO / OSCURO DINÁMICO & SISTEMA DE TEMAS VIP
@@ -4176,7 +4149,7 @@ body.is-fast-scrolling .card {
   init();
 
   /* ── Public API ──────────────────────────────────────────────── */
-  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio,enterCasino,preloadCatalogAndImages,toggleTheme,setTheme,quickTournamentFilter,scrollFeatured};
+  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio,preloadCatalogAndImages,toggleTheme,setTheme,quickTournamentFilter,scrollFeatured,closeWelcomePopup,showWelcomePopup};
 })());
 const App = window.App;
 </script>
