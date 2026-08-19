@@ -178,6 +178,8 @@ input,select{font:inherit;color:inherit}
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
   will-change: transform, opacity;
 }
 
@@ -186,8 +188,7 @@ input,select{font:inherit;color:inherit}
   right: -100px;
   width: 900px;
   height: 700px;
-  background: radial-gradient(ellipse at center, rgba(253, 216, 53, 0.30) 0%, rgba(245, 166, 35, 0.16) 40%, rgba(3, 6, 17, 0) 72%);
-  filter: blur(75px);
+  background: radial-gradient(ellipse at center, rgba(253, 216, 53, 0.20) 0%, rgba(245, 166, 35, 0.12) 30%, rgba(245, 166, 35, 0.04) 55%, rgba(3, 6, 17, 0) 70%);
   animation: orbitGold 16s ease-in-out infinite alternate;
 }
 
@@ -196,8 +197,7 @@ input,select{font:inherit;color:inherit}
   left: -180px;
   width: 850px;
   height: 750px;
-  background: radial-gradient(ellipse at center, rgba(229, 28, 35, 0.26) 0%, rgba(183, 28, 28, 0.14) 45%, rgba(3, 6, 17, 0) 72%);
-  filter: blur(85px);
+  background: radial-gradient(ellipse at center, rgba(229, 28, 35, 0.18) 0%, rgba(183, 28, 28, 0.10) 35%, rgba(183, 28, 28, 0.03) 58%, rgba(3, 6, 17, 0) 70%);
   animation: orbitRuby 22s ease-in-out infinite alternate;
 }
 
@@ -206,8 +206,7 @@ input,select{font:inherit;color:inherit}
   right: 10%;
   width: 750px;
   height: 600px;
-  background: radial-gradient(ellipse at center, rgba(37, 99, 235, 0.22) 0%, rgba(15, 23, 42, 0.14) 50%, rgba(3, 6, 17, 0) 72%);
-  filter: blur(80px);
+  background: radial-gradient(ellipse at center, rgba(37, 99, 235, 0.16) 0%, rgba(15, 23, 42, 0.09) 38%, rgba(15, 23, 42, 0.03) 60%, rgba(3, 6, 17, 0) 70%);
   animation: orbitSapphire 18s ease-in-out infinite alternate;
 }
 
@@ -296,31 +295,20 @@ input,select{font:inherit;color:inherit}
 .portal-logo-wrap img {
   height: 54px;
   width: auto;
-  filter: drop-shadow(0 0 20px rgba(253,216,53,0.55));
-  transition: filter 0.3s ease;
-}
-.portal-logo-wrap img:hover {
-  filter: drop-shadow(0 0 30px rgba(253,216,53,0.95));
+  transform: translateZ(0);
 }
 .logo-fallback-brand{font-family:'Space Grotesk',sans-serif;font-weight:900;font-size:1.6rem;letter-spacing:-0.5px;display:flex;align-items:center}
 .logo-brand-yellow{color:#fdd835;text-shadow:0 0 14px rgba(253,216,53,0.7)}
 .logo-brand-red{color:#e51c23;text-shadow:0 0 14px rgba(229,28,35,0.7)}
 
 /* ── HERO BANNER TOP ───────────────────────────────────────── */
-.hero-carousel-wrap {
-  max-width: var(--max-w);
-  margin: 10px auto 20px;
-  padding: 0 16px;
-  position: relative;
-  z-index: 40;
-}
 .carousel-slide-link {
   display: block;
   width: 100%;
   height: 100%;
   cursor: pointer;
   text-decoration: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 .carousel-slide-link:hover {
   opacity: 0.96;
@@ -331,15 +319,17 @@ input,select{font:inherit;color:inherit}
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--filter-bar-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.6);
+  background: rgba(3, 6, 17, 0.96);
+  border-bottom: 1px solid rgba(253, 216, 53, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
   padding: 12px 0 10px;
-  transition: background 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease;
+  contain: layout style;
+  transform: translateZ(0);
 }
 [data-theme="light"] .filter-bar-sticky-wrapper {
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.07);
+  background: rgba(248, 250, 252, 0.97);
+  border-bottom: 1px solid rgba(217, 119, 6, 0.25);
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
 }
 .portal-search-wrap {
   display: flex;
@@ -598,7 +588,7 @@ input,select{font:inherit;color:inherit}
 /* ══════════════════════════════════════════════════════════════
    HERO CAROUSEL — MARCO DORADO RESPONSIVE Y FLUIDO FULL-FRAME (ZERO-CLS)
    ══════════════════════════════════════════════════════════════ */
-.hero-carousel-wrap{max-width:var(--max-w);margin:20px auto 0;padding:0 24px;width:100%}
+.hero-carousel-wrap{max-width:var(--max-w);margin:20px auto 0;padding:0 24px;width:100%;contain:layout style}
 .hero-carousel{
   position:relative;
   width:100%;
@@ -606,16 +596,16 @@ input,select{font:inherit;color:inherit}
   min-height:360px;
   border-radius:20px;
   overflow:hidden;
-  border:2px solid rgba(253,216,53,0.75);
-  box-shadow:none;
-  animation:bannerGlowPulse 4s ease-in-out infinite;
+  border:2px solid rgba(253,216,53,0.85);
+  box-shadow:0 8px 32px rgba(0, 0, 0, 0.7);
   touch-action:pan-y;
   user-select:none;
   background:radial-gradient(circle at center, #151d38 0%, #070c1d 100%);
+  contain:layout style;
+  transform:translateZ(0);
 }
-@keyframes bannerGlowPulse{
-  0%,100%{border-color:rgba(253,216,53,0.75)}
-  50%{border-color:rgba(253,216,53,0.95)}
+body.app-ready .carousel-skeleton {
+  display: none !important;
 }
 .carousel-skeleton{
   position:absolute;
@@ -630,10 +620,6 @@ input,select{font:inherit;color:inherit}
   animation:skeletonShimmer 2.2s infinite ease-in-out;
   z-index:2;
   pointer-events:none;
-}
-@keyframes skeletonShimmer{
-  0%{background-position:-200% 0}
-  100%{background-position:200% 0}
 }
 .carousel-slides{display:flex;width:100%;height:100%;transition:transform 0.5s cubic-bezier(0.25,1,0.5,1);will-change:transform}
 .carousel-slide{flex:0 0 100%;width:100%;min-width:100%;max-width:100%;height:100%;position:relative;overflow:hidden;display:block;padding:0}
@@ -965,35 +951,29 @@ input,select{font:inherit;color:inherit}
   border: 1px solid var(--card-border);
   border-radius: 10px;
   overflow: hidden;
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
   contain: layout paint style;
   transform: translateZ(0);
+  will-change: transform;
   backface-visibility: hidden;
 }
 .card.card-enter {
   animation: cardAppear 0.35s ease both;
 }
 .card:hover{
-  transform:translateY(-5px) scale(1.03);
-  border-color:var(--card-hover-border);
-  box-shadow:var(--card-hover-shadow);
+  transform: translateY(-4px) scale(1.025);
+  border-color: var(--card-hover-border);
+  box-shadow: var(--card-hover-shadow);
 }
 @keyframes cardAppear{from{opacity:0;transform:translateY(16px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 
-/* ── BLINDAJE DE FLUIDEZ 120 FPS EN SCROLLBAR RÁPIDO ───────── */
+/* ── BLINDAJE DE FLUIDEZ 120 FPS EN SCROLLBAR ───────── */
 html {
   scroll-behavior: auto !important;
-}
-body.is-fast-scrolling .grid,
-body.is-fast-scrolling .card {
-  pointer-events: none !important;
-}
-body.is-fast-scrolling .card {
-  transition: none !important;
 }
 
 /* [CORRECCIÓN IMÁGENES] 1:1 Image Wrapper — Suavizado HD por GPU */
@@ -1084,30 +1064,28 @@ body.is-fast-scrolling .card {
   flex: 0 1 auto;
   max-width: fit-content;
   min-width: 0;
-  background: rgba(5,10,24,0.94);
-  border: 1px solid rgba(253,216,53,0.65);
+  background: rgba(5, 10, 24, 0.96);
+  border: 1px solid rgba(253, 216, 53, 0.65);
   border-radius: 999px;
   padding: 1.8px 7px;
   font-size: 0.52rem;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: 0.2px;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
-  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
 }
 
 /* HOT badge — Flexbox item */
-.badge-hot{position:relative;top:auto;right:auto;flex:0 0 auto;background:linear-gradient(135deg,#ff1744 0%,#ff5252 100%);color:#ffffff;font-size:0.48rem;font-weight:900;padding:1.8px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 3px 10px rgba(0,0,0,0.9),0 0 8px rgba(255,23,68,0.6);text-shadow:0 1px 3px rgba(0,0,0,0.9);animation:pulseHot 2s infinite;white-space:nowrap}
+.badge-hot{position:relative;top:auto;right:auto;flex:0 0 auto;background:linear-gradient(135deg,#ff1744 0%,#ff5252 100%);color:#ffffff;font-size:0.48rem;font-weight:900;padding:1.8px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 2px 6px rgba(0,0,0,0.8);text-shadow:0 1px 2px rgba(0,0,0,0.9);animation:pulseHot 2s infinite;white-space:nowrap;transform:translateZ(0)}
 @keyframes pulseHot{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 
 /* NUEVO badge — Flexbox item */
-.badge-new{position:relative;top:auto;right:auto;flex:0 0 auto;background:linear-gradient(135deg,#00e676 0%,#00b0ff 100%);color:#030a1c;font-size:0.48rem;font-weight:900;padding:1.8px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.45);box-shadow:0 3px 10px rgba(0,0,0,0.9),0 0 8px rgba(0,230,118,0.5);animation:pulseNew 2.5s ease-in-out infinite;white-space:nowrap}
-@keyframes pulseNew{0%,100%{box-shadow:0 3px 10px rgba(0,0,0,0.9)}50%{box-shadow:0 3px 18px rgba(0,230,118,0.8),0 0 16px rgba(0,230,118,0.4)}}
+.badge-new{position:relative;top:auto;right:auto;flex:0 0 auto;background:linear-gradient(135deg,#00e676 0%,#00b0ff 100%);color:#030a1c;font-size:0.48rem;font-weight:900;padding:1.8px 5px;border-radius:999px;text-transform:uppercase;letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.45);box-shadow:0 2px 6px rgba(0,0,0,0.8);animation:pulseNew 2.5s ease-in-out infinite;white-space:nowrap;transform:translateZ(0)}
+@keyframes pulseNew{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 
 /* Card body — Micro-escalado y simetría perfecta */
 .card-body{padding:6px 8px 8px;display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
@@ -1126,11 +1104,157 @@ body.is-fast-scrolling .card {
 .empty-state h3{font-size:1.2rem;color:var(--text-2);margin-bottom:8px}
 .empty-state p{font-size:0.9rem;margin-bottom:20px}
 
-/* ── INFINITE SCROLL ──────────────────────────────────────── */
-#scroll-sentinel{height:1px;width:100%}
-.scroll-loading{display:flex;justify-content:center;align-items:center;padding:24px;gap:10px;color:var(--text-3);font-size:0.88rem;font-weight:600}
-.scroll-spinner{width:22px;height:22px;border:3px solid rgba(253,216,53,0.3);border-top-color:#fdd835;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* ── VIP LOAD MORE & CATALOG PROGRESS BAR (PARADIGMA 2: CONTROL TOTAL) ── */
+.catalog-load-more-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px 80px;
+  gap: 20px;
+  max-width: 440px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.catalog-progress-bar-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.catalog-progress-text {
+  font-size: 0.90rem;
+  font-weight: 800;
+  color: var(--text-2);
+  letter-spacing: 0.5px;
+}
+
+.catalog-progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(253, 216, 53, 0.25);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+}
+
+[data-theme="light"] .catalog-progress-track {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(217, 119, 6, 0.3);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.catalog-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fdd835, #ffb300, #e51c23);
+  border-radius: 999px;
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 12px rgba(253, 216, 53, 0.6);
+}
+
+.btn-load-more-vip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 40px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fdd835 0%, #ffb300 50%, #f57f17 100%);
+  border: none;
+  color: #030611;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(253, 216, 53, 0.45), 0 2px 8px rgba(0, 0, 0, 0.6);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+  text-transform: uppercase;
+  outline: none;
+  user-select: none;
+}
+
+.btn-load-more-vip:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 32px rgba(253, 216, 53, 0.65), 0 4px 12px rgba(0, 0, 0, 0.8);
+  filter: brightness(1.08);
+}
+
+.btn-load-more-vip:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 4px 14px rgba(253, 216, 53, 0.35);
+}
+
+.btn-load-more-icon {
+  font-size: 1.15rem;
+  filter: drop-shadow(0 0 4px rgba(0,0,0,0.3));
+}
+
+.catalog-all-loaded-badge {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #fdd835;
+  letter-spacing: 1px;
+  padding: 10px 24px;
+  background: rgba(253, 216, 53, 0.1);
+  border: 1px solid rgba(253, 216, 53, 0.3);
+  border-radius: 999px;
+  text-align: center;
+}
+[data-theme="light"] .catalog-all-loaded-badge {
+  color: #b45309;
+  background: rgba(217, 119, 6, 0.1);
+}
+
+/* ── RESPONSIVE DUAL ARCHITECTURE: VISIBILITY TOGGLES ── */
+@media (max-width: 1023px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+@media (min-width: 1024px) {
+  .mobile-tablet-only {
+    display: none !important;
+  }
+}
+
+/* ── INFINITE SCROLL (MÓVIL & TABLET) ───────────────────────── */
+#scroll-sentinel {
+  height: 1px;
+  width: 100%;
+}
+.scroll-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  gap: 10px;
+  color: var(--text-3);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.scroll-spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(253, 216, 53, 0.3);
+  border-top-color: #fdd835;
+  border-radius: 50%;
+  animation: spinLoader 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spinLoader {
+  to { transform: rotate(360deg); }
+}
+
+body.is-fast-scrolling .grid,
+body.is-fast-scrolling .card {
+  pointer-events: none !important;
+}
+body.is-fast-scrolling .card {
+  transition: none !important;
+}
 
 /* ── THEME TOGGLE WIDGET 3D (MODO CLARO / OSCURO) ────────── */
 .theme-toggle-widget {
@@ -1144,19 +1268,20 @@ body.is-fast-scrolling .card {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, rgba(30, 42, 74, 0.95), rgba(13, 20, 38, 0.98));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 2px solid rgba(253, 216, 53, 0.5);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 14px rgba(253, 216, 53, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.5);
+  background: rgba(13, 20, 38, 0.96);
+  border: 1.5px solid rgba(253, 216, 53, 0.5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 2px 3px rgba(255, 255, 255, 0.35);
   cursor: pointer;
   user-select: none;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s, box-shadow 0.25s, background 0.3s;
+  contain: strict;
+  transform: translateZ(0);
+  will-change: transform;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s, box-shadow 0.25s;
 }
 .theme-toggle-widget:hover {
-  transform: translate3d(0, -2px, 0) scale(1.12);
+  transform: scale(1.12);
   border-color: #fdd835;
-  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.7), 0 0 22px rgba(253, 216, 53, 0.5), inset 0 2px 5px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(253, 216, 53, 0.5);
 }
 .theme-icon-wrap {
   display: flex;
@@ -1164,26 +1289,22 @@ body.is-fast-scrolling .card {
   justify-content: center;
   font-size: 15px;
   line-height: 1;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 2px rgba(253, 216, 53, 0.4));
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .theme-toggle-widget:active .theme-icon-wrap {
   transform: rotate(180deg) scale(0.85);
 }
 [data-theme="light"] .theme-toggle-widget {
-  background: radial-gradient(circle at 35% 35%, #ffffff, #eae6d9);
+  background: rgba(255, 255, 255, 0.96);
   border-color: rgba(0, 56, 168, 0.6);
-  box-shadow: 0 6px 18px rgba(10, 37, 64, 0.16), 0 0 14px rgba(0, 56, 168, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.9), inset 0 -2px 4px rgba(0, 0, 0, 0.1);
-}
-[data-theme="light"] .theme-icon-wrap {
-  filter: drop-shadow(0 2px 4px rgba(10, 37, 64, 0.4));
+  box-shadow: 0 4px 14px rgba(10, 37, 64, 0.16), inset 0 2px 3px rgba(255, 255, 255, 0.9);
 }
 
 /* ══════════════════════════════════════════════════════════════
    FABS 3D DE ÉLITE — IDENTIDAD OFICIAL PARLEY.COM.VE (AZUL Y ROJO)
    ══════════════════════════════════════════════════════════════ */
 
-/* 🏆 FAB TORNEOS — AZUL ROYAL OFICIAL PARLEY 3D */
+/* 🏆 FAB TORNEOS — AZUL ROYAL OFICIAL PARLEY 3D (100% GPU COMPOSITOR) */
 .fab-tournament {
   position: fixed;
   bottom: 110px;
@@ -1200,23 +1321,33 @@ body.is-fast-scrolling .card {
   background: radial-gradient(circle at 35% 30%, #2f74ff 0%, #0038a8 55%, #001952 100%);
   color: #fff;
   font-size: 1.55rem;
-  box-shadow: 0 10px 32px rgba(0, 56, 168, 0.7), 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(255, 255, 255, 0.7), inset 0 -3px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 56, 168, 0.65), 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 3px 5px rgba(255, 255, 255, 0.7);
   border: 3.5px solid rgba(255, 255, 255, 0.9);
   cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
-  animation: fabTourn3DPulse 3s ease-in-out infinite;
   user-select: none;
+  contain: strict;
+  transform: translateZ(0);
+  will-change: transform;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fab-tournament::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  box-shadow: 0 0 32px rgba(47, 116, 255, 0.9), 0 0 16px rgba(0, 56, 168, 0.8);
+  opacity: 0.3;
+  pointer-events: none;
+  animation: fabTournGlowGPU 3s ease-in-out infinite;
+  will-change: opacity;
 }
 .fab-tournament:hover {
   transform: scale(1.12) translateY(-4px);
-  box-shadow: 0 14px 44px rgba(0, 56, 168, 0.95), 0 0 35px rgba(47, 116, 255, 0.8), inset 0 3px 6px rgba(255, 255, 255, 0.85);
-  animation: none;
 }
 .fab-tournament:active {
-  transform: scale(0.96) translateY(0);
+  transform: scale(0.96);
 }
 .fab-tournament .fab-emoji {
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.75)) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.4));
   line-height: 1;
 }
 .fab-tournament .fab-label {
@@ -1227,14 +1358,14 @@ body.is-fast-scrolling .card {
   color: #ffffff;
   text-transform: uppercase;
   line-height: 1;
-  text-shadow: 0 1px 3px #000, 0 0 1px #000, 0 0 4px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 1px 3px #000;
 }
-@keyframes fabTourn3DPulse {
-  0%, 100% { box-shadow: 0 10px 30px rgba(0, 56, 168, 0.65), 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 3px 5px rgba(255, 255, 255, 0.6), inset 0 -3px 6px rgba(0, 0, 0, 0.5); }
-  50% { box-shadow: 0 10px 40px rgba(0, 56, 168, 0.9), 0 0 30px rgba(47, 116, 255, 0.65), inset 0 3px 5px rgba(255, 255, 255, 0.8), inset 0 -3px 6px rgba(0, 0, 0, 0.5); }
+@keyframes fabTournGlowGPU {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 0.95; }
 }
 
-/* 🎰 FAB SUERTE — ROJO PASIÓN OFICIAL PARLEY 3D */
+/* 🎰 FAB SUERTE — ROJO PASIÓN OFICIAL PARLEY 3D (100% GPU COMPOSITOR) */
 .fab-random {
   position: fixed;
   bottom: 26px;
@@ -1251,23 +1382,33 @@ body.is-fast-scrolling .card {
   background: radial-gradient(circle at 35% 30%, #ff2a42 0%, #d6001c 55%, #7a000f 100%);
   color: #fff;
   font-size: 1.6rem;
-  box-shadow: 0 10px 32px rgba(214, 0, 28, 0.7), 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(255, 255, 255, 0.7), inset 0 -3px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(214, 0, 28, 0.65), 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 3px 5px rgba(255, 255, 255, 0.7);
   border: 3.5px solid rgba(255, 255, 255, 0.9);
   cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
-  animation: fabRandom3DPulse 2.8s ease-in-out infinite;
   user-select: none;
+  contain: strict;
+  transform: translateZ(0);
+  will-change: transform;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fab-random::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  box-shadow: 0 0 32px rgba(255, 42, 66, 0.9), 0 0 16px rgba(214, 0, 28, 0.8);
+  opacity: 0.3;
+  pointer-events: none;
+  animation: fabRandomGlowGPU 2.8s ease-in-out infinite;
+  will-change: opacity;
 }
 .fab-random:hover {
   transform: scale(1.12) translateY(-4px);
-  box-shadow: 0 14px 44px rgba(214, 0, 28, 0.95), 0 0 35px rgba(255, 42, 66, 0.8), inset 0 3px 6px rgba(255, 255, 255, 0.85);
-  animation: none;
 }
 .fab-random:active {
-  transform: scale(0.96) translateY(0);
+  transform: scale(0.96);
 }
 .fab-random .fab-emoji {
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.75)) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.4));
   line-height: 1;
 }
 .fab-random .fab-label {
@@ -1278,11 +1419,11 @@ body.is-fast-scrolling .card {
   color: #ffffff;
   text-transform: uppercase;
   line-height: 1;
-  text-shadow: 0 1px 3px #000, 0 0 1px #000, 0 0 4px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 1px 3px #000;
 }
-@keyframes fabRandom3DPulse {
-  0%, 100% { box-shadow: 0 10px 30px rgba(214, 0, 28, 0.65), 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 3px 5px rgba(255, 255, 255, 0.6), inset 0 -3px 6px rgba(0, 0, 0, 0.5); }
-  50% { box-shadow: 0 10px 40px rgba(214, 0, 28, 0.9), 0 0 32px rgba(255, 42, 66, 0.7), inset 0 3px 5px rgba(255, 255, 255, 0.8), inset 0 -3px 6px rgba(0, 0, 0, 0.5); }
+@keyframes fabRandomGlowGPU {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 0.95; }
 }
 
 /* ── FLECHAS LATERALES DE CONTROL — CARRUSEL DESTACADOS (SOLO PC) ── */
@@ -1293,6 +1434,8 @@ body.is-fast-scrolling .card {
   margin: 0 auto;
   display: flex;
   align-items: center;
+  contain: layout style;
+  transform: translateZ(0);
 }
 .featured-arrow {
   display: none;
@@ -1303,18 +1446,16 @@ body.is-fast-scrolling .card {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, rgba(30, 42, 74, 0.94), rgba(13, 20, 38, 0.98));
+  background: rgba(13, 20, 38, 0.96);
   border: 2px solid rgba(253, 216, 53, 0.7);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 16px rgba(0, 56, 168, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.8), inset 0 2px 3px rgba(255, 255, 255, 0.4);
   color: #fdd835;
   font-size: 1.35rem;
   font-weight: 900;
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s;
   user-select: none;
 }
 .featured-arrow-prev {
@@ -1481,10 +1622,10 @@ body.is-fast-scrolling .card {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   MODAL — BASE OVERLAY
+   MODAL — BASE OVERLAY (ZERO RESIDUAL GPU OVERHEAD)
    ══════════════════════════════════════════════════════════════ */
-.modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.3s ease;overflow-y:auto}
-.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.25s ease;overflow-y:auto}
+.modal-overlay.open{display:flex;opacity:1;pointer-events:auto}
 
 /* ══════════════════════════════════════════════════════════════
    PARLEY FORTUNE — SIMULADOR DE TRAGAMONEDAS REALISTA
@@ -1876,19 +2017,23 @@ body.is-fast-scrolling .card {
 
 .sound-wave-bars span {
   width: 2px;
+  height: 10px;
   background: #fff;
   border-radius: 2px;
-  animation: waveBar 1.2s ease-in-out infinite alternate;
+  transform-origin: bottom;
+  transform: translateZ(0);
+  animation: waveBarGPU 1.2s ease-in-out infinite alternate;
+  will-change: transform;
 }
 
-.sound-wave-bars span:nth-child(1) { height: 40%; animation-delay: 0.1s; }
-.sound-wave-bars span:nth-child(2) { height: 80%; animation-delay: 0.3s; }
-.sound-wave-bars span:nth-child(3) { height: 60%; animation-delay: 0.2s; }
-.sound-wave-bars span:nth-child(4) { height: 100%; animation-delay: 0.4s; }
+.sound-wave-bars span:nth-child(1) { transform: scaleY(0.4); animation-delay: 0.1s; }
+.sound-wave-bars span:nth-child(2) { transform: scaleY(0.8); animation-delay: 0.3s; }
+.sound-wave-bars span:nth-child(3) { transform: scaleY(0.6); animation-delay: 0.2s; }
+.sound-wave-bars span:nth-child(4) { transform: scaleY(1.0); animation-delay: 0.4s; }
 
-@keyframes waveBar {
-  0% { height: 20%; }
-  100% { height: 100%; }
+@keyframes waveBarGPU {
+  0% { transform: scaleY(0.2); }
+  100% { transform: scaleY(1.0); }
 }
 
 .ambient-info {
@@ -2106,7 +2251,7 @@ body.is-fast-scrolling .card {
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
-     SLOTS GRID + INFINITE SCROLL
+     SLOTS GRID + LOAD MORE VIP (PARADIGMA 2)
      ══════════════════════════════════════════════════════════════ -->
 <section class="grid-wrap">
   <div class="grid" id="slotsGrid"></div>
@@ -2116,10 +2261,29 @@ body.is-fast-scrolling .card {
     <p>Intenta cambiar o limpiar los filtros activos</p>
     <button class="btn btn-primary" onclick="App.clearAll()">Limpiar todos los filtros</button>
   </div>
-  <div class="scroll-loading" id="scrollLoading" style="display:none">
+
+  <!-- 📱 VISTA MÓVIL Y TABLET: Scroll Virtual Infinito con Centinela -->
+  <div class="scroll-loading mobile-tablet-only" id="scroll-loading" style="display:none">
     <div class="scroll-spinner"></div> Cargando más slots…
   </div>
-  <div id="scroll-sentinel"></div>
+  <div id="scroll-sentinel" class="mobile-tablet-only"></div>
+
+  <!-- 💻 VISTA ESCRITORIO (>= 1024px): Motor VIP con Barra de Progreso y Auto-Load -->
+  <div class="catalog-load-more-wrap desktop-only" id="catalogLoadMoreWrap" style="display:none">
+    <div class="catalog-progress-bar-container">
+      <div class="catalog-progress-text" id="catalogProgressText">Mostrando 48 de 1.295 slots</div>
+      <div class="catalog-progress-track">
+        <div class="catalog-progress-fill" id="catalogProgressFill" style="width: 15%"></div>
+      </div>
+    </div>
+    <button class="btn-load-more-vip" id="btnLoadMoreVip" onclick="App.loadMore()">
+      <span class="btn-load-more-icon">⚡</span>
+      <span class="btn-load-more-text">MOSTRAR MÁS JUEGOS</span>
+    </button>
+    <div class="catalog-all-loaded-badge" id="catalogAllLoadedBadge" style="display:none">
+      ✨ HAS VISTO TODOS LOS SLOTS DISPONIBLES ✨
+    </div>
+  </div>
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════
@@ -2239,8 +2403,19 @@ body.is-fast-scrolling .card {
   window.App = Object.assign(window.App || {}, (() => {
   'use strict';
 
+  /* ── Lotes Áureos y Livianos para Máxima Velocidad y Estabilidad ──── */
+  function computeAdaptiveLoads(baseInitial, baseBatch) {
+    const initial = parseInt(baseInitial) || 24;
+    const batch = parseInt(baseBatch) || 24;
+    return {
+      initial: initial,
+      batch: batch
+    };
+  }
+
   /* ── Constantes y Configuración Dinámica ────────────────────── */
-  let INITIAL_LOAD=24, BATCH_SIZE=24, DEBOUNCE_MS=280, HOT_THRESHOLD=30000, NEW_THRESHOLD_DAYS=30;
+  const initialAdaptive = computeAdaptiveLoads(24, 24);
+  let INITIAL_LOAD = initialAdaptive.initial, BATCH_SIZE = initialAdaptive.batch, DEBOUNCE_MS = 280, HOT_THRESHOLD = 30000, NEW_THRESHOLD_DAYS = 30;
   const SPECIAL_TAGS=['Drop&Win','Torneo','Navidad'];
   const PROV_NAMES={pragmaticplay:'Pragmatic Play',wazdan:'Wazdan',betsoft:'Betsoft','boominggames':'Booming Games','booming games':'Booming Games',spinomenal:'Spinomenal',caletagaming:'Caleta Gaming',caleta:'Caleta Gaming',netent:'NetEnt',playngo:"Play'n GO","play'n go":"Play'n GO",nolimit:'Nolimit City',nolimitcity:'Nolimit City','nolimit city':'Nolimit City',redtiger:'Red Tiger','red tiger':'Red Tiger',evolution:'Evolution',hacksaw:'Hacksaw Gaming','hacksaw gaming':'Hacksaw Gaming',relax:'Relax Gaming','push gaming':'Push Gaming',pushgaming:'Push Gaming',elk:'ELK Studios',yggdrasil:'Yggdrasil',thunderkick:'Thunderkick',isoftbet:'iSoftBet',quickspin:'Quickspin',btg:'Big Time Gaming','bigtimegaming':'Big Time Gaming','big time gaming':'Big Time Gaming','ka gaming':'KA Gaming',kagaming:'KA Gaming',playtech:'Playtech',evoplay:'Evoplay',habanero:'Habanero','tada gaming':'TaDa Gaming',tadagaming:'TaDa Gaming',spinoro:'Spinoro',endorphina:'Endorphina','red rake gaming':'Red Rake Gaming','ruby play':'Ruby Play',rubyplay:'Ruby Play',skywind:'Skywind','7777 gaming':'7777 Gaming','triple cherry':'Triple Cherry',playson:'Playson','mascot gaming':'Mascot Gaming',novomatic:'Novomatic',popok:'PopOk Gaming',belatra:'Belatra',mancala:'Mancala Gaming','gaming corps':'Gaming Corps','3 oaks gaming':'3 Oaks Gaming','felix gaming':'Felix Gaming',gamzix:'Gamzix',galaxsys:'Galaxsys',turbogames:'TurboGames','vibra gaming':'Vibra Gaming',gmw:'GMW',kalamba:'Kalamba Games','kalamba games':'Kalamba Games',spribe:'Spribe',aviatrix:'Aviatrix'};
 
@@ -2290,12 +2465,14 @@ body.is-fast-scrolling .card {
   const $=id=>document.getElementById(id);
   const grid=$('slotsGrid'),searchInput=$('searchInput'),resultCount=$('resultCount');
   const activeChips=$('activeChips'),emptyState=$('emptyState');
-  const scrollLoading=$('scrollLoading'),sentinel=$('scroll-sentinel');
+  const catalogLoadMoreWrap=$('catalogLoadMoreWrap'),catalogProgressText=$('catalogProgressText'),catalogProgressFill=$('catalogProgressFill'),btnLoadMoreVip=$('btnLoadMoreVip'),catalogAllLoadedBadge=$('catalogAllLoadedBadge');
+  const sentinel=$('scroll-sentinel'),scrollLoading=$('scroll-loading');
 
   /* ── Utility ────────────────────────────────────────────────── */
   function normalize(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
   function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
   const isMobile=/Mobi|Android/i.test(navigator.userAgent);
+  const isMobileOrTabletDevice = () => window.innerWidth < 1024 || isMobile || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
   const SUPABASE_API_URL = "https://zofknbvkoxwoqtrcwpas.supabase.co/rest/v1";
   const SUPABASE_PUBLIC_KEY = "sb_publishable_EilryQ89HDbmfGDWmlKQ1A_Ch-aSEQC";
@@ -2537,14 +2714,20 @@ body.is-fast-scrolling .card {
     if (configMap.new_threshold_days) {
       NEW_THRESHOLD_DAYS = parseInt(configMap.new_threshold_days) || 30;
     }
+    let rawBatch = 24;
+    let rawInitial = 24;
     if (configMap.batch_size) {
-      BATCH_SIZE = parseInt(configMap.batch_size) || 24;
+      rawBatch = parseInt(configMap.batch_size) || 24;
     }
     if (configMap.initial_load_count) {
-      INITIAL_LOAD = parseInt(configMap.initial_load_count) || BATCH_SIZE || 24;
-    } else if (configMap.batch_size) {
-      INITIAL_LOAD = BATCH_SIZE;
+      rawInitial = parseInt(configMap.initial_load_count) || rawBatch;
+    } else {
+      rawInitial = rawBatch;
     }
+
+    const adaptive = computeAdaptiveLoads(rawInitial, rawBatch);
+    INITIAL_LOAD = adaptive.initial;
+    BATCH_SIZE = adaptive.batch;
     displayedCount = INITIAL_LOAD;
 
     if (configMap.special_collections) {
@@ -2726,10 +2909,14 @@ body.is-fast-scrolling .card {
     initTheme();
     buildFilterDropdowns();
     bindEvents();
-    initInfiniteScroll();
     initImgObserver();
     applyFilters();
-    startCarousel();
+    if (isMobileOrTabletDevice()) {
+      initInfiniteScroll();
+    } else {
+      initCatalogAutoLoadObserver();
+    }
+    initHeroObserver();
     initFeaturedSlotsCarousel();
     restoreFromURL();
     preloadCatalogAndImages();
@@ -2885,10 +3072,13 @@ body.is-fast-scrolling .card {
     const dd=$('ddTipoJuego');
     if(!dd) return;
 
-    /* Re-disparar animacion de entrada sutil para transicion fluida */
+    /* Re-disparar animacion de entrada sutil de forma asincrona (0ms forced reflow) */
     dd.classList.remove('dd-submenu-enter');
-    void dd.offsetWidth;
-    dd.classList.add('dd-submenu-enter');
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        dd.classList.add('dd-submenu-enter');
+      });
+    });
 
     let html='';
     if(parentId){
@@ -2972,7 +3162,103 @@ body.is-fast-scrolling .card {
     });
     filtered.sort(SORT_FNS[sortMode]||SORT_FNS.popular);
     displayedCount=INITIAL_LOAD;
-    renderCards(true);renderResultCount();renderActiveChips();updateFilterButtonStates();syncToURL();
+    renderCards(true);
+    renderResultCount();
+    renderActiveChips();
+    updateFilterButtonStates();
+    syncToURL();
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     VIP LOAD MORE & AUTONOMOUS AUTO-LOAD ENGINE (PARADIGMA 2+)
+     ══════════════════════════════════════════════════════════════ */
+  let catalogAutoLoadTimer = null;
+  let catalogAutoLoadObserver = null;
+
+  function updateCatalogProgressUI() {
+    const wrap = $('catalogLoadMoreWrap');
+    const textEl = $('catalogProgressText');
+    const fillEl = $('catalogProgressFill');
+    const btn = $('btnLoadMoreVip');
+    const allLoaded = $('catalogAllLoadedBadge');
+
+    if (!wrap) return;
+
+    if (!filtered || filtered.length === 0) {
+      wrap.style.display = 'none';
+      return;
+    }
+
+    wrap.style.display = 'flex';
+    const total = filtered.length;
+    const current = Math.min(displayedCount, total);
+    const pct = Math.min(100, Math.round((current / total) * 100));
+
+    if (textEl) {
+      textEl.textContent = `Mostrando ${current.toLocaleString('es-VE')} de ${total.toLocaleString('es-VE')} slots`;
+    }
+    if (fillEl) {
+      fillEl.style.width = `${pct}%`;
+    }
+
+    if (current >= total) {
+      if (btn) btn.style.display = 'none';
+      if (allLoaded) allLoaded.style.display = 'block';
+      if (catalogAutoLoadTimer) {
+        clearTimeout(catalogAutoLoadTimer);
+        catalogAutoLoadTimer = null;
+      }
+    } else {
+      if (btn) {
+        btn.style.display = 'inline-flex';
+        btn.disabled = false;
+        const remaining = total - current;
+        const nextBatch = Math.min(BATCH_SIZE, remaining);
+        btn.innerHTML = `<span class="btn-load-more-icon">⚡</span><span class="btn-load-more-text">MOSTRAR MÁS JUEGOS (${nextBatch} MÁS)</span>`;
+      }
+      if (allLoaded) allLoaded.style.display = 'none';
+    }
+  }
+
+  function initCatalogAutoLoadObserver() {
+    const wrap = $('catalogLoadMoreWrap');
+    if (!wrap || !('IntersectionObserver' in window)) return;
+
+    if (catalogAutoLoadObserver) {
+      catalogAutoLoadObserver.disconnect();
+    }
+
+    catalogAutoLoadObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && displayedCount < filtered.length && !isLoadingMore) {
+          triggerAutoLoadSequence();
+        } else {
+          if (catalogAutoLoadTimer) {
+            clearTimeout(catalogAutoLoadTimer);
+            catalogAutoLoadTimer = null;
+            updateCatalogProgressUI();
+          }
+        }
+      });
+    }, { rootMargin: '300px 0px 200px 0px', threshold: 0.1 });
+    catalogAutoLoadObserver.observe(wrap);
+  }
+
+  function triggerAutoLoadSequence() {
+    if (catalogAutoLoadTimer) clearTimeout(catalogAutoLoadTimer);
+    if (isLoadingMore || displayedCount >= filtered.length) return;
+
+    const btn = $('btnLoadMoreVip');
+    if (btn) {
+      const remaining = filtered.length - displayedCount;
+      const nextBatch = Math.min(BATCH_SIZE, remaining);
+      btn.innerHTML = `<span class="btn-load-more-icon">⏳</span><span class="btn-load-more-text">CARGANDO ${nextBatch} JUEGOS...</span>`;
+    }
+
+    catalogAutoLoadTimer = setTimeout(() => {
+      catalogAutoLoadTimer = null;
+      loadMore();
+    }, 1400); // 1.4s de tiempo estimado suave y autónomo (< 3s)
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -2980,9 +3266,21 @@ body.is-fast-scrolling .card {
      ══════════════════════════════════════════════════════════════ */
   function renderCards(reset=false){
     const page=filtered.slice(0,displayedCount);
-    if(page.length===0){grid.innerHTML='';emptyState.classList.add('visible');hideSentinel();renderResultCount();return}
+    if(page.length===0){
+      grid.innerHTML='';
+      emptyState.classList.add('visible');
+      renderResultCount();
+      if (isMobileOrTabletDevice()) {
+        hideSentinel();
+      } else {
+        updateCatalogProgressUI();
+      }
+      return;
+    }
     emptyState.classList.remove('visible');
-    if(reset)grid.innerHTML='';
+    if(reset) {
+      grid.innerHTML='';
+    }
     const frag=document.createDocumentFragment();
     const startIndex = reset ? 0 : grid.children.length;
     const slots = filtered.slice(startIndex, displayedCount);
@@ -3016,51 +3314,86 @@ body.is-fast-scrolling .card {
     });
     grid.appendChild(frag);
     renderResultCount();
-    if(displayedCount>=filtered.length)hideSentinel();else showSentinel();
+    if (isMobileOrTabletDevice()) {
+      if (displayedCount >= filtered.length) hideSentinel(); else showSentinel();
+    } else {
+      updateCatalogProgressUI();
+    }
   }
-  function hideSentinel(){if(sentinel)sentinel.style.display='none'}
-  function showSentinel(){if(sentinel)sentinel.style.display='block'}
 
-  /* ── Infinite Scroll & High-Speed Fast-Drag Handling ────────── */
-  let isFastScrolling = false;
-  let scrollThrottleTimer = null;
+  /* ── Motor de Carga Dual: Móvil/Tablet (Centinela) + Desktop (VIP) ── */
   let loadMoreRaf = null;
 
+  function loadMore(){
+    if(catalogAutoLoadTimer) {
+      clearTimeout(catalogAutoLoadTimer);
+      catalogAutoLoadTimer = null;
+    }
+    if(isLoadingMore || displayedCount >= filtered.length) return;
+    isLoadingMore = true;
+
+    if (isMobileOrTabletDevice()) {
+      const scrollLoading = $('scroll-loading');
+      if (scrollLoading) scrollLoading.style.display = 'flex';
+    } else {
+      const btn = $('btnLoadMoreVip');
+      if (btn) {
+        btn.innerHTML = `<span class="btn-load-more-icon">⏳</span><span class="btn-load-more-text">CARGANDO...</span>`;
+        btn.disabled = true;
+      }
+    }
+
+    if(loadMoreRaf) cancelAnimationFrame(loadMoreRaf);
+
+    loadMoreRaf = requestAnimationFrame(() => {
+      displayedCount = Math.min(displayedCount + BATCH_SIZE, filtered.length);
+      renderCards(false);
+      if (isMobileOrTabletDevice()) {
+        const scrollLoading = $('scroll-loading');
+        if (scrollLoading) scrollLoading.style.display = 'none';
+      } else {
+        updateCatalogProgressUI();
+      }
+      isLoadingMore = false;
+    });
+  }
+
+  /* ── Infinite Scroll & High-Speed Fast-Drag Handling (Móviles & Tablets) ── */
+  let isFastScrolling = false;
+  let scrollThrottleTimer = null;
+
   function initInfiniteScroll(){
-    if(!('IntersectionObserver' in window))return;
-    infiniteObserver=new IntersectionObserver(entries=>{
+    if(!('IntersectionObserver' in window)) return;
+    const sentinel = $('scroll-sentinel');
+    if(!sentinel) return;
+
+    if (infiniteObserver) {
+      infiniteObserver.disconnect();
+    }
+
+    infiniteObserver = new IntersectionObserver(entries => {
       for(const e of entries){
-        if(e.isIntersecting&&!isLoadingMore&&displayedCount<filtered.length){
+        if(e.isIntersecting && !isLoadingMore && displayedCount < filtered.length){
           loadMore();
         }
       }
-    },{rootMargin:'400px',threshold:0.01});
-    if(sentinel)infiniteObserver.observe(sentinel);
+    }, { rootMargin: '400px', threshold: 0.01 });
+    infiniteObserver.observe(sentinel);
 
-    window.addEventListener('scroll',()=>{
+    window.addEventListener('scroll', () => {
       if(!document.body.classList.contains('is-fast-scrolling')){
         document.body.classList.add('is-fast-scrolling');
       }
-      if(scrollThrottleTimer)clearTimeout(scrollThrottleTimer);
-      scrollThrottleTimer=setTimeout(()=>{
+      if(scrollThrottleTimer) clearTimeout(scrollThrottleTimer);
+      scrollThrottleTimer = setTimeout(() => {
         document.body.classList.remove('is-fast-scrolling');
-        isFastScrolling=false;
-      },70);
-    },{passive:true});
+        isFastScrolling = false;
+      }, 70);
+    }, { passive: true });
   }
 
-  function loadMore(){
-    if(isLoadingMore)return;
-    isLoadingMore=true;
-    if(scrollLoading)scrollLoading.style.display='flex';
-    if(loadMoreRaf)cancelAnimationFrame(loadMoreRaf);
-    loadMoreRaf=requestAnimationFrame(()=>{
-      displayedCount=Math.min(displayedCount+BATCH_SIZE,filtered.length);
-      renderCards(false);
-      if(scrollLoading)scrollLoading.style.display='none';
-      isLoadingMore=false;
-    });
-  }
+  function hideSentinel(){ const s = $('scroll-sentinel'); if(s) s.style.display = 'none'; }
+  function showSentinel(){ const s = $('scroll-sentinel'); if(s) s.style.display = 'block'; }
 
   /* ── Lazy Image Loading (GPU Smooth Batched) ───────────────── */
   let imgObserver=null;
@@ -3282,6 +3615,44 @@ body.is-fast-scrolling .card {
 
   function stopCarousel(){
     if(slideTimer) clearInterval(slideTimer);
+    slideTimer = null;
+  }
+
+  let heroObserver = null;
+  let heroResumeTimer = null;
+  let isHeroVisible = false;
+
+  function initHeroObserver(){
+    const heroWrap = $('heroCarouselWrap') || document.querySelector('.hero-carousel-wrap') || document.querySelector('.hero-carousel');
+    if(!heroWrap || !('IntersectionObserver' in window)) {
+      startCarousel();
+      return;
+    }
+    heroObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        isHeroVisible = entry.isIntersecting;
+        if(isHeroVisible){
+          scheduleHeroResume(500);
+        } else {
+          if (heroResumeTimer) {
+            clearTimeout(heroResumeTimer);
+            heroResumeTimer = null;
+          }
+          stopCarousel();
+        }
+      });
+    }, { threshold: 0.05 });
+    heroObserver.observe(heroWrap);
+  }
+
+  function scheduleHeroResume(delayMs = 500) {
+    if (heroResumeTimer) clearTimeout(heroResumeTimer);
+    if (!isHeroVisible) return;
+    heroResumeTimer = setTimeout(() => {
+      if (isHeroVisible && !isWindowScrolling) {
+        startCarousel();
+      }
+    }, delayMs);
   }
 
   function resetCarouselTimer(){
@@ -3426,7 +3797,56 @@ body.is-fast-scrolling .card {
 
     renderFeaturedCards();
     initFeaturedFreeDrag();
-    startFeaturedAutoScroll();
+    initFeaturedObserver();
+  }
+
+  /* ── Observer de Congelación en Memoria y Reingreso Cero-Choque (Freeze-State) ── */
+  let featuredObserver = null;
+  let isFeaturedVisible = false;
+  let featuredIdleResumeTimer = null;
+
+  function initFeaturedObserver() {
+    const section = $('featuredSlotsSection');
+    if (!section || !('IntersectionObserver' in window)) {
+      startFeaturedAutoScroll();
+      return;
+    }
+    featuredObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        isFeaturedVisible = entry.isIntersecting;
+        if (isFeaturedVisible) {
+          // Reingreso estático congelado: cero rAF durante scroll activo
+          scheduleFeaturedResumeOnIdle(400);
+        } else {
+          if (featuredIdleResumeTimer) {
+            clearTimeout(featuredIdleResumeTimer);
+            featuredIdleResumeTimer = null;
+          }
+          featuredAutoScrollActive = false;
+          if (featuredRafId) {
+            cancelAnimationFrame(featuredRafId);
+            featuredRafId = null;
+          }
+          if (momentumRafId) {
+            cancelAnimationFrame(momentumRafId);
+            momentumRafId = null;
+          }
+        }
+      });
+    }, { threshold: 0.05 });
+    featuredObserver.observe(section);
+  }
+
+  function scheduleFeaturedResumeOnIdle(delayMs = 400) {
+    if (featuredIdleResumeTimer) clearTimeout(featuredIdleResumeTimer);
+    if (!isFeaturedVisible) return;
+    featuredIdleResumeTimer = setTimeout(() => {
+      if (isFeaturedVisible && !isWindowScrolling && !isFeaturedUserInteracting && !isFeaturedDragging) {
+        lastFrameTimestamp = performance.now();
+        featuredAutoScrollActive = true;
+        startFeaturedAutoScroll();
+      }
+    }, delayMs);
   }
 
   function renderFeaturedCards() {
@@ -3452,11 +3872,33 @@ body.is-fast-scrolling .card {
     }).join('');
 
     lastSpotlightCard = track.children[0] || null;
+    updateFeaturedDimensionsCache();
     requestAnimationFrame(updateFeaturedSpotlight);
   }
 
-  /* ── Detección del Rango de Atención Máxima (Sensor de Centro Elástico & Clamp Seguro) ── */
+  /* ── Detección del Rango de Atención Máxima con Dimensiones Cacheadas (0ms Reflow) ── */
   let lastSpotlightCard = null;
+  let cachedFeaturedCardWidth = 135;
+  let cachedFeaturedContainerWidth = 0;
+  let cachedFeaturedMaxScroll = 0;
+
+  function updateFeaturedDimensionsCache() {
+    const container = $('featuredScrollContainer');
+    const track = $('featuredTrack');
+    if (!container || !track) return;
+    const cards = track.children;
+    if (cards && cards.length > 0 && cards[0].offsetWidth > 0) {
+      cachedFeaturedCardWidth = cards[0].offsetWidth;
+    } else {
+      cachedFeaturedCardWidth = isMobileOrTabletDevice() ? 120 : 145;
+    }
+    cachedFeaturedContainerWidth = container.clientWidth || (window.innerWidth || 360);
+    cachedFeaturedMaxScroll = Math.max(0, (container.scrollWidth || 0) - cachedFeaturedContainerWidth);
+  }
+
+  window.addEventListener('resize', () => {
+    updateFeaturedDimensionsCache();
+  }, { passive: true });
 
   function updateFeaturedSpotlight() {
     const container = $('featuredScrollContainer');
@@ -3466,14 +3908,13 @@ body.is-fast-scrolling .card {
     const cards = track.children;
     if (!cards || cards.length === 0) return;
 
-    // Medición elástica adaptada a cualquier DPR y ancho móvil
-    const firstCard = cards[0];
-    const cardWidth = (firstCard && firstCard.offsetWidth > 0) ? firstCard.offsetWidth : 120;
+    const cardWidth = cachedFeaturedCardWidth || 135;
     const gap = 14;
     const pitch = cardWidth + gap;
 
-    // Centro visual exacto del viewport visible
-    const visibleCenter = container.scrollLeft + (container.clientWidth / 2);
+    // Centro visual exacto usando dimensiones cacheadas (0ms forced reflow)
+    const containerWidth = cachedFeaturedContainerWidth || container.clientWidth || 360;
+    const visibleCenter = container.scrollLeft + (containerWidth / 2);
     
     // Índice de la tarjeta matemáticamente más cercana al centro
     let targetIdx = Math.round((visibleCenter - (cardWidth / 2)) / pitch);
@@ -3503,32 +3944,40 @@ body.is-fast-scrolling .card {
   let momentumRafId = null;
 
   function startFeaturedAutoScroll() {
-    if (featuredRafId) cancelAnimationFrame(featuredRafId);
+    if (featuredRafId) {
+      cancelAnimationFrame(featuredRafId);
+      featuredRafId = null;
+    }
+    if (!featuredAutoScrollActive || isFeaturedUserInteracting || isFeaturedDragging) return;
+
+    const container = $('featuredScrollContainer');
+    if (!container) return;
+
     lastFrameTimestamp = performance.now();
 
     function loop(now) {
-      if (!lastFrameTimestamp) lastFrameTimestamp = now;
-      const dt = Math.min((now - lastFrameTimestamp) / 1000, 0.05); // Límite de 50ms para evitar saltos
+      if (!featuredAutoScrollActive || isFeaturedUserInteracting || isFeaturedDragging) {
+        featuredRafId = null;
+        return; // Detención total del bucle: no solicita más frames
+      }
+      const dt = Math.min((now - lastFrameTimestamp) / 1000, 0.05);
       lastFrameTimestamp = now;
 
-      const container = $('featuredScrollContainer');
-      if (container && featuredAutoScrollActive && !isFeaturedUserInteracting && !isFeaturedDragging) {
-        const maxScroll = container.scrollWidth - container.clientWidth;
-        if (maxScroll > 1) {
-          const deltaMove = FEATURED_SPEED_PX_SEC * dt * featuredScrollDirection;
-          container.scrollLeft += deltaMove;
+      const maxScroll = cachedFeaturedMaxScroll > 0 ? cachedFeaturedMaxScroll : (container.scrollWidth - container.clientWidth);
+      if (maxScroll > 1) {
+        const deltaMove = FEATURED_SPEED_PX_SEC * dt * featuredScrollDirection;
+        container.scrollLeft += deltaMove;
 
-          // Modo Búmeran: oscilación elástica continua al llegar a los topes
-          if (container.scrollLeft >= maxScroll - 0.5) {
-            container.scrollLeft = maxScroll;
-            featuredScrollDirection = -1;
-          } else if (container.scrollLeft <= 0.5) {
-            container.scrollLeft = 0;
-            featuredScrollDirection = 1;
-          }
-
-          updateFeaturedSpotlight();
+        // Modo Búmeran: oscilación elástica continua al llegar a los topes
+        if (container.scrollLeft >= maxScroll - 0.5) {
+          container.scrollLeft = maxScroll;
+          featuredScrollDirection = -1;
+        } else if (container.scrollLeft <= 0.5) {
+          container.scrollLeft = 0;
+          featuredScrollDirection = 1;
         }
+
+        updateFeaturedSpotlight();
       }
       featuredRafId = requestAnimationFrame(loop);
     }
@@ -3556,6 +4005,7 @@ body.is-fast-scrolling .card {
     featuredScrollPauseTimer = setTimeout(() => {
       lastFrameTimestamp = performance.now();
       featuredAutoScrollActive = true;
+      startFeaturedAutoScroll();
     }, FEATURED_BREAK_MS);
   }
 
@@ -3608,6 +4058,13 @@ body.is-fast-scrolling .card {
       lastMoveX = clientX;
       lastMoveTime = performance.now();
       velocityX = 0;
+
+      // Vinculación ON-DEMAND única y exclusivamente durante el arrastre activo
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+      window.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('touchend', onEnd, { passive: true });
+      window.addEventListener('touchcancel', onEnd, { passive: true });
     }
 
     function onMove(e) {
@@ -3646,6 +4103,13 @@ body.is-fast-scrolling .card {
       isFeaturedDragging = false;
       container.classList.remove('is-dragging');
 
+      // Desvinculación INMEDIATA de window para liberar el 100% del Main Thread
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
+
       if (Math.abs(velocityX) > 1.0) {
         runMomentumGliding();
       } else {
@@ -3653,16 +4117,9 @@ body.is-fast-scrolling .card {
       }
     }
 
-    // Eventos Touch (Móviles y Tablets)
+    // Eventos de Inicio (Container únicamente)
     container.addEventListener('touchstart', onStart, { passive: false });
-    window.addEventListener('touchmove', onMove, { passive: false });
-    window.addEventListener('touchend', onEnd, { passive: true });
-    window.addEventListener('touchcancel', onEnd, { passive: true });
-
-    // Eventos Mouse (Desktop)
     container.addEventListener('mousedown', onStart);
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onEnd);
 
     // Hover (Pausa al leer sobre desktop, reanuda tras salir)
     container.addEventListener('mouseenter', () => {
@@ -3689,6 +4146,38 @@ body.is-fast-scrolling .card {
       }
     }, true);
   }
+
+  /* ── Detector Global de Scroll Pasivo para Congelación Dinámica (Zero-Clash) ── */
+  let isWindowScrolling = false;
+  let windowScrollIdleTimer = null;
+
+  window.addEventListener('scroll', () => {
+    isWindowScrolling = true;
+
+    // Si el usuario sube a la cabecera, congelar cualquier timer del catálogo
+    if (window.scrollY <= 250 && catalogAutoLoadTimer) {
+      clearTimeout(catalogAutoLoadTimer);
+      catalogAutoLoadTimer = null;
+    }
+
+    if (featuredAutoScrollActive && !isFeaturedDragging) {
+      featuredAutoScrollActive = false;
+      if (featuredRafId) {
+        cancelAnimationFrame(featuredRafId);
+        featuredRafId = null;
+      }
+    }
+    if (windowScrollIdleTimer) clearTimeout(windowScrollIdleTimer);
+    windowScrollIdleTimer = setTimeout(() => {
+      isWindowScrolling = false;
+      if (isFeaturedVisible && !isFeaturedUserInteracting && !isFeaturedDragging) {
+        scheduleFeaturedResumeOnIdle(150);
+      }
+      if (isHeroVisible) {
+        scheduleHeroResume(150);
+      }
+    }, 250);
+  }, { passive: true });
 
   function scrollFeatured(dir) {
     const container = $('featuredScrollContainer');
@@ -4266,15 +4755,9 @@ body.is-fast-scrolling .card {
     applyFilters();
 
     setTimeout(() => {
-      const targetElement = $('filterBarStickyWrapper') || $('filterBarWrap') || $('slotsGrid');
+      const targetElement = $('filterBarStickyWrapper') || $('slotsGrid');
       if (targetElement) {
-        const headerOffset = 65;
-        const elementPosition = targetElement.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth'
-        });
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }, 60);
   }
@@ -4283,7 +4766,7 @@ body.is-fast-scrolling .card {
   init();
 
   /* ── Public API ──────────────────────────────────────────────── */
-  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio,preloadCatalogAndImages,toggleTheme,setTheme,quickTournamentFilter,scrollFeatured,closeWelcomePopup,showWelcomePopup};
+  return{goSlide,nextSlide,prevSlide,filterByTag,filterByPopular,clearAll,openFortune,closeFortune,spinFortune,toggleAmbientAudio,playAmbientAudio,pauseAmbientAudio,preloadCatalogAndImages,toggleTheme,setTheme,quickTournamentFilter,scrollFeatured,closeWelcomePopup,showWelcomePopup,loadMore};
 })());
 const App = window.App;
 </script>
