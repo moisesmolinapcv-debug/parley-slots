@@ -1888,9 +1888,39 @@
       }
     }
 
-    // ─── GESTIÓN DE COLECCIONES ESPECIALES (TAGS) ───
+    // ─── GESTIÓN DE COLECCIONES ESPECIALES (TAGS & TORNEOS) ───
     let cachedSpecials = [];
     let activeSpecialEditId = null;
+
+    function getSpecialStatus(col) {
+      if (col.is_active === false) {
+        return { label: '🔴 Inactivo (Manual)', class: 'badge-inactive', color: 'var(--danger)', bg: 'rgba(218,54,51,0.15)' };
+      }
+      const now = new Date();
+      if (col.start_date) {
+        const sDate = new Date(col.start_date);
+        if (!isNaN(sDate.getTime()) && sDate > now) {
+          return { label: `⏳ Programado (${formatDateTimeShort(col.start_date)})`, class: 'badge-scheduled', color: 'var(--warning)', bg: 'rgba(210,153,34,0.15)' };
+        }
+      }
+      if (col.end_date) {
+        const eDate = new Date(col.end_date);
+        if (!isNaN(eDate.getTime()) && eDate <= now) {
+          return { label: `🔴 Expirado (${formatDateTimeShort(col.end_date)})`, class: 'badge-expired', color: 'var(--danger)', bg: 'rgba(218,54,51,0.15)' };
+        }
+      }
+      return { label: '🟢 En Curso / Activo', class: 'badge-active', color: 'var(--success)', bg: 'rgba(46,160,67,0.15)' };
+    }
+
+    function formatDateTimeShort(dtStr) {
+      if (!dtStr) return '';
+      try {
+        const d = new Date(dtStr);
+        if (isNaN(d.getTime())) return dtStr;
+        const pad = n => String(n).padStart(2, '0');
+        return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      } catch(e) { return dtStr; }
+    }
 
     async function loadSpecialsAdmin() {
       const container = document.getElementById('specialsContainer');
@@ -1899,9 +1929,9 @@
       const { data, error } = await supabaseClient.from('site_config').select('value').eq('key', 'special_collections').maybeSingle();
       if (error || !data || !data.value) {
         cachedSpecials = [
-          { id: "Drop&Win", name: "Drop & Win", icon: "♦", slot_ids: [] },
-          { id: "Torneo", name: "Torneo", icon: "♠", slot_ids: [] },
-          { id: "Navidad", name: "Navidad", icon: "♣", slot_ids: [] }
+          { id: "Torneo", name: "Torneo Principal", icon: "🏆", is_active: true, start_date: "", end_date: "", slot_ids: [] },
+          { id: "Drop&Win", name: "Drop & Win", icon: "💎", is_active: true, start_date: "", end_date: "", slot_ids: [] },
+          { id: "Navidad", name: "Especiales", icon: "⭐", is_active: true, start_date: "", end_date: "", slot_ids: [] }
         ];
       } else {
         try {
@@ -1918,26 +1948,85 @@
 
       container.innerHTML = cachedSpecials.map((col, idx) => {
         const slotCount = Array.isArray(col.slot_ids) ? col.slot_ids.length : 0;
+        const isFirst = idx === 0;
+        const isActive = col.is_active !== false;
+        const status = getSpecialStatus(col);
+        const hasStart = Boolean(col.start_date);
+        const hasEnd = Boolean(col.end_date);
+
+        const cardBorder = isFirst 
+          ? 'border: 2px solid #fdd835 !important; box-shadow: 0 0 24px rgba(253,216,53,0.3); background: linear-gradient(180deg, rgba(253,216,53,0.08) 0%, #131722 100%);' 
+          : 'border: 1px solid #30363d; background: #131722;';
+
         return `
-          <div class="card-panel" style="background:#131722; border:1px solid #30363d; border-radius:12px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+          <div class="card-panel" style="${cardBorder} border-radius:14px; padding:20px; display:flex; flex-direction:column; justify-content:space-between; position:relative; transition:all 0.25s;">
             <div>
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-                <span style="font-size:28px; background:rgba(253,216,53,0.1); border:1px solid rgba(253,216,53,0.3); border-radius:8px; padding:4px 10px;">${col.icon || '🏷️'}</span>
-                <span style="background:rgba(56,139,253,0.15); color:var(--info); font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;">
-                  ${slotCount} slots asignados
-                </span>
+              ${isFirst ? `
+                <div style="background:linear-gradient(90deg, #fdd835, #ffb300); color:#000; font-weight:800; font-size:11px; padding:4px 10px; border-radius:6px; margin-bottom:14px; display:inline-flex; align-items:center; gap:6px; letter-spacing:0.5px;">
+                  👑 #1 PRINCIPAL · ANCLADO AL BOTÓN RÁPIDO 🏆 TORNEOS
+                </div>
+              ` : `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <span style="color:var(--text-muted); font-size:12px; font-weight:700; background:#21262d; padding:2px 8px; border-radius:6px;">
+                    Posición #${idx + 1}
+                  </span>
+                </div>
+              `}
+
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; gap:10px;">
+                <span style="font-size:28px; background:rgba(253,216,53,0.1); border:1px solid rgba(253,216,53,0.3); border-radius:8px; padding:4px 10px; flex-shrink:0;">${col.icon || '🏷️'}</span>
+                
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                  <!-- Switch Toggle Activo/Inactivo -->
+                  <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; background:#090c10; padding:4px 10px; border-radius:20px; border:1px solid #30363d;" title="Encender o Apagar en el portal público">
+                    <span style="font-size:11px; font-weight:700; color:${isActive ? '#3fb950' : 'var(--text-muted)'};">${isActive ? 'ON' : 'OFF'}</span>
+                    <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleSpecialActive('${col.id}')" style="cursor:pointer; accent-color:#3fb950; transform:scale(1.15);">
+                  </label>
+                  
+                  <span style="background:${status.bg}; color:${status.color}; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; border:1px solid ${status.color};">
+                    ${status.label}
+                  </span>
+                </div>
               </div>
-              <h3 style="color:#fff; font-size:17px; margin-bottom:4px;">${col.name}</h3>
-              <p style="color:var(--text-muted); font-size:12px; margin-bottom:16px;">Clave identificadora: <code>${col.id}</code></p>
+
+              <h3 style="color:#fff; font-size:18px; font-weight:700; margin-bottom:4px;">${col.name}</h3>
+              <p style="color:var(--text-muted); font-size:12px; margin-bottom:12px;">Clave identificadora: <code>${col.id}</code></p>
+
+              <!-- Detalles de Horarios / Fechas -->
+              <div style="background:#090c10; border:1px solid #21262d; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; justify-content:space-between;">
+                  <span>📅 Inicio:</span>
+                  <strong style="color:${hasStart ? '#58a6ff' : 'var(--text-muted)'}">${hasStart ? formatDateTimeShort(col.start_date) : 'Inmediato'}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span>🏁 Cierre:</span>
+                  <strong style="color:${hasEnd ? '#f85149' : 'var(--text-muted)'}">${hasEnd ? formatDateTimeShort(col.end_date) : 'Indefinido'}</strong>
+                </div>
+              </div>
             </div>
             
-            <div style="display:flex; gap:10px; margin-top:10px;">
-              <button class="btn btn-gold" style="flex:1; font-size:12px; padding:8px 12px;" onclick="openSpecialSlotPicker('${col.id}')">
-                ⚙️ Asignar Slots (${slotCount})
-              </button>
-              <button class="btn" style="background:rgba(218,54,51,0.15); color:var(--danger); border:1px solid rgba(218,54,51,0.4); padding:8px 12px; font-size:12px;" onclick="deleteSpecialCollection('${col.id}')" title="Eliminar colección">
-                🗑️
-              </button>
+            <!-- Acciones y Reordenamiento -->
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+              <div style="display:flex; gap:6px;">
+                <button class="btn" style="flex:1; font-size:12px; padding:7px 10px; background:#21262d; color:#fff;" onclick="openSpecialModal('${col.id}')" title="Editar detalles, fechas e icono">
+                  ✏️ Editar Fechas / Info
+                </button>
+                <button class="btn btn-gold" style="flex:1; font-size:12px; padding:7px 10px;" onclick="openSpecialSlotPicker('${col.id}')">
+                  ⚙️ Slots (${slotCount})
+                </button>
+              </div>
+
+              <div style="display:flex; gap:6px;">
+                <button class="btn" style="flex:1; font-size:12px; padding:6px 10px; background:#161b22; color:${isFirst ? '#484f58' : '#fff'}; border:1px solid #30363d;" onclick="moveSpecial(${idx}, -1)" ${isFirst ? 'disabled' : ''} title="Subir prioridad">
+                  ⬆️ Subir
+                </button>
+                <button class="btn" style="flex:1; font-size:12px; padding:6px 10px; background:#161b22; color:${idx === cachedSpecials.length - 1 ? '#484f58' : '#fff'}; border:1px solid #30363d;" onclick="moveSpecial(${idx}, 1)" ${idx === cachedSpecials.length - 1 ? 'disabled' : ''} title="Bajar prioridad">
+                  ⬇️ Bajar
+                </button>
+                <button class="btn" style="background:rgba(218,54,51,0.15); color:var(--danger); border:1px solid rgba(218,54,51,0.4); padding:6px 12px; font-size:12px;" onclick="deleteSpecialCollection('${col.id}')" title="Eliminar colección">
+                  🗑️
+                </button>
+              </div>
             </div>
           </div>
         `;
@@ -1955,31 +2044,162 @@
       if (error) {
         showToast('Error guardando especiales: ' + error.message, 'error');
       } else {
+        // Invalidación inmediata de caché local para reflejar cambios en tiempo real en el lobby
+        try {
+          localStorage.removeItem('parley_live_overrides_cache_v5');
+          sessionStorage.removeItem('parley_live_overrides_cache_v5');
+        } catch(e) {}
         showToast('✅ Colecciones especiales guardadas exitosamente', 'success');
         loadSpecialsAdmin();
       }
     }
 
     function openNewSpecialModal() {
-      const name = prompt('Nombre de la nueva colección especial (ej. "Megaways Favoritos", "Halloween", "Exclusivos"):');
-      if (!name || !name.trim()) return;
+      openSpecialModal(null);
+    }
 
-      const icon = prompt('Emoji o Icono representativo (ej. 🎃, 💎, ⚡, ♠):', '⭐') || '⭐';
-      const cleanId = name.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+    function openSpecialModal(colId = null) {
+      const isEdit = Boolean(colId);
+      const col = isEdit ? cachedSpecials.find(s => s.id === colId) : null;
 
-      if (cachedSpecials.some(s => s.id === cleanId)) {
-        alert('Ya existe una colección con este identificador.');
+      const modalHtml = `
+        <div id="specialEditModal" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;">
+          <div style="background:#131722; border:1.5px solid var(--accent-gold); border-radius:16px; width:100%; max-width:550px; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.9); overflow:hidden;">
+            <div style="padding:20px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="color:#fdd835; font-size:18px; margin-bottom:2px;">${isEdit ? '✏️ Editar Colección / Torneo' : '➕ Nueva Colección / Torneo'}</h3>
+                <p style="color:var(--text-muted); font-size:12px;">Configura nombre, icono, fechas de agendamiento y estado.</p>
+              </div>
+              <button onclick="document.getElementById('specialEditModal').remove()" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">✕</button>
+            </div>
+            
+            <form id="specialEditForm" onsubmit="handleSaveSpecialForm(event, '${colId || ''}')" style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; color:#fff; margin-bottom:6px;">Nombre de la Colección / Torneo *</label>
+                <input type="text" id="specFormName" required value="${col ? col.name : ''}" placeholder="ej. Gran Torneo Pragmatic, Drops & Wins, etc." style="width:100%; background:#090c10; border:1px solid #30363d; border-radius:8px; padding:10px 14px; color:#fff; font-size:14px;">
+              </div>
+
+              <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
+                <div>
+                  <label style="display:block; font-size:12px; font-weight:700; color:#fff; margin-bottom:6px;">Identificador Clave (ID) *</label>
+                  <input type="text" id="specFormId" required ${isEdit ? 'disabled' : ''} value="${col ? col.id : ''}" placeholder="ej. Torneo_Pragmatic" style="width:100%; background:${isEdit ? '#161b22' : '#090c10'}; border:1px solid #30363d; border-radius:8px; padding:10px 14px; color:#fff; font-size:14px;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:12px; font-weight:700; color:#fff; margin-bottom:6px;">Icono / Emoji</label>
+                  <input type="text" id="specFormIcon" value="${col ? (col.icon || '🏆') : '🏆'}" placeholder="🏆" style="width:100%; background:#090c10; border:1px solid #30363d; border-radius:8px; padding:10px 14px; color:#fff; font-size:14px; text-align:center;">
+                </div>
+              </div>
+
+              <div style="background:#090c10; border:1px solid #21262d; border-radius:10px; padding:14px;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                  <input type="checkbox" id="specFormActive" ${(col && col.is_active === false) ? '' : 'checked'} style="accent-color:#3fb950; transform:scale(1.2);">
+                  <div>
+                    <span style="font-size:13px; font-weight:700; color:#fff;">Colección Activa</span>
+                    <p style="font-size:11px; color:var(--text-muted); margin:0;">Si está desactivada, no se mostrará en el portal público aunque esté dentro del rango de fechas.</p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Agendamiento de Fechas -->
+              <div style="background:#090c10; border:1px solid #21262d; border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:12px;">
+                <div style="font-size:13px; font-weight:700; color:#fdd835; display:flex; align-items:center; gap:6px;">
+                  ⏰ Agendamiento Automático (Opcional)
+                </div>
+
+                <div>
+                  <label style="display:block; font-size:12px; color:#fff; margin-bottom:4px;">Fecha y Hora de Inicio (Publicación):</label>
+                  <input type="datetime-local" id="specFormStartDate" value="${col && col.start_date ? col.start_date : ''}" style="width:100%; background:#161b22; border:1px solid #30363d; border-radius:8px; padding:8px 12px; color:#fff; font-size:13px;">
+                  <span style="font-size:11px; color:var(--text-muted);">Dejar vacío para publicar inmediatamente tras activar.</span>
+                </div>
+
+                <div>
+                  <label style="display:block; font-size:12px; color:#fff; margin-bottom:4px;">Fecha y Hora de Cierre (Expiración):</label>
+                  <input type="datetime-local" id="specFormEndDate" value="${col && col.end_date ? col.end_date : ''}" style="width:100%; background:#161b22; border:1px solid #30363d; border-radius:8px; padding:8px 12px; color:#fff; font-size:13px;">
+                  <span style="font-size:11px; color:var(--text-muted);">Dejar vacío para mantener público de forma indefinida.</span>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+                <button type="button" class="btn" style="background:#21262d; color:#fff;" onclick="document.getElementById('specialEditModal').remove()">Cancelar</button>
+                <button type="submit" class="btn btn-gold">💾 Guardar Colección</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      const existingModal = document.getElementById('specialEditModal');
+      if (existingModal) existingModal.remove();
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    async function handleSaveSpecialForm(e, colId) {
+      e.preventDefault();
+      const name = document.getElementById('specFormName').value.trim();
+      const icon = document.getElementById('specFormIcon').value.trim() || '🏆';
+      const isActive = document.getElementById('specFormActive').checked;
+      const startDate = document.getElementById('specFormStartDate').value;
+      const endDate = document.getElementById('specFormEndDate').value;
+
+      if (!name) {
+        showToast('El nombre es obligatorio', 'error');
         return;
       }
 
-      cachedSpecials.push({
-        id: cleanId,
-        name: name.trim(),
-        icon: icon.trim(),
-        slot_ids: []
-      });
+      if (colId) {
+        // Edición de colección existente
+        const col = cachedSpecials.find(s => s.id === colId);
+        if (col) {
+          col.name = name;
+          col.icon = icon;
+          col.is_active = isActive;
+          col.start_date = startDate || "";
+          col.end_date = endDate || "";
+        }
+      } else {
+        // Nueva colección
+        let rawId = document.getElementById('specFormId').value.trim();
+        let cleanId = rawId.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+        if (!cleanId) cleanId = name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
 
-      saveSpecialsToDb();
+        if (cachedSpecials.some(s => s.id === cleanId)) {
+          showToast('Ya existe una colección con ese identificador ID', 'error');
+          return;
+        }
+
+        cachedSpecials.push({
+          id: cleanId,
+          name: name,
+          icon: icon,
+          is_active: isActive,
+          start_date: startDate || "",
+          end_date: endDate || "",
+          slot_ids: []
+        });
+      }
+
+      const modal = document.getElementById('specialEditModal');
+      if (modal) modal.remove();
+
+      await saveSpecialsToDb();
+    }
+
+    async function toggleSpecialActive(colId) {
+      const col = cachedSpecials.find(s => s.id === colId);
+      if (!col) return;
+      col.is_active = col.is_active === false ? true : false;
+      await saveSpecialsToDb();
+    }
+
+    async function moveSpecial(index, direction) {
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= cachedSpecials.length) return;
+
+      const temp = cachedSpecials[index];
+      cachedSpecials[index] = cachedSpecials[targetIndex];
+      cachedSpecials[targetIndex] = temp;
+
+      await saveSpecialsToDb();
     }
 
     function deleteSpecialCollection(colId) {
@@ -2189,7 +2409,7 @@
         'carousel_speed':    '⏱️ Velocidad del Carrusel — Segundos entre slides (ej: 5)',
         'banner_cta_text':   '💬 Texto del Botón CTA de Banners (ej: ¡Jugar Ahora!)',
         // Pipeline
-        'pipeline_schedule':         '⏰ Hora de Ejecución del Bibliotecario Nocturno',
+        'pipeline_schedule':         '⏰ Hora de Ejecución del Bibliotecario Nocturno (Cron UTC / VET)',
         'pipeline_telegram_enabled': '📢 Notificaciones Telegram del Bibliotecario (true / false)',
         'github_pat':        '🔑 GitHub Personal Access Token (PAT) para modo manual',
       };
@@ -2203,6 +2423,7 @@
         'game_categories':   'JSON Array de objetos: [{"id":"video_slots","name":"Video Slots","emoji":"🎰"},...]',
         'carousel_speed':    'En segundos. Ej: 5 = rota cada 5 segundos',
         'banner_cta_text':   'Texto del botón sobre el banner. Ej: ¡Jugar Ahora! o Ver Oferta',
+        'pipeline_schedule': 'Zona Horaria: GitHub Actions opera en UTC. Para Venezuela (VET, UTC-4): 02:00 AM VET = "0 6 * * *" (06:00 UTC).',
         'github_pat':        'Token personal de GitHub con permiso \'workflow\'. Requerido para el Bibliotecario manual.',
         'featured_slots_order': 'Array JSON de IDs de slots. Gestionado desde la pestaña Slots Destacados.',
       };

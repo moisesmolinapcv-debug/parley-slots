@@ -2459,7 +2459,7 @@ body.is-fast-scrolling .card {
   let searchQuery='',sortMode='popular';
   let currentSlide=0,slideTimer=null,infiniteObserver=null,isLoadingMore=false;
   let fortuneSpinning=false,fortuneAnimId=null;
-  let specialCollections = [];
+  let specialCollections = [], hasLoadedSpecialCollectionsFromSupabase = false;
 
   /* ── DOM refs ───────────────────────────────────────────────── */
   const $=id=>document.getElementById(id);
@@ -2733,6 +2733,7 @@ body.is-fast-scrolling .card {
     if (configMap.special_collections) {
       try {
         specialCollections = typeof configMap.special_collections === 'string' ? JSON.parse(configMap.special_collections) : configMap.special_collections;
+        hasLoadedSpecialCollectionsFromSupabase = true;
         if (typeof renderTagsDropdown === 'function') {
           renderTagsDropdown();
         }
@@ -2904,6 +2905,17 @@ body.is-fast-scrolling .card {
     }
 
     // ── 3. Renderizar catálogo inmediatamente con datos locales ────
+    try {
+      const cachedRaw = localStorage.getItem(SUPABASE_CACHE_KEY) || sessionStorage.getItem(SUPABASE_CACHE_KEY);
+      if (cachedRaw) {
+        const cached = JSON.parse(cachedRaw);
+        if (cached && cached.config && cached.config.special_collections) {
+          specialCollections = typeof cached.config.special_collections === 'string' ? JSON.parse(cached.config.special_collections) : cached.config.special_collections;
+          hasLoadedSpecialCollectionsFromSupabase = true;
+        }
+      }
+    } catch(e) {}
+
     allSlots = processSlots(rawData, null); // sin filtros de Supabase todavía
     enrichSlots(allSlots);
     initTheme();
@@ -2930,15 +2942,19 @@ body.is-fast-scrolling .card {
     // ── 4. Supabase responde → aplicar overrides sin bloquear ─────
     overridesPromise.then(overrides => {
       if (!overrides) return;
+
+      // 4.A Actualizar siempre los dropdowns de metadatos ligeros con datos frescos de Supabase
+      renderTagsDropdown();
+
+      // 4.B Re-filtrar los 10.000 slots ÚNICAMENTE si hay proveedores o slots inactivos
       const hasProvFilter = overrides.activeProvs && overrides.activeProvs.size > 0;
       const hasInactive   = overrides.inactiveSlotIds && overrides.inactiveSlotIds.size > 0;
-      if (!hasProvFilter && !hasInactive) return; // nada que filtrar, no re-renderizar
-
-      allSlots = processSlots(rawData, overrides);
-      enrichSlots(allSlots);
-      displayedCount = INITIAL_LOAD;
-      buildFilterDropdowns();
-      applyFilters();
+      if (hasProvFilter || hasInactive) {
+        allSlots = processSlots(rawData, overrides);
+        enrichSlots(allSlots);
+        displayedCount = INITIAL_LOAD;
+        applyFilters();
+      }
       initFeaturedSlotsCarousel();
     }).catch(() => {});
   }
@@ -3030,13 +3046,35 @@ body.is-fast-scrolling .card {
     }).join('');
   }
 
-  /* Renderiza el dropdown de Tags especiales: seleccionados al TOP con soporte para colecciones dinámicas */
+  /* ── Validación de Vigencia y Estado para Colecciones Especiales ── */
+  function isSpecialCollectionActive(col) {
+    if (!col) return false;
+    if (col.is_active === false) return false;
+    const now = new Date();
+    if (col.start_date) {
+      const sDate = new Date(col.start_date);
+      if (!isNaN(sDate.getTime()) && sDate > now) return false;
+    }
+    if (col.end_date) {
+      const eDate = new Date(col.end_date);
+      if (!isNaN(eDate.getTime()) && eDate <= now) return false;
+    }
+    return true;
+  }
+
+  function getActiveSpecialCollections() {
+    if (!specialCollections || !Array.isArray(specialCollections)) return [];
+    return specialCollections.filter(isSpecialCollectionActive);
+  }
+
+  /* Renderiza el dropdown de Tags especiales: seleccionados al TOP con soporte para colecciones dinámicas y vigencia */
   function renderTagsDropdown(){
     const dd=$('ddTags');
     if(!dd) return;
 
-    if (specialCollections && Array.isArray(specialCollections) && specialCollections.length > 0) {
-      const sortedCols = [...specialCollections];
+    const activeCols = getActiveSpecialCollections();
+    if (activeCols.length > 0) {
+      const sortedCols = [...activeCols];
       sortedCols.sort((a,b) => {
         const aSel = (activeTags.has(a.id) || activeTags.has(a.name)) ? 1 : 0;
         const bSel = (activeTags.has(b.id) || activeTags.has(b.name)) ? 1 : 0;
@@ -3052,7 +3090,11 @@ body.is-fast-scrolling .card {
           </label>
         `;
       }).join('');
+    } else if (hasLoadedSpecialCollectionsFromSupabase) {
+      // Supabase cargó explícitamente y no hay colecciones activas en este momento
+      dd.innerHTML = '<div style="padding:12px 16px; font-size:12px; color:var(--text-muted); text-align:center;">No hay especiales activos</div>';
     } else {
+      // Fallback offline de emergencia únicamente si Supabase no ha respondido ni hay caché
       const tags=[...SPECIAL_TAGS];
       tags.sort((a,b)=>{
         const aSel=activeTags.has(a)?1:0;
@@ -3486,13 +3528,33 @@ body.is-fast-scrolling .card {
     const bTa=$('btnTags');
     if(activeTags.size>0){bTa.classList.add('active');bTa.innerHTML=`<span class="filter-icon">♥</span> Especiales <span class="filter-count-badge">${activeTags.size}</span> <span class="filter-arrow">▾</span>`}
     else{bTa.classList.remove('active');bTa.innerHTML='<span class="filter-icon">♥</span> Especiales <span class="filter-arrow">▾</span>'}
+
+    const bO=$('btnOrdenar');
+    if (bO) {
+      const sortLabels = {
+        popular: '★ Más populares',
+        az: 'A → Z',
+        za: 'Z → A',
+        recent: '♦ Más recientes'
+      };
+      if (sortMode && sortMode !== 'popular') {
+        bO.classList.add('active');
+        bO.innerHTML = `<span class="filter-icon">★</span> ${sortLabels[sortMode] || 'Ordenar'} <span class="filter-arrow">▾</span>`;
+      } else {
+        bO.classList.remove('active');
+        bO.innerHTML = `<span class="filter-icon">★</span> Ordenar por <span class="filter-arrow">▾</span>`;
+      }
+    }
   }
 
   /* ── UI Sync helpers (reordenamiento dinámico al TOP) ────────── */
   function syncTemaUI(){renderTemaDropdown()}
   function syncProvUI(){renderProvDropdown()}
   function syncTagsUI(){renderTagsDropdown()}
-  function syncSortUI(){$('ddOrdenar').querySelectorAll('.dd-option').forEach(o=>o.classList.toggle('selected',o.dataset.sort===sortMode))}
+  function syncSortUI(){
+    $('ddOrdenar').querySelectorAll('.dd-option').forEach(o=>o.classList.toggle('selected',o.dataset.sort===sortMode));
+    updateFilterButtonStates();
+  }
 
   /* ── Skeletons ──────────────────────────────────────────────── */
   function showSkeletons(){let h='';for(let i=0;i<20;i++)h+=`<article class="card" style="animation-delay:${i*40}ms"><div class="card-img-wrap" style="background:linear-gradient(135deg,#1a1f35,#252b40);animation:pulse 1.5s ease-in-out infinite ${i*80}ms"></div><div class="card-body"><div style="height:14px;background:rgba(255,255,255,0.08);border-radius:6px;margin-bottom:8px;animation:pulse 1.5s infinite"></div><div style="height:32px;background:rgba(229,28,35,0.2);border-radius:999px;animation:pulse 1.5s infinite"></div></div></article>`;grid.innerHTML=`<style>@keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}</style>`+h}
@@ -3585,6 +3647,17 @@ body.is-fast-scrolling .card {
         activeTags.delete(e.target.value);
       }
       syncTagsUI();applyFilters();
+    });
+
+    /* Ordenar: seleccion de modo y aplicacion */
+    $('ddOrdenar').addEventListener('click', e => {
+      const o = e.target.closest('.dd-option');
+      if (!o || !o.dataset.sort) return;
+      e.stopPropagation();
+      sortMode = o.dataset.sort;
+      syncSortUI();
+      closeAllDropdowns();
+      applyFilters();
     });
     $('fortuneModal').addEventListener('click',e=>{if(e.target===$('fortuneModal'))closeFortune()});
     const wOverlay = $('welcomePopupOverlay');
@@ -4739,9 +4812,10 @@ body.is-fast-scrolling .card {
      ══════════════════════════════════════════════════════════════ */
   function quickTournamentFilter() {
     let targetTag = null;
+    const activeCols = getActiveSpecialCollections();
 
-    if (specialCollections && Array.isArray(specialCollections) && specialCollections.length > 0) {
-      targetTag = specialCollections[0].id || specialCollections[0].name;
+    if (activeCols.length > 0) {
+      targetTag = activeCols[0].id || activeCols[0].name;
     } else if (SPECIAL_TAGS && SPECIAL_TAGS.length > 0) {
       targetTag = SPECIAL_TAGS.find(t => /torneo|tournament|drop/i.test(t)) || SPECIAL_TAGS[0];
     }
