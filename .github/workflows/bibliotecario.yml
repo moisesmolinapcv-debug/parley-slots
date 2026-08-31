@@ -64,7 +64,10 @@ jobs:
           TELEGRAM_BOT_TOKEN:   ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:     ${{ secrets.TELEGRAM_CHAT_ID }}
           # Detectar modo de ejecución (auto vs manual)
-          TRIGGER_MODE:         ${{ github.event_name == 'workflow_dispatch' && inputs.trigger || 'automatic' }}
+          # NOTA CRÍTICA: argparse solo acepta 'auto' o 'manual', nunca 'automatic'.
+          # Cuando el cron dispara, github.event_name = 'schedule', por lo que el
+          # fallback debe ser 'auto' y NO 'automatic' (que causa falla inmediata).
+          TRIGGER_MODE:         ${{ github.event_name == 'workflow_dispatch' && inputs.trigger || 'auto' }}
           REACTIVATE_ALL:       ${{ inputs.reactivate_all == true && 'true' || 'false' }}
         run: |
           echo "════════════════════════════════════════"

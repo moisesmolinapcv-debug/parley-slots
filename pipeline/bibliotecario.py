@@ -524,15 +524,42 @@ def inject_data(added, modified, missing_updates, new_providers, prov_updates):
     """Inyecta datos en Supabase. Los missing_updates solo actualizan missing_from_source (sin tocar is_active)."""
     print("[4] Inyectando datos en Supabase...")
 
-    # Upsert de slots nuevos y modificados en batches de 200
+    # Upsert de slots nuevos y modificados en batches de 200.
+    # RESILIENCIA: si Supabase rechaza game_type_id/themes por ser columnas inexistentes,
+    # se reintenta sin esos campos para no bloquear el pipeline en producción.
+    CLASSIFICATION_FIELDS = {'game_type_id', 'themes'}
     all_upserts = added + modified
+    classification_supported = True  # Se asume True hasta que falle
+
     for i in range(0, len(all_upserts), BATCH_SIZE):
         batch = all_upserts[i:i + BATCH_SIZE]
-        supabase_request(
-            "POST", "slots?on_conflict=external_id",
-            json_data=batch,
-            prefer="resolution=merge-duplicates,return=minimal"
-        )
+
+        # Si ya sabemos que las columnas no existen, strip directo sin reintentar
+        if not classification_supported:
+            batch = [{k: v for k, v in s.items() if k not in CLASSIFICATION_FIELDS} for s in batch]
+
+        try:
+            supabase_request(
+                "POST", "slots?on_conflict=external_id",
+                json_data=batch,
+                prefer="resolution=merge-duplicates,return=minimal"
+            )
+        except Exception as e:
+            err_str = str(e).lower()
+            if classification_supported and ('game_type_id' in err_str or 'themes' in err_str or 'column' in err_str):
+                # Las columnas de clasificación aún no existen en Supabase.
+                # Reintentar sin esos campos para no bloquear la producción.
+                print(f"[4] AVISO: columnas game_type_id/themes no existen aún en Supabase. "
+                      f"Ejecuta el SQL de migración. Reintentando sin clasificación...")
+                classification_supported = False
+                batch_stripped = [{k: v for k, v in s.items() if k not in CLASSIFICATION_FIELDS} for s in batch]
+                supabase_request(
+                    "POST", "slots?on_conflict=external_id",
+                    json_data=batch_stripped,
+                    prefer="resolution=merge-duplicates,return=minimal"
+                )
+            else:
+                raise  # Error distinto: propagar normalmente
 
     # Aplicar marca informativa a slots ausentes del API (SOLO missing_from_source, sin tocar is_active)
     for payload in missing_updates:
