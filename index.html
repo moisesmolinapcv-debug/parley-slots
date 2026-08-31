@@ -1364,6 +1364,74 @@ body.is-fast-scrolling .card {
   0%, 100% { opacity: 0.25; }
   50%      { opacity: 0.95; }
 }
+/* Estado inactivo del FAB: colecciones existen pero ninguna está activa */
+.fab-tournament.fab-inactive {
+  opacity: 0.52;
+  cursor: default;
+  filter: grayscale(0.4);
+}
+.fab-tournament.fab-inactive::after { animation: none; opacity: 0.1; }
+.fab-tournament.fab-inactive:hover { transform: none; }
+.fab-tournament.fab-inactive:active { transform: none; }
+
+/* Panel contextual anclado al FAB de Torneos */
+#tournamentPanel {
+  position: fixed;
+  bottom: 196px;
+  right: 18px;
+  z-index: 1100;
+  background: linear-gradient(135deg, #0d1b3e 0%, #0a1428 100%);
+  border: 1.5px solid rgba(47, 116, 255, 0.55);
+  border-radius: 14px;
+  padding: 16px 18px 14px;
+  min-width: 210px;
+  max-width: 260px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 20px rgba(47,116,255,0.2);
+  animation: fadeInPanel 0.22s ease;
+  color: #e8ecf5;
+}
+#tournamentPanel .tp-icon { font-size: 2rem; display: block; text-align: center; margin-bottom: 6px; }
+#tournamentPanel .tp-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #7fa8ff;
+  text-align: center;
+  margin-bottom: 8px;
+}
+#tournamentPanel .tp-message {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  text-align: center;
+  color: #c8d4ee;
+}
+#tournamentPanel .tp-detail {
+  font-size: 0.75rem;
+  color: #7fa8ff;
+  text-align: center;
+  margin-top: 6px;
+  font-weight: 600;
+}
+#tournamentPanel .tp-close {
+  display: block;
+  margin: 12px auto 0;
+  background: rgba(47,116,255,0.18);
+  border: 1px solid rgba(47,116,255,0.4);
+  color: #aac0f5;
+  border-radius: 8px;
+  padding: 5px 16px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.8px;
+}
+#tournamentPanel .tp-close:hover { background: rgba(47,116,255,0.35); color: #fff; }
+@keyframes fadeInPanel {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)  scale(1); }
+}
 
 /* 🎰 FAB SUERTE — ROJO PASIÓN OFICIAL PARLEY 3D (100% GPU COMPOSITOR) */
 .fab-random {
@@ -3106,6 +3174,8 @@ body.is-fast-scrolling .card {
         return `<label class="dd-option${isChecked?' selected':''}"><input type="checkbox" value="${t}" class="tag-check"${isChecked?' checked':''}> ${t}</label>`;
       }).join('');
     }
+    // Sincronizar estado visual del FAB cada vez que el dropdown se recalcula
+    if (typeof updateFabTournamentState === 'function') updateFabTournamentState();
   }
 
   /* Renderiza el dropdown de Tipo de Juego (nivel raiz o submenu de un padre) con animacion fluida */
@@ -3176,6 +3246,22 @@ body.is-fast-scrolling .card {
      FILTERING ENGINE
      ══════════════════════════════════════════════════════════════ */
   function applyFilters(){
+    // ── Limpieza de chips obsoletos ──────────────────────────────────────────
+    // Si una colección especial fue seleccionada pero luego se apagó en Supabase,
+    // su chip persiste en activeTags aunque ya no sea válida. La removemos aquí
+    // para que la UI no muestre estados contradictorios (chip activo + "no hay especiales").
+    if (activeTags.size > 0 && hasLoadedSpecialCollectionsFromSupabase && specialCollections.length > 0) {
+      const activeColKeys = new Set(
+        getActiveSpecialCollections().flatMap(c => [c.id, c.name].filter(Boolean))
+      );
+      for (const tag of [...activeTags]) {
+        const isSupabaseTag = specialCollections.some(c => c.id === tag || c.name === tag);
+        if (isSupabaseTag && !activeColKeys.has(tag)) {
+          activeTags.delete(tag); // Colección ya no activa: limpiar chip silenciosamente
+        }
+      }
+    }
+    // ── Filtrado principal ───────────────────────────────────────────────────
     const q=normalize(searchQuery),has=q.length>0;
     filtered=allSlots.filter(s=>{
       if(has&&!s._nameNorm.includes(q))return false;
@@ -4810,30 +4896,122 @@ body.is-fast-scrolling .card {
   /* ══════════════════════════════════════════════════════════════
      🏆 ATAJO RÁPIDO A TORNEOS & ESPECIALES
      ══════════════════════════════════════════════════════════════ */
+
+  /* Actualiza el estado visual del FAB según la disponibilidad de colecciones.
+     Llamado desde renderTagsDropdown() cada vez que Supabase responde.
+     Estados:
+       - Sin colecciones creadas     → FAB oculto (display:none)
+       - Colecciones pero todas OFF  → FAB atenuado (.fab-inactive), panel informativo al clic
+       - Colección activa disponible → FAB pleno, aplica filtro al clic            */
+  function updateFabTournamentState() {
+    const fab = document.getElementById('fabTournament');
+    if (!fab) return;
+    if (!hasLoadedSpecialCollectionsFromSupabase) return; // Esperar a que Supabase responda
+
+    const allCols    = Array.isArray(specialCollections) ? specialCollections : [];
+    const activeCols = getActiveSpecialCollections();
+
+    if (allCols.length === 0) {
+      // No existe ninguna colección creada: el FAB no tiene propósito, ocultarlo
+      fab.style.display = 'none';
+    } else if (activeCols.length === 0) {
+      // Hay colecciones pero todas están OFF o vencidas
+      fab.style.display = '';
+      fab.classList.add('fab-inactive');
+      fab.title = 'No hay torneos activos en este momento';
+    } else {
+      // Hay al menos una colección activa
+      fab.style.display = '';
+      fab.classList.remove('fab-inactive');
+      fab.title = `🏆 ${activeCols[0].name || 'Torneos y Especiales'}`;
+    }
+  }
+
+  /* Muestra el panel contextual del FAB anclado encima del botón.
+     Se auto-cierra con cualquier clic fuera del panel.             */
+  function showTournamentPanel() {
+    // Limpiar panel previo si existe
+    const existing = document.getElementById('tournamentPanel');
+    if (existing) { existing.remove(); return; } // segundo clic = cierra
+
+    const allCols  = Array.isArray(specialCollections) ? specialCollections : [];
+    const now      = new Date();
+
+    // ¿Hay una colección futura (no activa aún, pero configurada)?
+    const futureCols = allCols.filter(col => {
+      if (!col || col.is_active === false) return false;
+      if (!col.start_date) return false;
+      const sDate = new Date(col.start_date);
+      return !isNaN(sDate.getTime()) && sDate > now;
+    });
+
+    let icon, title, message, detail = '';
+
+    if (futureCols.length > 0) {
+      const next   = futureCols[0];
+      const sDate  = new Date(next.start_date);
+      const day    = sDate.toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
+      const hour   = sDate.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
+      icon    = next.icon || '⏳';
+      title   = 'PRÓXIMAMENTE';
+      message = `<strong>${next.name}</strong>`;
+      detail  = `Comienza el ${day} a las ${hour}`;
+    } else if (allCols.length > 0) {
+      icon    = '🏆';
+      title   = 'SIN TORNEOS ACTIVOS';
+      message = 'No hay torneos ni especiales\nactivos en este momento.';
+      detail  = 'El administrador activará\nuno cuando esté disponible.';
+    } else {
+      icon    = '🎯';
+      title   = 'SIN TORNEOS';
+      message = 'No hay torneos\nconfigurados actualmente.';
+      detail  = '';
+    }
+
+    const panel = document.createElement('div');
+    panel.id = 'tournamentPanel';
+    panel.innerHTML = `
+      <span class="tp-icon">${icon}</span>
+      <div class="tp-title">${title}</div>
+      <div class="tp-message">${message.replace(/\n/g,'<br>')}</div>
+      ${detail ? `<div class="tp-detail">${detail.replace(/\n/g,'<br>')}</div>` : ''}
+      <button class="tp-close" onclick="document.getElementById('tournamentPanel')?.remove()">CERRAR</button>
+    `;
+    document.body.appendChild(panel);
+
+    // Cerrar con clic fuera del panel
+    setTimeout(() => {
+      function outsideClick(e) {
+        const p = document.getElementById('tournamentPanel');
+        const fab = document.getElementById('fabTournament');
+        if (p && !p.contains(e.target) && e.target !== fab && !fab?.contains(e.target)) {
+          p.remove();
+          document.removeEventListener('click', outsideClick);
+        }
+      }
+      document.addEventListener('click', outsideClick);
+    }, 50);
+  }
+
+  /* Punto de entrada del FAB: decide si filtrar o mostrar panel según estado */
   function quickTournamentFilter() {
-    let targetTag = null;
     const activeCols = getActiveSpecialCollections();
 
     if (activeCols.length > 0) {
-      targetTag = activeCols[0].id || activeCols[0].name;
-    } else if (SPECIAL_TAGS && SPECIAL_TAGS.length > 0) {
-      targetTag = SPECIAL_TAGS.find(t => /torneo|tournament|drop/i.test(t)) || SPECIAL_TAGS[0];
+      // ── CASO ACTIVO: aplicar la colección #1 como filtro ────────────────
+      const targetTag = activeCols[0].id || activeCols[0].name;
+      activeTags.clear();
+      activeTags.add(targetTag);
+      syncTagsUI();
+      applyFilters();
+      setTimeout(() => {
+        const el = document.getElementById('filterBarStickyWrapper') || document.getElementById('slotsGrid');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
+    } else {
+      // ── CASO INACTIVO / FUTURO / VACÍO: mostrar panel contextual ────────
+      showTournamentPanel();
     }
-
-    if (!targetTag) targetTag = 'Torneo';
-
-    activeTags.clear();
-    activeTags.add(targetTag);
-
-    syncTagsUI();
-    applyFilters();
-
-    setTimeout(() => {
-      const targetElement = $('filterBarStickyWrapper') || $('slotsGrid');
-      if (targetElement) {
-        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 60);
   }
 
   /* ── Boot ────────────────────────────────────────────────────── */
