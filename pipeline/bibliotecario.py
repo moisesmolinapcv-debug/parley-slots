@@ -635,7 +635,7 @@ def generate_static(site_config, supabase_providers):
             
         offset += PAGE_SIZE
         if len(batch) < PAGE_SIZE: break
-        
+
     OUTPUT_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(OUTPUT_JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(all_slots, f, ensure_ascii=False, separators=(",", ":"))
@@ -653,9 +653,10 @@ def generate_static(site_config, supabase_providers):
         f.write("var SLOTS_INITIAL_DATA = ")
         json.dump(top_40, f, ensure_ascii=False, separators=(",", ":"))
         f.write(";\n")
-        
+
     pipeline_stats['slots_total'] = len(all_slots)
     print(f"[5] Static files generated with {len(all_slots)} slots.")
+
 
 def reactivate_all():
     """
@@ -663,7 +664,8 @@ def reactivate_all():
     que fueron apagados por la lógica anterior del Bibliotecario (source_status='1',
     is_active=False). Los slots apagados por Parley (source_status='0') se respetan.
     Los proveedores también se reactivan.
-    Se ejecuta UNA SOLA VEZ como acción de inicialización manual.
+    IMPORTANTE: Regenera los archivos estáticos al final para sincronizar la
+    página pública con el estado actual de Supabase.
     """
     print("=" * 60)
     print("  MODO REACTIVACIÓN MASIVA — El Bibliotecario v2.0")
@@ -673,9 +675,9 @@ def reactivate_all():
     # Reactivar slots que Parley mantiene activos pero el Bibliotecario apagó
     print("[R1] Reactivando slots con source_status='1' que están inactivos...")
     try:
-        r = supabase_request("PATCH", "slots?is_active=eq.false&source_status=eq.1",
-                             json_data={'is_active': True, 'missing_from_source': False})
-        print("[R1] ✅ Slots reactivados (source_status='1', is_active=False).")
+        supabase_request("PATCH", "slots?is_active=eq.false&source_status=eq.1",
+                         json_data={'is_active': True, 'missing_from_source': False})
+        print("[R1] Slots reactivados (source_status='1', is_active=False).")
     except Exception as e:
         print(f"[R1] ERROR: {e}")
 
@@ -684,18 +686,47 @@ def reactivate_all():
     try:
         supabase_request("PATCH", "providers?is_active=eq.false",
                          json_data={'is_active': True})
-        print("[R2] ✅ Proveedores reactivados.")
+        print("[R2] Proveedores reactivados.")
     except Exception as e:
         print(f"[R2] ERROR: {e}")
 
-    # Contar cuántos quedaron activos
+    # Contar slots activos paginando correctamente.
+    # CORRECCION: la versión anterior solo leía la 1ª página (1000 slots).
+    # Ahora pagina hasta obtener el total real.
+    print("[R3] Contando total de slots activos en Supabase (paginado)...")
+    total_active = 0
     try:
-        r_count = supabase_request("GET", "slots", params={"is_active": "eq.true", "select": "external_id"})
-        total_active = len(r_count.json())
-        print(f"[R3] Total slots activos en Supabase ahora: {total_active:,}")
+        offset_count = 0
+        while True:
+            r_count = supabase_request("GET", "slots", params={
+                "is_active": "eq.true",
+                "select": "external_id",
+                "limit": PAGE_SIZE,
+                "offset": offset_count
+            })
+            page = r_count.json()
+            total_active += len(page)
+            if len(page) < PAGE_SIZE:
+                break
+            offset_count += PAGE_SIZE
+        print(f"[R3] Total slots activos en Supabase: {total_active:,}")
     except Exception as e:
         total_active = -1
         print(f"[R3] No se pudo contar: {e}")
+
+    # Regenerar archivos estáticos OBLIGATORIAMENTE.
+    # Sin este paso, slots.js queda con el snapshot anterior a la reactivación
+    # y la página pública muestra menos slots que Supabase.
+    print("[R4] Regenerando archivos estáticos (slots.js / slots.json / slots_initial.js)...")
+    static_count = 0
+    try:
+        site_config = fetch_site_config()
+        supabase_providers = fetch_supabase_providers()
+        generate_static(site_config, supabase_providers)
+        static_count = pipeline_stats.get('slots_total', 0)
+        print(f"[R4] Archivos estáticos regenerados con {static_count:,} slots.")
+    except Exception as e:
+        print(f"[R4] AVISO: No se pudieron regenerar los estáticos: {e}")
 
     elapsed = time.time() - t0
 
@@ -704,7 +735,7 @@ def reactivate_all():
         'executed_at':      datetime.now(timezone.utc).isoformat(),
         'status':           'success',
         'slots_fetched':    0,
-        'slots_total':      total_active,
+        'slots_total':      static_count if static_count > 0 else total_active,
         'slots_added':      0,
         'slots_modified':   0,
         'slots_deactivated': 0,
@@ -714,7 +745,7 @@ def reactivate_all():
         'trigger_mode':     'reactivate_all',
         'error_message':    None,
         'backup_file':      '',
-        'notes':            'El Bibliotecario v2.0 — Reactivación Masiva de Inicialización'
+        'notes':            f'El Bibliotecario v2.0 — Reactivacion Masiva | Supabase: {total_active} | Estaticos: {static_count}'
     }
     try:
         supabase_request("POST", "pipeline_logs", json_data=log_entry, prefer="return=minimal")
@@ -730,7 +761,8 @@ def reactivate_all():
         f"📅 {fecha} · {hora} (VET)\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"✅ Acción de inicialización completada\n\n"
-        f"  🟢 Slots activos ahora: {total_active:,}\n"
+        f"  🟢 Slots activos en Supabase: {total_active:,}\n"
+        f"  📄 Slots en archivo estático:  {static_count:,}\n"
         f"  ⏱️  Duración: {int(elapsed//60)}m {int(elapsed%60)}s\n\n"
         f"📌 Recuerda: La visibilidad futura es solo del Panel de Control."
     )
