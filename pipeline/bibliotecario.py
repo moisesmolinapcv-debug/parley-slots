@@ -63,12 +63,65 @@ PROVIDER_DISPLAY = {
     'aviatrix': 'Aviatrix', 'tada gaming': 'TaDa Gaming', 'gmw': 'GMW',
 }
 
+# --- CLASIFICACIÓN AUTOMÁTICA DE SLOTS (sincronizado con index.html) ---
+# Diccionario de Tipo de Juego: palabras clave en nombre + game_url
+GAME_TYPE_KEYWORDS = {
+    'GJ_CRASH':     ['crash', 'aviator', 'aviatrix', 'balloon', 'spaceman', 'jetx', 'rocketman', 'turkey', 'comet'],
+    'GJ_ROULETTE':  ['roulette', 'ruleta', 'rouletta'],
+    'GJ_BACCARAT':  ['baccarat', 'bacarat', 'baccara'],
+    'GJ_BLACKJACK': ['blackjack', 'black jack', 'twenty-one'],
+    'GJ_POKER':     ['poker', 'poker3', 'holdem', 'stud'],
+    'GJ_BINGO':     ['bingo', 'keno'],
+    'GJ_INSTANT':   ['instant', 'scratch', 'fast', 'turbo', 'plinko', 'mines', 'dice', 'hilo', 'hi-lo'],
+    'GJ_CLASSIC':   ['fruit', 'fruits', 'wild', 'bar', 'cherry', 'sevens', 'lucky', 'classic', '777', 'joker'],
+    # GJ_SLOTS es el fallback por defecto para video slots estándar
+}
+
+# Diccionario de Temáticas: palabras clave en nombre del slot
+THEME_KEYWORDS = {
+    'T01_Egipto':    ['egypt', 'egyp', 'pharaoh', 'cleopatra', 'anubis', 'sphinx', 'nile', 'isis', 'horus', 'scarab', 'mummy', 'tutankhamun', 'pyramid', 'lucky-egypt'],
+    'T02_Mitologia': ['olympus', 'zeus', 'poseidon', 'ares', 'athena', 'thor', 'odin', 'valhalla', 'god', 'gods', 'titan', 'hercules', 'viking', 'loki', 'freya', 'ragnarok', 'mythology'],
+    'T03_Azteca':    ['aztec', 'mayan', 'maya', 'inca', 'gonzo', 'temple', 'jungle'],
+    'T04_Clasicos':  ['fruit', 'fruits', 'cherry', 'bar', 'seven', '777', 'joker', 'bells', 'diamond', 'classic'],
+    'T05_Navidad':   ['christmas', 'xmas', 'santa', 'reindeer', 'snowman', 'navidad', 'holiday'],
+    'T06_Halloween': ['halloween', 'witch', 'pumpkin', 'ghost', 'zombie', 'vampire', 'monster', 'skull', 'dracula', 'spooky'],
+    'T07_Animal':    ['wolf', 'eagle', 'buffalo', 'panda', 'tiger', 'lion', 'bear', 'panther', 'fox', 'elephant', 'rhino', 'gorilla', 'fish', 'shark', 'dragon', 'snake', 'frog', 'bull', 'horse'],
+    'T08_Oriental':  ['china', 'chinese', 'japan', 'japanese', 'asia', 'lantern', 'panda', 'sakura', 'samurai', 'ninja', 'geisha', 'fortune'],
+    'T09_Pirata':    ['pirate', 'pirates', 'treasure', 'gold', 'caribbean', 'corsair', 'jolly'],
+    'T10_Espacio':   ['space', 'cosmos', 'galaxy', 'alien', 'planet', 'rocket', 'star', 'meteor', 'nebula', 'galactic'],
+    'T11_Fruta':     ['mango', 'banana', 'lemon', 'orange', 'watermelon', 'strawberry', 'melon', 'kiwi'],
+    'T12_Diamante':  ['diamond', 'gem', 'gems', 'jewel', 'jewels', 'crystal', 'ruby', 'emerald', 'sapphire'],
+    'T13_Faroeste':  ['western', 'cowboy', 'sheriff', 'outlaw', 'gold rush', 'wild west'],
+}
+
+def classify_slot(name: str, provider: str, raw_game_url: str) -> dict:
+    """
+    Bibliotecario v2.0: Clasifica un slot en Tipo de Juego y Temáticas.
+    Sincronizado con los diccionarios de inferencia de index.html.
+    Retorna: {'game_type_id': str, 'themes': list[str]}
+    """
+    text = f"{name} {raw_game_url} {provider}".lower().replace('-', ' ').replace('_', ' ')
+
+    # 1. Tipo de Juego: primera coincidencia gana; GJ_SLOTS es el fallback
+    game_type_id = 'GJ_SLOTS'
+    for type_id, keywords in GAME_TYPE_KEYWORDS.items():
+        if any(kw in text for kw in keywords):
+            game_type_id = type_id
+            break
+
+    # 2. Temáticas: múltiples coincidencias posibles
+    themes = [tid for tid, kws in THEME_KEYWORDS.items() if any(kw in text for kw in kws)]
+    if not themes:
+        themes = ['T04_Clasicos']  # Fallback si no hay coincidencias
+
+    return {'game_type_id': game_type_id, 'themes': themes}
+
 # --- STATS GLOBALS ---
 pipeline_stats = {
     'slots_fetched': 0, 'slots_total': 0, 'slots_added': 0, 'slots_modified': 0,
-    'slots_deactivated': 0, 'slots_quarantined': 0, 'slots_reactivated': 0, 'providers_added': 0,
-    'status': 'running', 'error_message': None, 'backup_file': None,
-    'trigger_mode': 'automatic', 'duration_seconds': 0
+    'slots_classified': 0, 'slots_missing_from_source': 0, 'slots_reactivated': 0,
+    'providers_added': 0, 'status': 'running', 'error_message': None,
+    'backup_file': None, 'trigger_mode': 'automatic', 'duration_seconds': 0
 }
 
 # --- HTTP UTILS ---
@@ -108,23 +161,22 @@ def send_telegram(message: str):
 def send_telegram_success(elapsed: float):
     fecha = datetime.now().strftime("%d/%m/%Y")
     hora = datetime.now().strftime("%I:%M %p")
-    quarantined = pipeline_stats.get('slots_quarantined', 0)
-    truly_off   = pipeline_stats['slots_deactivated'] - quarantined
     msg = (
-        f"✅ EL BIBLIOTECARIO — PARLEY.COM.VE\n"
+        f"✅ EL BIBLIOTECARIO v2.0 — PARLEY.COM.VE\n"
         f"📅 {fecha} · {hora} (VET)\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"📊 RESUMEN DE SINCRONIZACIÓN\n\n"
-        f"  🔢 Slots extraídos del API:    {pipeline_stats['slots_fetched']:,}\n"
-        f"  📚 Catálogo activo en Supabase: {pipeline_stats['slots_total']:,}\n"
+        f"  🔢 Slots extraídos del API:      {pipeline_stats['slots_fetched']:,}\n"
+        f"  📚 Catálogo visible en Supabase: {pipeline_stats['slots_total']:,}\n"
         f"  ✨ Slots nuevos añadidos:         +{pipeline_stats['slots_added']}\n"
         f"  🔄 Slots actualizados:            {pipeline_stats['slots_modified']}\n"
-        f"  🗑️  Slots desactivados (perm.):    {truly_off}\n"
-        f"  ⏳ Slots en cuarentena (3d):      {quarantined}\n"
-        f"  🏢 Proveedores nuevos:             {pipeline_stats['providers_added']}\n"
+        f"  🏷️  Slots clasificados:            {pipeline_stats['slots_classified']}\n"
+        f"  👻 Slots no vistos (info):        {pipeline_stats['slots_missing_from_source']}\n"
+        f"  🏢 Proveedores nuevos:            {pipeline_stats['providers_added']}\n"
         f"  ⏱️  Duración total:              {int(elapsed//60)}m {int(elapsed%60)}s\n"
         f"  💾 Backup: {Path(pipeline_stats['backup_file'] or '').name} ✅\n"
         f"  🎯 Modo: {pipeline_stats['trigger_mode']}\n"
+        f"\n⚠️ NOTA: La visibilidad de slots es decisión exclusiva del Panel de Control."
     )
     send_telegram(msg)
 
@@ -301,29 +353,36 @@ def fetch_site_config():
     return config
 
 def process_data(api_slots, supabase_slots, supabase_providers, site_config):
-    print("[3] Processing data...")
+    """
+    Bibliotecario v2.0: Extractor, Refinador y Organizador de Datos Puros.
+    REGLA CARDINAL: El Bibliotecario NUNCA apaga slots por ausencia del API.
+    La visibilidad (is_active) es decisión EXCLUSIVA del Panel de Control.
+    """
+    print("[3] Processing data (v2.0 — Extractor Puro)...")
     new_threshold = int(site_config.get('new_threshold_days', 30))
     now_utc = datetime.now(timezone.utc)
-    
-    # Provider checks
+
+    # --- Mapas de proveedores ---
     prov_map = {p['name']: p for p in supabase_providers}
     prov_blocked = set(p['name'] for p in supabase_providers if not p.get('is_active', True))
-    
+
     new_providers = {}
-    
-    # Slot checks
+
+    # --- Mapa de slots existentes en Supabase ---
     supa_map = {str(s['external_id']): s for s in supabase_slots}
-    
+
     added = []
     modified = []
-    deactivated = []
-    
+    missing_updates = []  # Solo actualizaciones informativas (missing_from_source=True)
+
     api_map = {}
-    
+    classified_count = 0
+
     for row in api_slots:
         ext_id = str(row.get('id') or row.get('slot_product_id') or '')
-        if not ext_id: continue
-        
+        if not ext_id:
+            continue
+
         prov_slug = (row.get('provider') or '').lower().strip()
         if prov_slug and prov_slug not in prov_map and prov_slug not in new_providers:
             new_providers[prov_slug] = {
@@ -334,132 +393,135 @@ def process_data(api_slots, supabase_slots, supabase_providers, site_config):
                 'created_at': now_utc.isoformat(),
                 'updated_at': now_utc.isoformat()
             }
-            
+
         c_desc = int(row.get('clicks_desktop') or 0)
-        c_mob = int(row.get('clicks_mobile') or 0)
+        c_mob  = int(row.get('clicks_mobile') or 0)
         tot_clicks = c_desc + c_mob
-        
+
         created_at_val = parse_endpoint_date(row.get('created_at'))
         dt_created = datetime.fromisoformat(created_at_val.replace('Z', '+00:00'))
-        if dt_created.tzinfo is None: dt_created = dt_created.replace(tzinfo=timezone.utc)
+        if dt_created.tzinfo is None:
+            dt_created = dt_created.replace(tzinfo=timezone.utc)
         is_new_val = (now_utc - dt_created).days <= new_threshold
-        
+
         source_status = str(row.get('status', '1'))
-        
         supa_slot = supa_map.get(ext_id)
-        
-        # Human-First Rules
-        final_is_active = True
-        if source_status == "0":
-            final_is_active = False
+
+        # ── REGLAS DE VISIBILIDAD (Human-First) ──────────────────────────────
+        # Sólo tres condiciones pueden poner is_active = False:
+        # 1. Parley mismo lo marcó como inactivo en su sistema (source_status='0')
+        # 2. Un administrador lo bloqueó manualmente en el Panel (is_active=False con source_status='1')
+        # 3. El proveedor fue bloqueado por un administrador en el Panel
+        # El Bibliotecario NUNCA puede apagar slots por otras razones.
+        # ─────────────────────────────────────────────────────────────────────
+        if source_status == '0':
+            final_is_active = False  # Parley lo marcó OFF en origen
         elif supa_slot and supa_slot.get('is_active') is False and supa_slot.get('source_status') == '1':
-            final_is_active = False # Admin blocked
+            final_is_active = False  # Administrador lo bloqueó: decisión humana intocable
         elif prov_slug in prov_blocked:
-            final_is_active = False # Provider blocked
-            
+            final_is_active = False  # Proveedor bloqueado por administrador
+        else:
+            final_is_active = True   # Por defecto: visible
+
+        # ── CLASIFICACIÓN AUTOMÁTICA ──────────────────────────────────────────
+        raw_game_url = row.get('game_url', '')
+        slot_name    = row.get('name', '').strip()
+        classification = classify_slot(slot_name, prov_slug, raw_game_url)
+        classified_count += 1
+
         normalized = {
-            'external_id': ext_id,
-            'name': row.get('name', '').strip(),
-            'provider': prov_slug,
+            'external_id':      ext_id,
+            'name':             slot_name,
+            'provider':         prov_slug,
             'provider_display': PROVIDER_DISPLAY.get(prov_slug, prov_slug.title()),
-            'image_url': row.get('image_url', ''),
+            'image_url':        row.get('image_url', ''),
             'slot_desktop_url': row.get('slot_desktop_movil') or row.get('slot_desktop_url') or '',
-            'slot_mobile_url': row.get('slot_url_movil') or row.get('slot_mobile_url') or '',
-            'slot_app_url': row.get('slot_url_app') or '',
-            'raw_game_url': row.get('game_url', ''),
-            'is_active': final_is_active,
-            'is_new': is_new_val,
-            'total_clicks': tot_clicks,
-            'clicks_desktop': c_desc,
-            'clicks_mobile': c_mob,
-            'slot_product_id': row.get('slot_product_id'),
+            'slot_mobile_url':  row.get('slot_url_movil') or row.get('slot_mobile_url') or '',
+            'slot_app_url':     row.get('slot_url_app') or '',
+            'raw_game_url':     raw_game_url,
+            'is_active':        final_is_active,
+            'is_new':           is_new_val,
+            'total_clicks':     tot_clicks,
+            'clicks_desktop':   c_desc,
+            'clicks_mobile':    c_mob,
+            'slot_product_id':  row.get('slot_product_id'),
             'provider_game_id': row.get('provider_game_id', ''),
-            'source_status': source_status,
-            'is_mobile': bool(row.get('is_mobile', 1)),
-            'is_desktop': bool(row.get('is_desktop', 1)),
+            'source_status':    source_status,
+            'is_mobile':        bool(row.get('is_mobile', 1)),
+            'is_desktop':       bool(row.get('is_desktop', 1)),
             'missing_from_source': False,
-            'last_seen_at': now_utc.isoformat(),
-            'created_at': created_at_val,
-            'updated_at': now_utc.isoformat()
+            'last_seen_at':     now_utc.isoformat(),
+            'created_at':       created_at_val,
+            'updated_at':       now_utc.isoformat(),
+            # Clasificación automática
+            'game_type_id':     classification['game_type_id'],
+            'themes':           classification['themes'],
         }
-        
+
         api_map[ext_id] = normalized
-        
+
         if not supa_slot:
             added.append(normalized)
         else:
             changed = False
             for k, v in normalized.items():
-                if k == 'updated_at': continue
+                if k == 'updated_at':
+                    continue
                 if supa_slot.get(k) != v:
                     changed = True
                     break
             if changed:
                 modified.append(normalized)
-                
-    # Failsafe check
+
+    # ── FAILSAFE: Si el API devuelve < 80% de los slots conocidos, abortar ──
     failsafe_active = False
     if len(supa_map) > 0 and (len(api_map) / len(supa_map)) < FAILSAFE_THRESHOLD:
         failsafe_active = True
         pipeline_stats['status'] = 'partial_success'
         send_telegram_failsafe(len(api_map), len(supa_map))
-        
+
+    # ── SLOTS AUSENTES DEL API: SOLO MARCA INFORMATIVA, NUNCA APAGA ──────────
+    # El campo missing_from_source=True es únicamente un indicador de auditoría.
+    # No tiene efecto sobre la visibilidad del slot en la página pública.
+    missing_count = 0
     for ext_id, supa_slot in supa_map.items():
         if ext_id not in api_map:
-            # Missing from source
-            last_seen = supa_slot.get('last_seen_at')
-            dt_last_seen = None
-            if last_seen:
-                dt_last_seen = datetime.fromisoformat(last_seen.replace('Z', '+00:00'))
-                if dt_last_seen.tzinfo is None: dt_last_seen = dt_last_seen.replace(tzinfo=timezone.utc)
-            else:
-                dt_last_seen = now_utc # Assuming it was seen just now if null
-                
-            days_missing = (now_utc - dt_last_seen).days
-            
-            update_payload = {'missing_from_source': True}
-            should_update = False
-            
-            if days_missing >= 3 and not failsafe_active:
-                if supa_slot.get('is_active'):
-                    update_payload['is_active'] = False
-                    should_update = True
-            
             if not supa_slot.get('missing_from_source'):
-                should_update = True
-                
-            if should_update:
-                update_payload['external_id'] = ext_id
-                deactivated.append(update_payload)
-                
-    # Contar slots activos por proveedor — comparación en minúsculas para evitar duplicados
-    # por diferencias de casing entre la tabla providers y los slugs de api_map
+                # Marcar la primera vez que no aparece (solo informativo)
+                missing_updates.append({'external_id': ext_id, 'missing_from_source': True})
+            missing_count += 1
+
+    pipeline_stats['slots_missing_from_source'] = missing_count
+    pipeline_stats['slots_classified'] = classified_count
+
+    # ── CONTAR SLOTS ACTIVOS POR PROVEEDOR ───────────────────────────────────
     prov_updates = []
-    # Construir mapa de conteos por slug (todos en minúscula)
     slug_counts = {}
     for v in api_map.values():
         if v['is_active']:
             slug = v['provider'].lower().strip()
             slug_counts[slug] = slug_counts.get(slug, 0) + 1
 
-    for prov_slug, p_data in new_providers.items():
-        p_data['slot_count'] = slug_counts.get(prov_slug, 0)
+    for prov_slug_key, p_data in new_providers.items():
+        p_data['slot_count'] = slug_counts.get(prov_slug_key, 0)
 
     for prov in supabase_providers:
-        # Comparar en minúsculas para ser resiliente a diferencias de casing
         slug_norm = prov['name'].lower().strip()
         count = slug_counts.get(slug_norm, 0)
         if prov.get('slot_count') != count:
             prov_updates.append({'name': prov['name'], 'slot_count': count, 'updated_at': now_utc.isoformat()})
 
-    # Separar métricas: verdaderamente desactivados vs en cuarentena
-    truly_deactivated = sum(1 for p in deactivated if p.get('is_active') is False)
-    quarantined = len(deactivated) - truly_deactivated
-    pipeline_stats['slots_quarantined'] = quarantined
+    if failsafe_active:
+        print(f"[3] ⚠️ FAILSAFE ACTIVO: {len(api_map)} API vs {len(supa_map)} Supabase. Desactivaciones bloqueadas.")
+        # Con failsafe activo, solo procesamos adds y modificaciones — NO missing_updates
+        missing_updates = []
 
-    return added, modified, deactivated, list(new_providers.values()), prov_updates
+    print(f"[3] ✅ Procesados: +{len(added)} nuevos, {len(modified)} modificados, {missing_count} ausentes del API (solo marca informativa).")
+    return added, modified, missing_updates, list(new_providers.values()), prov_updates
 
-def inject_data(added, modified, deactivated, new_providers, prov_updates):
+
+def inject_data(added, modified, missing_updates, new_providers, prov_updates):
+    """Inyecta datos en Supabase. Los missing_updates solo actualizan missing_from_source (sin tocar is_active)."""
     print("[4] Inyectando datos en Supabase...")
 
     # Upsert de slots nuevos y modificados en batches de 200
@@ -472,25 +534,18 @@ def inject_data(added, modified, deactivated, new_providers, prov_updates):
             prefer="resolution=merge-duplicates,return=minimal"
         )
 
-    # Aplicar updates a slots desaparecidos (PATCH individual para no afectar otros campos)
-    for payload in deactivated:
-        ext_id = payload.get('external_id')  # Leer sin mutar
-        patch_data = {k: v for k, v in payload.items() if k != 'external_id'}  # Copiar sin el id
+    # Aplicar marca informativa a slots ausentes del API (SOLO missing_from_source, sin tocar is_active)
+    for payload in missing_updates:
+        ext_id = payload.get('external_id')
+        patch_data = {k: v for k, v in payload.items() if k != 'external_id'}
         supabase_request("PATCH", f"slots?external_id=eq.{ext_id}", json_data=patch_data)
 
-    # Insertar proveedores NUEVOS (ya fueron filtrados — no existen en Supabase)
-    # No usamos on_conflict porque la tabla puede no tener UNIQUE constraint en name
-    # y además ya sabemos que son nuevos (filtrado previo vs prov_map)
+    # Insertar proveedores NUEVOS
     if new_providers:
         try:
-            supabase_request(
-                "POST", "providers",
-                json_data=new_providers,
-                prefer="return=minimal"
-            )
+            supabase_request("POST", "providers", json_data=new_providers, prefer="return=minimal")
             print(f"[4] Proveedores nuevos insertados: {len(new_providers)}")
         except Exception as e:
-            # Si falla el batch, intentar uno a uno (tolerancia a duplicados)
             print(f"[4] Batch de proveedores falló ({e}), intentando uno a uno...")
             inserted = 0
             for prov in new_providers:
@@ -503,11 +558,11 @@ def inject_data(added, modified, deactivated, new_providers, prov_updates):
 
     # Actualizar slot_count de proveedores existentes
     for pu in prov_updates:
-        name = pu.get('name')  # Leer sin mutar
-        patch_data = {k: v for k, v in pu.items() if k != 'name'}  # Copiar sin la clave primaria
+        name = pu.get('name')
+        patch_data = {k: v for k, v in pu.items() if k != 'name'}
         supabase_request("PATCH", f"providers?name=eq.{name}", json_data=patch_data)
 
-    print(f"[4] ✅ Inyección completa: +{len(added)} nuevos, {len(modified)} modificados, {len(deactivated)} desactivados.")
+    print(f"[4] ✅ Inyección completa: +{len(added)} nuevos, {len(modified)} modificados, {len(missing_updates)} marcas informativas.")
 
 def generate_static(site_config, supabase_providers):
     print("[5] Generating static files...")
@@ -575,11 +630,101 @@ def generate_static(site_config, supabase_providers):
     pipeline_stats['slots_total'] = len(all_slots)
     print(f"[5] Static files generated with {len(all_slots)} slots.")
 
+def reactivate_all():
+    """
+    Bibliotecario v2.0 — Modo de Inicialización: Reactiva masivamente todos los slots
+    que fueron apagados por la lógica anterior del Bibliotecario (source_status='1',
+    is_active=False). Los slots apagados por Parley (source_status='0') se respetan.
+    Los proveedores también se reactivan.
+    Se ejecuta UNA SOLA VEZ como acción de inicialización manual.
+    """
+    print("=" * 60)
+    print("  MODO REACTIVACIÓN MASIVA — El Bibliotecario v2.0")
+    print("=" * 60)
+    t0 = time.time()
+
+    # Reactivar slots que Parley mantiene activos pero el Bibliotecario apagó
+    print("[R1] Reactivando slots con source_status='1' que están inactivos...")
+    try:
+        r = supabase_request("PATCH", "slots?is_active=eq.false&source_status=eq.1",
+                             json_data={'is_active': True, 'missing_from_source': False})
+        print("[R1] ✅ Slots reactivados (source_status='1', is_active=False).")
+    except Exception as e:
+        print(f"[R1] ERROR: {e}")
+
+    # Reactivar todos los proveedores
+    print("[R2] Reactivando todos los proveedores...")
+    try:
+        supabase_request("PATCH", "providers?is_active=eq.false",
+                         json_data={'is_active': True})
+        print("[R2] ✅ Proveedores reactivados.")
+    except Exception as e:
+        print(f"[R2] ERROR: {e}")
+
+    # Contar cuántos quedaron activos
+    try:
+        r_count = supabase_request("GET", "slots", params={"is_active": "eq.true", "select": "external_id"})
+        total_active = len(r_count.json())
+        print(f"[R3] Total slots activos en Supabase ahora: {total_active:,}")
+    except Exception as e:
+        total_active = -1
+        print(f"[R3] No se pudo contar: {e}")
+
+    elapsed = time.time() - t0
+
+    # Registrar en pipeline_logs
+    log_entry = {
+        'executed_at':      datetime.now(timezone.utc).isoformat(),
+        'status':           'success',
+        'slots_fetched':    0,
+        'slots_total':      total_active,
+        'slots_added':      0,
+        'slots_modified':   0,
+        'slots_deactivated': 0,
+        'slots_reactivated': total_active,
+        'providers_added':  0,
+        'duration_seconds': int(elapsed),
+        'trigger_mode':     'reactivate_all',
+        'error_message':    None,
+        'backup_file':      '',
+        'notes':            'El Bibliotecario v2.0 — Reactivación Masiva de Inicialización'
+    }
+    try:
+        supabase_request("POST", "pipeline_logs", json_data=log_entry, prefer="return=minimal")
+        print("[R] Log registrado en pipeline_logs.")
+    except Exception as e:
+        print(f"[R] No se pudo registrar log: {e}")
+
+    # Notificación Telegram
+    fecha = datetime.now().strftime("%d/%m/%Y")
+    hora  = datetime.now().strftime("%I:%M %p")
+    msg = (
+        f"🔄 EL BIBLIOTECARIO v2.0 — REACTIVACIÓN MASIVA\n"
+        f"📅 {fecha} · {hora} (VET)\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"✅ Acción de inicialización completada\n\n"
+        f"  🟢 Slots activos ahora: {total_active:,}\n"
+        f"  ⏱️  Duración: {int(elapsed//60)}m {int(elapsed%60)}s\n\n"
+        f"📌 Recuerda: La visibilidad futura es solo del Panel de Control."
+    )
+    send_telegram(msg)
+    print("=" * 60)
+    print("  REACTIVACIÓN MASIVA COMPLETADA.")
+    print("=" * 60)
+
+
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='El Bibliotecario v2.0 — Parley.com.ve')
     parser.add_argument('--mode', choices=['auto', 'manual'], default='auto')
     parser.add_argument('--restore', type=str, help='Backup file to restore from')
+    parser.add_argument('--reactivate-all', action='store_true',
+                        help='Reactivar masivamente todos los slots y proveedores (acción de inicialización única)')
     args = parser.parse_args()
+
+    # ── Modo de Reactivación Masiva (ejecución única de inicialización) ──
+    if args.reactivate_all:
+        reactivate_all()
+        sys.exit(0)
 
     pipeline_stats['trigger_mode'] = 'automatic' if args.mode == 'auto' else 'manual'
 
@@ -614,21 +759,19 @@ def main():
 
         if site_config.get('maintenance_mode') == 'true':
             print("Maintenance mode active. Exiting without changes.")
-            # Registrar salida por mantenimiento antes de salir
             pipeline_stats['status'] = 'skipped'
             pipeline_stats['error_message'] = 'Maintenance mode activo'
             sys.exit(0)
 
-        added, modified, deactivated, new_providers, prov_updates = process_data(
+        added, modified, missing_updates, new_providers, prov_updates = process_data(
             api_slots, supabase_slots, supabase_providers, site_config
         )
 
         pipeline_stats['slots_added']       = len(added)
-        pipeline_stats['slots_modified']     = len(modified)
-        pipeline_stats['slots_deactivated']  = len(deactivated)
-        pipeline_stats['providers_added']    = len(new_providers)
+        pipeline_stats['slots_modified']    = len(modified)
+        pipeline_stats['providers_added']   = len(new_providers)
 
-        inject_data(added, modified, deactivated, new_providers, prov_updates)
+        inject_data(added, modified, missing_updates, new_providers, prov_updates)
         generate_static(site_config, supabase_providers)
 
         elapsed = time.time() - t0
@@ -637,20 +780,20 @@ def main():
 
         # Escribir log de éxito directamente
         log_entry = {
-            'executed_at':     datetime.now(timezone.utc).isoformat(),
-            'status':          pipeline_stats['status'],
-            'slots_fetched':   pipeline_stats['slots_fetched'],
-            'slots_total':     pipeline_stats['slots_total'],
-            'slots_added':     pipeline_stats['slots_added'],
-            'slots_modified':  pipeline_stats['slots_modified'],
-            'slots_deactivated': pipeline_stats['slots_deactivated'],
+            'executed_at':      datetime.now(timezone.utc).isoformat(),
+            'status':           pipeline_stats['status'],
+            'slots_fetched':    pipeline_stats['slots_fetched'],
+            'slots_total':      pipeline_stats['slots_total'],
+            'slots_added':      pipeline_stats['slots_added'],
+            'slots_modified':   pipeline_stats['slots_modified'],
+            'slots_deactivated': 0,
             'slots_reactivated': pipeline_stats.get('slots_reactivated', 0),
-            'providers_added': pipeline_stats['providers_added'],
+            'providers_added':  pipeline_stats['providers_added'],
             'duration_seconds': pipeline_stats['duration_seconds'],
-            'trigger_mode':    pipeline_stats['trigger_mode'],
-            'error_message':   None,
-            'backup_file':     Path(pipeline_stats['backup_file']).name,
-            'notes':           'El Bibliotecario v1.0'
+            'trigger_mode':     pipeline_stats['trigger_mode'],
+            'error_message':    None,
+            'backup_file':      Path(pipeline_stats['backup_file']).name,
+            'notes':            f"El Bibliotecario v2.0 | Clasificados: {pipeline_stats.get('slots_classified', 0)} | Ausentes del API: {pipeline_stats.get('slots_missing_from_source', 0)}"
         }
         supabase_request("POST", "pipeline_logs", json_data=log_entry, prefer="return=minimal")
         _log_written = True
@@ -684,7 +827,7 @@ def main():
             'trigger_mode':    pipeline_stats['trigger_mode'],
             'error_message':   str(e)[:500],
             'backup_file':     Path(pipeline_stats['backup_file']).name if pipeline_stats.get('backup_file') else '',
-            'notes':           'El Bibliotecario v1.0'
+            'notes':           'El Bibliotecario v2.0'
         }
         try:
             supabase_request("POST", "pipeline_logs", json_data=log_entry, prefer="return=minimal")
@@ -708,14 +851,14 @@ def main():
                 'slots_total':     pipeline_stats.get('slots_total', 0),
                 'slots_added':     pipeline_stats.get('slots_added', 0),
                 'slots_modified':  pipeline_stats.get('slots_modified', 0),
-                'slots_deactivated': pipeline_stats.get('slots_deactivated', 0),
+                'slots_deactivated': 0,
                 'slots_reactivated': pipeline_stats.get('slots_reactivated', 0),
                 'providers_added': pipeline_stats.get('providers_added', 0),
                 'duration_seconds': int(elapsed_final),
                 'trigger_mode':    pipeline_stats.get('trigger_mode', 'unknown'),
                 'error_message':   pipeline_stats.get('error_message', 'Ejecución terminada sin log previo'),
                 'backup_file':     Path(pipeline_stats['backup_file']).name if pipeline_stats.get('backup_file') else '',
-                'notes':           'El Bibliotecario v1.0 (§2D-2: fallback finally)'
+                'notes':           'El Bibliotecario v2.0 (§2D-2: fallback finally)'
             }
             try:
                 supabase_request("POST", "pipeline_logs", json_data=fallback_log, prefer="return=minimal")

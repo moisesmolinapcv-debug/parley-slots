@@ -9,8 +9,8 @@ name: El Bibliotecario — Parley.com.ve
 
 on:
   schedule:
-    # 06:00 UTC = 02:00 AM Venezuela (VET = UTC-4)
-    - cron: '0 6 * * *'
+    # 10:00 UTC = 06:00 AM Venezuela (VET = UTC-4)
+    - cron: '0 10 * * *'
 
   workflow_dispatch:
     # Permite ejecución manual desde el Admin Panel o GitHub UI
@@ -20,6 +20,11 @@ on:
         required: false
         default: 'manual'
         type: string
+      reactivate_all:
+        description: 'Reactivar masivamente todos los slots (acción de inicialización única)'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   bibliotecario:
@@ -52,7 +57,7 @@ jobs:
         run: pip install requests
 
       # ── PASO 4: Ejecutar El Bibliotecario ─────────────────────────
-      - name: 📚 Ejecutar El Bibliotecario
+      - name: 📚 Ejecutar El Bibliotecario v2.0
         env:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
@@ -60,13 +65,21 @@ jobs:
           TELEGRAM_CHAT_ID:     ${{ secrets.TELEGRAM_CHAT_ID }}
           # Detectar modo de ejecución (auto vs manual)
           TRIGGER_MODE:         ${{ github.event_name == 'workflow_dispatch' && inputs.trigger || 'automatic' }}
+          REACTIVATE_ALL:       ${{ inputs.reactivate_all == true && 'true' || 'false' }}
         run: |
           echo "════════════════════════════════════════"
-          echo "  EL BIBLIOTECARIO — PARLEY.COM.VE"
+          echo "  EL BIBLIOTECARIO v2.0 — PARLEY.COM.VE"
           echo "  Modo: $TRIGGER_MODE"
+          echo "  Reactivar Todo: $REACTIVATE_ALL"
           echo "  Inicio: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "  Hora Venezuela: $(TZ='America/Caracas' date '+%Y-%m-%d %I:%M %p VET')"
           echo "════════════════════════════════════════"
-          python pipeline/bibliotecario.py --mode=$TRIGGER_MODE
+          if [ "$REACTIVATE_ALL" = "true" ]; then
+            echo "→ Ejecutando modo de Reactivación Masiva..."
+            python pipeline/bibliotecario.py --reactivate-all
+          else
+            python pipeline/bibliotecario.py --mode=$TRIGGER_MODE
+          fi
 
       # ── PASO 5: Verificar si hay cambios en archivos estáticos ────
       - name: 🔍 Verificar cambios en archivos estáticos
