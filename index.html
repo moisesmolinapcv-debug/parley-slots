@@ -2538,6 +2538,10 @@ body.is-fast-scrolling .card {
 
   /* ── Utility ────────────────────────────────────────────────── */
   function normalize(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+  function normalizeProviderKey(str){
+    if(str===null||str===undefined||str==='')return '';
+    return String(str).toLowerCase().trim().replace(/[^a-z0-9]/g,'');
+  }
   function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
   const isMobile=/Mobi|Android/i.test(navigator.userAgent);
   const isMobileOrTabletDevice = () => window.innerWidth < 1024 || isMobile || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -2597,48 +2601,89 @@ body.is-fast-scrolling .card {
     return { game_type_id: typeId, themes: matchedThemes };
   }
 
-  /** ⚡ Consulta relámpago a Supabase DB con Inversión Lógica, Resiliencia y Caché TTL (5 min) */
+  /** ⚡ Supabase DB Overrides Engine con Hidratación Síncrona, SWR y Resiliencia Total */
   const SUPABASE_CACHE_KEY = 'parley_live_overrides_cache_v5';
-  const SUPABASE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos de validez
+  const SUPABASE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos de referencia
+
+  function getCachedOverrides() {
+    try {
+      const normProv = typeof normalizeProviderKey === 'function' ? normalizeProviderKey : (s => (s === null || s === undefined ? '' : String(s).toLowerCase().trim().replace(/[^a-z0-9]/g, '')));
+      const cachedRaw = localStorage.getItem(SUPABASE_CACHE_KEY) || sessionStorage.getItem(SUPABASE_CACHE_KEY);
+      if (!cachedRaw) return null;
+      const cached = JSON.parse(cachedRaw);
+      if (!cached || typeof cached !== 'object') return null;
+      return {
+        activeProvs: Array.isArray(cached.activeProvs) && cached.activeProvs.length > 0 ? new Set(cached.activeProvs.map(normProv).filter(Boolean)) : null,
+        inactiveSlotIds: Array.isArray(cached.inactiveSlotIds) ? new Set(cached.inactiveSlotIds) : new Set(),
+        banners: Array.isArray(cached.banners) ? cached.banners : [],
+        config: cached.config && typeof cached.config === 'object' ? cached.config : {},
+        ts: cached.ts || 0
+      };
+    } catch (e) {
+      return null;
+    }
+  }
 
   async function fetchLiveOverrides() {
-    // ── 1. Verificar si existe snapshot fresco en almacenamiento local (< 5 min) ──
+    const normProv = typeof normalizeProviderKey === 'function' ? normalizeProviderKey : (s => (s === null || s === undefined ? '' : String(s).toLowerCase().trim().replace(/[^a-z0-9]/g, '')));
+    const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
+
+    const fetchWithTimeout = (url, options = {}, timeoutMs = 4000) => {
+      if (typeof AbortController === 'undefined') {
+        return fetch(url, options).catch(() => null);
+      }
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      return fetch(url, { ...options, signal: controller.signal })
+        .then(res => { clearTimeout(timer); return res; })
+        .catch(() => { clearTimeout(timer); return null; });
+    };
+
     try {
-      const cachedRaw = localStorage.getItem(SUPABASE_CACHE_KEY) || sessionStorage.getItem(SUPABASE_CACHE_KEY);
-      if (cachedRaw) {
-        const cached = JSON.parse(cachedRaw);
-        if (cached && cached.ts && (Date.now() - cached.ts < SUPABASE_CACHE_TTL_MS)) {
-          if (Array.isArray(cached.banners) && cached.banners.length > 0) {
-            renderDynamicBanners(cached.banners);
-          }
-          if (cached.config) {
-            applyLiveSiteConfig(cached.config);
-          }
+      const [resProvActive, resSlotsInactive, resBanners, resConfig] = await Promise.all([
+        fetchWithTimeout(`${SUPABASE_API_URL}/providers?is_active=eq.true&select=name,display_name`, { headers }),
+        fetchWithTimeout(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=id,external_id,name`, { headers }),
+        fetchWithTimeout(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url,link_url&order=position.asc`, { headers }),
+        fetchWithTimeout(`${SUPABASE_API_URL}/site_config?select=key,value`, { headers })
+      ]);
+
+      // ── DETECCIÓN RESILIENTE DE FALLO DE RED / SUPABASE OFFLINE ──
+      const isProvOk = resProvActive && resProvActive.ok;
+      const isSlotsOk = resSlotsInactive && resSlotsInactive.ok;
+
+      if (!isProvOk && !isSlotsOk) {
+        const fallbackCached = getCachedOverrides();
+        if (fallbackCached) {
           return {
-            activeProvs: cached.activeProvs && cached.activeProvs.length > 0 ? new Set(cached.activeProvs) : null,
-            inactiveSlotIds: cached.inactiveSlotIds ? new Set(cached.inactiveSlotIds) : new Set()
+            activeProvs: fallbackCached.activeProvs,
+            inactiveSlotIds: fallbackCached.inactiveSlotIds,
+            banners: fallbackCached.banners,
+            config: fallbackCached.config,
+            isFresh: false
           };
         }
+        return { activeProvs: null, inactiveSlotIds: new Set(), banners: [], config: {}, isFresh: false };
       }
-    } catch(e) {}
-
-    // ── 2. Si no hay caché válida, consultar Supabase con timeout de seguridad ──
-    try {
-      const headers = { 'apikey': SUPABASE_PUBLIC_KEY, 'Authorization': `Bearer ${SUPABASE_PUBLIC_KEY}` };
-      const [resProvActive, resSlotsInactive, resBanners, resConfig] = await Promise.all([
-        fetch(`${SUPABASE_API_URL}/providers?is_active=eq.true&select=name,display_name`, { headers }).catch(() => null),
-        fetch(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=id,external_id,name`, { headers }).catch(() => null),
-        fetch(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url,link_url&order=position.asc`, { headers }).catch(() => null),
-        fetch(`${SUPABASE_API_URL}/site_config?select=key,value`, { headers }).catch(() => null)
-      ]);
 
       const activeProvs = new Set();
       let activeProvsArr = [];
       if (resProvActive && resProvActive.ok) {
         const provData = await resProvActive.json();
         provData.forEach(p => {
-          if (p.name) { activeProvs.add(p.name.toLowerCase().trim()); activeProvsArr.push(p.name.toLowerCase().trim()); }
-          if (p.display_name) { activeProvs.add(p.display_name.toLowerCase().trim()); activeProvsArr.push(p.display_name.toLowerCase().trim()); }
+          if (p.name) {
+            const k1 = normProv(p.name);
+            if (k1 && !activeProvs.has(k1)) {
+              activeProvs.add(k1);
+              activeProvsArr.push(k1);
+            }
+          }
+          if (p.display_name) {
+            const k2 = normProv(p.display_name);
+            if (k2 && !activeProvs.has(k2)) {
+              activeProvs.add(k2);
+              activeProvsArr.push(k2);
+            }
+          }
         });
       }
 
@@ -2694,20 +2739,26 @@ body.is-fast-scrolling .card {
         localStorage.setItem(SUPABASE_CACHE_KEY, JSON.stringify(cachePayload));
       } catch(e) {}
 
-      return { activeProvs, inactiveSlotIds };
+      return {
+        activeProvs: activeProvs.size > 0 ? activeProvs : null,
+        inactiveSlotIds,
+        banners: bannersArr,
+        config: configMap,
+        isFresh: true
+      };
     } catch (e) {
-      // Si falla la red, intentar usar cualquier caché previa disponible
-      try {
-        const fallbackRaw = localStorage.getItem(SUPABASE_CACHE_KEY);
-        if (fallbackRaw) {
-          const fb = JSON.parse(fallbackRaw);
-          return {
-            activeProvs: fb.activeProvs && fb.activeProvs.length > 0 ? new Set(fb.activeProvs) : null,
-            inactiveSlotIds: fb.inactiveSlotIds ? new Set(fb.inactiveSlotIds) : new Set()
-          };
-        }
-      } catch(e2) {}
-      return { activeProvs: null, inactiveSlotIds: new Set() };
+      // Si falla la red, intentar usar cualquier caché previa disponible de forma resiliente
+      const fallbackCached = getCachedOverrides();
+      if (fallbackCached) {
+        return {
+          activeProvs: fallbackCached.activeProvs,
+          inactiveSlotIds: fallbackCached.inactiveSlotIds,
+          banners: fallbackCached.banners,
+          config: fallbackCached.config,
+          isFresh: false
+        };
+      }
+      return { activeProvs: null, inactiveSlotIds: new Set(), banners: [], config: {}, isFresh: false };
     }
   }
 
@@ -2896,10 +2947,12 @@ body.is-fast-scrolling .card {
 
 
   /* ── Bootstrapping con Inversión Lógica de Supabase DB ────────── */
-  /* ⚡ CARGA EN PARALELO: Renderiza inmediatamente con datos locales,
-     Supabase se carga en segundo plano y actualiza cuando responde. */
+  /* ⚡ CARGA EN PARALELO CON HIDRATACIÓN SÍNCRONA DE CACHÉ:
+     1. Hidrata síncronamente los overrides de Supabase almacenados en localStorage.
+     2. Renderiza inmediatamente el primer frame con los datos locales YA filtrados (Zero-Flicker).
+     3. Supabase se consulta en paralelo en segundo plano (SWR) y revalida/actualiza el estado si hubo cambios. */
   async function init(){
-    // ── 0A. Hidratar banners inmediatamente desde caché si existen ──
+    // ── 0A. Hidratar banners y popups inmediatamente desde caché si existen ──
     try {
       const cached = localStorage.getItem('parley_cached_banners');
       if (cached) {
@@ -2910,7 +2963,6 @@ body.is-fast-scrolling .card {
       }
     } catch(e) {}
 
-    // ── 0B. Hidratar Pop-up de Entrada inmediatamente si existe en caché ──
     try {
       const cachedPopup = localStorage.getItem('parley_cached_welcome_popup');
       if (cachedPopup) {
@@ -2921,9 +2973,26 @@ body.is-fast-scrolling .card {
       }
     } catch(e) {}
 
+    // ── 0B. Hidratar Overrides de Supabase Síncronamente (Anti-Oscilación de Conteo) ──
+    const initialOverrides = getCachedOverrides();
+    if (initialOverrides) {
+      if (initialOverrides.banners && initialOverrides.banners.length > 0) {
+        renderDynamicBanners(initialOverrides.banners);
+      }
+      if (initialOverrides.config && Object.keys(initialOverrides.config).length > 0) {
+        applyLiveSiteConfig(initialOverrides.config);
+        if (initialOverrides.config.special_collections) {
+          try {
+            specialCollections = typeof initialOverrides.config.special_collections === 'string' ? JSON.parse(initialOverrides.config.special_collections) : initialOverrides.config.special_collections;
+            hasLoadedSpecialCollectionsFromSupabase = true;
+          } catch(e) {}
+        }
+      }
+    }
+
     showSkeletons();
 
-    // ── 1. Lanzar Supabase en paralelo (no bloqueante) ────────────
+    // ── 1. Lanzar Supabase en paralelo en segundo plano (SWR Revalidation) ────
     const overridesPromise = fetchLiveOverrides();
 
     // ── 2. Usar datos locales inmediatamente (sin esperar red) ────
@@ -2936,10 +3005,17 @@ body.is-fast-scrolling .card {
 
     function processSlots(data, overrides) {
       if (!data || !Array.isArray(data)) return [];
+      const normProv = typeof normalizeProviderKey === 'function' ? normalizeProviderKey : (s => (s === null || s === undefined ? '' : String(s).toLowerCase().trim().replace(/[^a-z0-9]/g, '')));
+      const seenKeys = new Set();
       return data.filter(s => {
-        if (s.is_active === false) return false;
-        const slotId   = String(s.id || '');
+        if (!s || s.is_active === false) return false;
+        const slotId   = (s.id !== null && s.id !== undefined && s.id !== '') ? String(s.id) : '';
         const extId    = String(s.external_id || s.slot_product_id || '');
+        const dedupKey = extId || slotId;
+        if (dedupKey) {
+          if (seenKeys.has(dedupKey)) return false;
+          seenKeys.add(dedupKey);
+        }
         const slotName = (s.name || '').toLowerCase().trim();
         if (overrides && overrides.inactiveSlotIds && (
             (slotId   && overrides.inactiveSlotIds.has(slotId))   ||
@@ -2947,8 +3023,8 @@ body.is-fast-scrolling .card {
             (slotName && overrides.inactiveSlotIds.has(slotName))
         )) return false;
         if (overrides && overrides.activeProvs && overrides.activeProvs.size > 0) {
-          const provName = (s.provider || '').toLowerCase().trim();
-          const provDisp = (s.provider_display || '').toLowerCase().trim();
+          const provName = normProv(s.provider);
+          const provDisp = normProv(s.provider_display);
           if (!overrides.activeProvs.has(provName) && !overrides.activeProvs.has(provDisp)) return false;
         }
         return true;
@@ -2972,24 +3048,14 @@ body.is-fast-scrolling .card {
       });
     }
 
-    // ── 3. Renderizar catálogo inmediatamente con datos locales ────
-    try {
-      const cachedRaw = localStorage.getItem(SUPABASE_CACHE_KEY) || sessionStorage.getItem(SUPABASE_CACHE_KEY);
-      if (cachedRaw) {
-        const cached = JSON.parse(cachedRaw);
-        if (cached && cached.config && cached.config.special_collections) {
-          specialCollections = typeof cached.config.special_collections === 'string' ? JSON.parse(cached.config.special_collections) : cached.config.special_collections;
-          hasLoadedSpecialCollectionsFromSupabase = true;
-        }
-      }
-    } catch(e) {}
-
-    allSlots = processSlots(rawData, null); // sin filtros de Supabase todavía
+    // ── 3. Renderizar catálogo con datos locales filtrados por caché inicial ────
+    allSlots = processSlots(rawData, initialOverrides);
     enrichSlots(allSlots);
     initTheme();
     buildFilterDropdowns();
     bindEvents();
     initImgObserver();
+    restoreFromURL();
     applyFilters();
     if (isMobileOrTabletDevice()) {
       initInfiniteScroll();
@@ -2998,7 +3064,6 @@ body.is-fast-scrolling .card {
     }
     initHeroObserver();
     initFeaturedSlotsCarousel();
-    restoreFromURL();
     preloadCatalogAndImages();
     initAmbientPlayer();
 
@@ -3007,23 +3072,50 @@ body.is-fast-scrolling .card {
       document.body.classList.add('app-ready');
     }
 
-    // ── 4. Supabase responde → aplicar overrides sin bloquear ─────
-    overridesPromise.then(overrides => {
-      if (!overrides) return;
+    // ── 4. Supabase responde (SWR Revalidation) → comparar y re-renderizar si hubo cambios ─────
+    overridesPromise.then(freshOverrides => {
+      if (!freshOverrides) return;
 
       // 4.A Actualizar siempre los dropdowns de metadatos ligeros con datos frescos de Supabase
-      renderTagsDropdown();
+      if (typeof renderTagsDropdown === 'function') {
+        renderTagsDropdown();
+      }
 
-      // 4.B Re-filtrar los 10.000 slots ÚNICAMENTE si hay proveedores o slots inactivos
-      const hasProvFilter = overrides.activeProvs && overrides.activeProvs.size > 0;
-      const hasInactive   = overrides.inactiveSlotIds && overrides.inactiveSlotIds.size > 0;
-      if (hasProvFilter || hasInactive) {
-        allSlots = processSlots(rawData, overrides);
+      // 4.B Computar slots con los overrides frescos de Supabase
+      const freshSlots = processSlots(rawData, freshOverrides);
+
+      // 4.C Comparación diferencial: verificar si cambió el conteo o la composición de slots
+      const prevCount = allSlots ? allSlots.length : 0;
+      const freshCount = freshSlots ? freshSlots.length : 0;
+      let hasStateChanged = prevCount !== freshCount;
+
+      if (!hasStateChanged && prevCount > 0) {
+        const prevIds = new Set(allSlots.map(s => String(s.id || s.external_id || s.slot_product_id || s.name)));
+        for (const s of freshSlots) {
+          const idKey = String(s.id || s.external_id || s.slot_product_id || s.name);
+          if (!prevIds.has(idKey)) {
+            hasStateChanged = true;
+            break;
+          }
+        }
+      }
+
+      // 4.D Solo si hubo un cambio real en el catálogo activo, re-renderizar el grid
+      if (hasStateChanged) {
+        allSlots = freshSlots;
         enrichSlots(allSlots);
         displayedCount = INITIAL_LOAD;
+        if (typeof computeProviderStats === 'function') {
+          computeProviderStats();
+        }
+        if (typeof renderProvDropdown === 'function') {
+          renderProvDropdown();
+        }
         applyFilters();
+        if (typeof initFeaturedSlotsCarousel === 'function') {
+          initFeaturedSlotsCarousel();
+        }
       }
-      initFeaturedSlotsCarousel();
     }).catch(() => {});
   }
 
@@ -3059,9 +3151,14 @@ body.is-fast-scrolling .card {
     provDisplayMap={};
     provSlotCounts={};
     allSlots.forEach(s=>{
-      if(s.provider){
-        if(s.provider_display) provDisplayMap[s.provider]=s.provider_display;
-        provSlotCounts[s.provider]=(provSlotCounts[s.provider]||0)+1;
+      if(s && s.provider){
+        const normKey=normalizeProviderKey(s.provider);
+        if(normKey){
+          provSlotCounts[normKey]=(provSlotCounts[normKey]||0)+1;
+          if(!provDisplayMap[normKey] || s.provider_display){
+            provDisplayMap[normKey]=s.provider_display||provDisplayMap[normKey]||PROV_NAMES[normKey]||PROV_NAMES[s.provider]||s.provider;
+          }
+        }
       }
     });
   }
@@ -3076,7 +3173,7 @@ body.is-fast-scrolling .card {
 
   /* Renderiza el dropdown de Proveedores: seleccionados al TOP, resto por relevancia (conteo de slots) */
   function renderProvDropdown(){
-    const uniqueProvs=[...new Set(allSlots.map(s=>s.provider))];
+    const uniqueProvs=[...new Set(allSlots.map(s=>normalizeProviderKey(s ? s.provider : '')).filter(Boolean))];
     uniqueProvs.sort((a,b)=>{
       const aSel=activeProviders.has(a)?1:0;
       const bSel=activeProviders.has(b)?1:0;
@@ -3274,7 +3371,7 @@ body.is-fast-scrolling .card {
           if(s.game_type_id!==activeCategory)return false;
         }
       }
-      if(activeProviders.size > 0 && !activeProviders.has(s.provider)) return false;
+      if(activeProviders.size > 0 && !activeProviders.has(normalizeProviderKey(s.provider)) && !activeProviders.has(normalizeProviderKey(s.provider_display))) return false;
       if(activeTags.size > 0){
         for(const tag of activeTags){
           const matchedCol = specialCollections.find(c => c.id === tag || c.name === tag);
@@ -3579,8 +3676,11 @@ body.is-fast-scrolling .card {
     if(searchQuery)chips.push(mkChip(`"${searchQuery}"`,()=>{searchInput.value='';searchQuery='';applyFilters()}));
     if(activeTheme){const l=THEME_RULES.find(t=>t.id===activeTheme)?.label||activeTheme;chips.push(mkChip(l,()=>{activeTheme=null;syncTemaUI();applyFilters()}))}
     if(activeCategory)chips.push(mkChip(activeCategory,()=>{activeCategory=null;syncTipoUI();applyFilters()}));
-    /* Usar provider_display del primer slot de ese proveedor para el chip label */
-    activeProviders.forEach(p=>{const disp=allSlots.find(s=>s.provider===p)?.provider_display||PROV_NAMES[p]||p;chips.push(mkChip(disp,()=>{activeProviders.delete(p);syncProvUI();applyFilters()}))});
+    /* Usar provDisplayMap o provider_display del slot coincidente para el chip label */
+    activeProviders.forEach(p=>{
+      const disp=provDisplayMap[p]||allSlots.find(s=>normalizeProviderKey(s.provider)===p||normalizeProviderKey(s.provider_display)===p)?.provider_display||PROV_NAMES[p]||p;
+      chips.push(mkChip(disp,()=>{activeProviders.delete(p);syncProvUI();applyFilters()}));
+    });
     activeTags.forEach(t=>chips.push(mkChip(t,()=>{activeTags.delete(t);syncTagsUI();applyFilters()})));
     activeChips.innerHTML='';chips.forEach(c=>activeChips.appendChild(c));
     if(chips.length>=2){const ca=document.createElement('span');ca.className='chip chip--clear-all';ca.textContent='✕ Limpiar todo';ca.onclick=clearAll;activeChips.appendChild(ca)}
@@ -3723,7 +3823,13 @@ body.is-fast-scrolling .card {
       }
     });
     $('ddTematica').addEventListener('click',e=>{const o=e.target.closest('.dd-option');if(!o)return;activeTheme=o.dataset.tema==='null'?null:o.dataset.tema;syncTemaUI();closeAllDropdowns();applyFilters()});
-    $('ddProveedor').addEventListener('change',e=>{if(e.target.type!=='checkbox')return;e.target.checked?activeProviders.add(e.target.value):activeProviders.delete(e.target.value);syncProvUI();applyFilters()});
+    $('ddProveedor').addEventListener('change',e=>{
+      if(e.target.type!=='checkbox')return;
+      const val=normalizeProviderKey(e.target.value);
+      if(!val)return;
+      e.target.checked?activeProviders.add(val):activeProviders.delete(val);
+      syncProvUI();applyFilters();
+    });
     $('ddTags').addEventListener('change',e=>{
       if(e.target.type!=='checkbox')return;
       if(e.target.checked){
@@ -4613,11 +4719,24 @@ body.is-fast-scrolling .card {
     if(p.has('tema')){activeTheme=p.get('tema');syncTemaUI()}
     if(p.has('tipo')){activeCategory=p.get('tipo');syncTipoUI()}
     if(p.has('prov')){
-      const activeProvSet = new Set(allSlots.map(s => s._providerDisplay ? s._providerDisplay.toLowerCase().trim() : ''));
-      p.get('prov').split(',').forEach(v => {
-        if (activeProvSet.has(v.toLowerCase().trim())) {
-          activeProviders.add(v);
+      const validProvKeys = new Set(allSlots.map(s => normalizeProviderKey(s ? s.provider : '')).filter(Boolean));
+      allSlots.forEach(s => {
+        if(s && s.provider_display){
+          const dk = normalizeProviderKey(s.provider_display);
+          if (dk) validProvKeys.add(dk);
         }
+      });
+      Object.keys(PROV_NAMES).forEach(k => {
+        const nk = normalizeProviderKey(k);
+        if (nk) validProvKeys.add(nk);
+      });
+      p.getAll('prov').forEach(paramVal => {
+        paramVal.split(',').forEach(v => {
+          const k = normalizeProviderKey(v);
+          if (k && validProvKeys.has(k)) {
+            activeProviders.add(k);
+          }
+        });
       });
       if (activeProviders.size === 0) {
         history.replaceState(null, '', location.pathname);
@@ -4960,7 +5079,7 @@ body.is-fast-scrolling .card {
       icon    = '🏆';
       title   = 'SIN TORNEOS ACTIVOS';
       message = 'No hay torneos ni especiales\nactivos en este momento.';
-      detail  = 'El administrador activará\nuno cuando esté disponible.';
+      detail  = 'Muy pronto encontraras nuevos torneos.';
     } else {
       icon    = '🎯';
       title   = 'SIN TORNEOS';
