@@ -10,23 +10,15 @@ CREATE TABLE IF NOT EXISTS public.site_config (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- 2. Garantizar lectura pública y escritura autenticada para la gestión de site_config
+-- 2. RLS de site_config
+--    Las políticas viven en SUPABASE_SECURITY_2_RLS_HARDENING.sql (lectura pública
+--    sin la fila github_pat, escritura solo para public.admin_users vía is_admin()).
+--    NO volver a crear aquí políticas "USING (true)": exponían el GitHub PAT y
+--    daban escritura a cualquier cuenta autenticada.
 ALTER TABLE public.site_config ENABLE ROW LEVEL SECURITY;
-
--- A) Lectura pública universal (anon y authenticated)
 DROP POLICY IF EXISTS "Lectura publica site_config" ON public.site_config;
-CREATE POLICY "Lectura publica site_config" 
-    ON public.site_config FOR SELECT 
-    USING (true);
-
--- B) Escritura blindada (INSERT, UPDATE, DELETE) únicamente para administradores autenticados
 DROP POLICY IF EXISTS "Escritura site_config" ON public.site_config;
 DROP POLICY IF EXISTS "Escritura autenticada site_config" ON public.site_config;
-CREATE POLICY "Escritura autenticada site_config" 
-    ON public.site_config FOR ALL 
-    TO authenticated 
-    USING (true)
-    WITH CHECK (true);
 
 -- 3. Inicializar / Actualizar la clave featured_slots_order en Supabase
 INSERT INTO public.site_config (key, value, description)

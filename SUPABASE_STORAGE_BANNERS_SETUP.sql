@@ -31,23 +31,23 @@ CREATE POLICY "Public Banners Access"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'banners');
 
--- B) Permitir que el panel de administración autenticado suba nuevas imágenes
+-- B–D) Subir / actualizar / borrar: solo administradores (public.admin_users).
+--      Requiere haber ejecutado antes SUPABASE_SECURITY_2_RLS_HARDENING.sql (crea is_admin()).
 CREATE POLICY "Public Banners Upload"
 ON storage.objects FOR INSERT
 TO authenticated
-WITH CHECK (bucket_id = 'banners');
+WITH CHECK (bucket_id = 'banners' AND (SELECT public.is_admin()));
 
--- C) Permitir actualización / sobreescritura de imágenes a administradores autenticados
 CREATE POLICY "Public Banners Update"
 ON storage.objects FOR UPDATE
 TO authenticated
-USING (bucket_id = 'banners');
+USING (bucket_id = 'banners' AND (SELECT public.is_admin()))
+WITH CHECK (bucket_id = 'banners' AND (SELECT public.is_admin()));
 
--- D) Permitir eliminación de imágenes a administradores autenticados
 CREATE POLICY "Public Banners Delete"
 ON storage.objects FOR DELETE
 TO authenticated
-USING (bucket_id = 'banners');
+USING (bucket_id = 'banners' AND (SELECT public.is_admin()));
 
 -- 4. Confirmación
 SELECT 'Bucket banners y políticas RLS configurados con éxito' AS resultado;
