@@ -4716,8 +4716,42 @@ body.is-fast-scrolling .card {
      ══════════════════════════════════════════════════════════════ */
   function clearAll(){searchInput.value='';searchQuery='';activeTheme=null;activeCategory=null;activeProviders.clear();activeTags.clear();sortMode='popular';syncTipoUI();syncTemaUI();syncProvUI();syncTagsUI();syncSortUI();applyFilters()}
   function syncToURL(){const p=new URLSearchParams;if(searchQuery)p.set('q',searchQuery);if(activeTheme)p.set('tema',activeTheme);if(activeCategory)p.set('tipo',activeCategory);if(activeProviders.size>0)p.set('prov',[...activeProviders].join(','));if(sortMode!=='popular')p.set('sort',sortMode);if(activeTags.size>0)p.set('tags',[...activeTags].join(','));const qs=p.toString();history.replaceState(null,'',qs?`?${qs}`:location.pathname)}
-  function restoreFromURL(){
-    const p=new URLSearchParams(location.search);
+  /* ¿El enlace apunta a este mismo catálogo (mismo sitio y misma página)? */
+  function isInternalCatalogLink(href){
+    if(!href || href === '#') return false;
+    try{
+      const u = new URL(href, location.href);
+      const norm = path => path.replace(/index\.html$/,'').replace(/\/+$/,'');
+      return u.origin === location.origin && norm(u.pathname) === norm(location.pathname);
+    }catch(e){ return false; }
+  }
+
+  /* Aplica los filtros de un enlace interno sin recargar ni abrir otra pestaña */
+  function openInternalCatalogLink(href){
+    const u = new URL(href, location.href);
+    // Partir de un estado limpio para que el enlace muestre exactamente lo que indica
+    searchInput.value=''; searchQuery=''; activeTheme=null; activeCategory=null;
+    activeProviders.clear(); activeTags.clear(); sortMode='popular'; pendingUrlTags=[];
+    syncTipoUI(); syncTemaUI(); syncSortUI();
+    restoreFromURL(u.searchParams, 'smooth');
+    if(!(searchQuery||activeTheme||activeCategory||activeProviders.size||activeTags.size||sortMode!=='popular')) applyFilters();
+    if(u.hash && document.querySelector(u.hash)) document.querySelector(u.hash).scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  /* Intercepta clics en banners / popup que apuntan a este mismo catálogo */
+  document.addEventListener('click', e => {
+    if(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest && e.target.closest('a.carousel-slide-link, #welcomePopupLink');
+    if(!a) return;
+    const href = a.getAttribute('href');
+    if(!isInternalCatalogLink(href)) return;
+    e.preventDefault();
+    if(a.id === 'welcomePopupLink' && typeof closeWelcomePopup === 'function') closeWelcomePopup();
+    openInternalCatalogLink(href);
+  }, true); // fase de captura: la tarjeta del popup detiene la propagación del clic
+
+  function restoreFromURL(params, scrollBehavior){
+    const p = params || new URLSearchParams(location.search);
     if(p.has('q')){searchQuery=p.get('q');searchInput.value=searchQuery}
     if(p.has('tema')){activeTheme=p.get('tema');syncTemaUI()}
     if(p.has('tipo')){activeCategory=p.get('tipo');syncTipoUI()}
@@ -4762,7 +4796,7 @@ body.is-fast-scrolling .card {
     const hasUrlFilters = !!(searchQuery||activeTheme||activeCategory||activeProviders.size||activeTags.size||sortMode!=='popular');
     if(hasUrlFilters)applyFilters();
     // Si el enlace trae filtros, llevar al usuario directamente al catálogo
-    if(hasUrlFilters || pendingUrlTags.length) scrollToCatalog(350);
+    if(hasUrlFilters || pendingUrlTags.length) scrollToCatalog(scrollBehavior ? 60 : 350, scrollBehavior);
   }
 
   /* Reintenta aplicar las etiquetas de la URL cuando llegan las colecciones de Supabase */
@@ -4784,10 +4818,10 @@ body.is-fast-scrolling .card {
   /* Desplaza la vista hasta la barra de filtros / grilla del catálogo */
   /* Al llegar desde un enlace se usa salto instantáneo: el scroll "smooth" puede no
      completarse mientras la página aún carga o si la pestaña no está visible. */
-  function scrollToCatalog(delay){
+  function scrollToCatalog(delay, behavior){
     setTimeout(() => {
       const el = document.getElementById('filterBarStickyWrapper') || document.getElementById('slotsGrid');
-      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      if (el) el.scrollIntoView({ behavior: behavior || 'auto', block: 'start' });
     }, delay || 0);
   }
 
