@@ -4782,10 +4782,12 @@ body.is-fast-scrolling .card {
   }
 
   /* Desplaza la vista hasta la barra de filtros / grilla del catálogo */
+  /* Al llegar desde un enlace se usa salto instantáneo: el scroll "smooth" puede no
+     completarse mientras la página aún carga o si la pestaña no está visible. */
   function scrollToCatalog(delay){
     setTimeout(() => {
       const el = document.getElementById('filterBarStickyWrapper') || document.getElementById('slotsGrid');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
     }, delay || 0);
   }
 
