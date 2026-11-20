@@ -4821,7 +4821,16 @@ body.is-fast-scrolling .card {
   function scrollToCatalog(delay, behavior){
     setTimeout(() => {
       const el = document.getElementById('filterBarStickyWrapper') || document.getElementById('slotsGrid');
-      if (el) el.scrollIntoView({ behavior: behavior || 'auto', block: 'start' });
+      if (!el) return;
+      const smooth = behavior === 'smooth' && document.visibilityState === 'visible';
+      const startY = window.scrollY;
+      el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+      // Respaldo: si el scroll suave no arrancó (navegador lo ignoró), saltar directo
+      if (smooth) setTimeout(() => {
+        if (window.scrollY === startY && el.getBoundingClientRect().top > 40) {
+          el.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+      }, 700);
     }, delay || 0);
   }
 
