@@ -2527,7 +2527,7 @@ body.is-fast-scrolling .card {
   let searchQuery='',sortMode='popular';
   let currentSlide=0,slideTimer=null,infiniteObserver=null,isLoadingMore=false;
   let fortuneSpinning=false,fortuneAnimId=null;
-  let specialCollections = [], hasLoadedSpecialCollectionsFromSupabase = false;
+  let specialCollections = [], hasLoadedSpecialCollectionsFromSupabase = false, pendingUrlTags = [];
 
   /* ── DOM refs ───────────────────────────────────────────────── */
   const $=id=>document.getElementById(id);
@@ -3116,6 +3116,9 @@ body.is-fast-scrolling .card {
           initFeaturedSlotsCarousel();
         }
       }
+
+      // 4.E Aplicar etiquetas de la URL (?tags=) que dependían de las colecciones de Supabase
+      applyPendingUrlTags();
     }).catch(() => {});
   }
 
@@ -4744,9 +4747,46 @@ body.is-fast-scrolling .card {
     }
     syncProvUI();
     if(p.has('sort')&&SORT_FNS[p.get('sort')]){sortMode=p.get('sort');syncSortUI()}
-    if(p.has('tags'))p.get('tags').split(',').forEach(t=>{if(SPECIAL_TAGS.includes(t))activeTags.add(t)});
+    if(p.has('tags')){
+      // Aceptar tanto las etiquetas fijas como las colecciones especiales creadas en el admin
+      const urlTags = p.get('tags').split(',').map(t => t.trim()).filter(Boolean);
+      const validTags = new Set([
+        ...SPECIAL_TAGS,
+        ...(Array.isArray(specialCollections) ? specialCollections.flatMap(c => [c.id, c.name].filter(Boolean)) : [])
+      ]);
+      urlTags.forEach(t => { if (validTags.has(t)) activeTags.add(t); });
+      // Si alguna etiqueta aún no es reconocible (Supabase no ha respondido), se reintenta luego
+      pendingUrlTags = urlTags.filter(t => !activeTags.has(t));
+    }
     syncTagsUI();
-    if(searchQuery||activeTheme||activeCategory||activeProviders.size||activeTags.size||sortMode!=='popular')applyFilters();
+    const hasUrlFilters = !!(searchQuery||activeTheme||activeCategory||activeProviders.size||activeTags.size||sortMode!=='popular');
+    if(hasUrlFilters)applyFilters();
+    // Si el enlace trae filtros, llevar al usuario directamente al catálogo
+    if(hasUrlFilters || pendingUrlTags.length) scrollToCatalog(350);
+  }
+
+  /* Reintenta aplicar las etiquetas de la URL cuando llegan las colecciones de Supabase */
+  function applyPendingUrlTags(){
+    if(!pendingUrlTags.length) return;
+    const validTags = new Set(
+      (Array.isArray(specialCollections) ? specialCollections : []).flatMap(c => [c.id, c.name].filter(Boolean))
+    );
+    let added = false;
+    pendingUrlTags.forEach(t => { if (validTags.has(t) && !activeTags.has(t)) { activeTags.add(t); added = true; } });
+    pendingUrlTags = [];
+    if(added){
+      syncTagsUI();
+      applyFilters();
+      scrollToCatalog(60);
+    }
+  }
+
+  /* Desplaza la vista hasta la barra de filtros / grilla del catálogo */
+  function scrollToCatalog(delay){
+    setTimeout(() => {
+      const el = document.getElementById('filterBarStickyWrapper') || document.getElementById('slotsGrid');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, delay || 0);
   }
 
   /* ══════════════════════════════════════════════════════════════
