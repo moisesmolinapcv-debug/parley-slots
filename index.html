@@ -592,8 +592,11 @@ input,select{font:inherit;color:inherit}
 .hero-carousel{
   position:relative;
   width:100%;
-  height:360px;
-  min-height:360px;
+  /* Proporción fija = el banner se ve completo, sin recortes, en cualquier ancho.
+     PC / tablet: 32:9 (diseñar a 2560×720)  ·  Celular ≤600px: 16:9 (1280×720) */
+  aspect-ratio:32/9;
+  height:auto;
+  min-height:0;
   border-radius:20px;
   overflow:hidden;
   border:2px solid rgba(253,216,53,0.85);
@@ -1927,8 +1930,7 @@ body.is-fast-scrolling .card {
 @media(max-width:1024px){
   .grid{grid-template-columns:repeat(3,1fr)}
   .cabinet-lever{display:none}
-  /* C-04: altura carousel tablet bloqueada */
-  .hero-carousel{height:270px;min-height:270px}
+  /* C-04: el carrusel conserva su proporción 32:9 (ver .hero-carousel) */
 }
 @media(max-width:768px){
   .portal-header{padding:18px 16px 0}
@@ -1936,7 +1938,6 @@ body.is-fast-scrolling .card {
   .portal-search-box input{height:46px;font-size:0.88rem;padding:0 16px 0 46px}
   /* C-04: carousel full-frame móvil bloqueado */
   .hero-carousel-wrap{padding:0 12px;margin-top:14px}
-  .hero-carousel{height:200px;min-height:200px}
   .carousel-nav{left:50%;transform:translateX(-50%);bottom:10px;right:auto;padding:3px 8px;gap:6px}
   .results-bar{padding:14px 12px 10px;flex-direction:column;align-items:flex-start}
   .grid-wrap{padding:8px 12px 160px}
@@ -1987,8 +1988,10 @@ body.is-fast-scrolling .card {
   .reel-symbol img{width:100%;height:100%;border-radius:8px}
   .spin-btn{font-size:0.95rem;padding:12px 0;max-width:100%}
   .fortune-result-name{font-size:0.95rem}
-  /* C-05: Carousel mínimo iPhone SE bloqueado */
-  .hero-carousel{height:170px;min-height:170px}
+}
+/* Celular: imagen móvil propia en formato 16:9 (mismo corte que BANNER_MOBILE_MQ) */
+@media(max-width:600px){
+  .hero-carousel{aspect-ratio:16/9}
 }
 @media(max-height:650px){
   .fortune-cabinet{max-height:96vh}
@@ -2718,7 +2721,7 @@ body.is-fast-scrolling .card {
       const [resProvActive, resSlotsInactive, resBanners, resConfig] = await Promise.all([
         fetchWithTimeout(`${SUPABASE_API_URL}/providers?is_active=eq.true&select=name,display_name`, { headers }),
         fetchWithTimeout(`${SUPABASE_API_URL}/slots?is_active=eq.false&select=id,external_id,name`, { headers }),
-        fetchWithTimeout(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=position,title,image_url,link_url&order=position.asc`, { headers }),
+        fetchWithTimeout(`${SUPABASE_API_URL}/banners?is_active=eq.true&select=*&order=position.asc`, { headers }),
         fetchWithTimeout(`${SUPABASE_API_URL}/site_config?select=key,value`, { headers })
       ]);
 
@@ -2967,6 +2970,9 @@ body.is-fast-scrolling .card {
     }
   }
 
+  /* Debe coincidir con el @media del .hero-carousel que pasa a formato 16:9 */
+  const BANNER_MOBILE_MQ = '(max-width: 600px)';
+
   function renderDynamicBanners(banners) {
     const track = document.getElementById('carouselSlides');
     const nav = document.getElementById('carouselNav');
@@ -2981,14 +2987,15 @@ body.is-fast-scrolling .card {
 
     banners.forEach((b, idx) => {
       const bannerNum = (idx % 2) + 1;
-      // 🌟 La imagen activa de Supabase gobierna de forma universal (Desktop, Tablet y Móvil)
+      // 🖥️ image_url → PC / tablet (32:9)   📱 image_url_movil → celular ≤600px (16:9)
+      //    Si el banner no tiene imagen móvil, el celular usa la de PC como respaldo.
       const bannerImg = b.image_url || `BANNER/banner_${bannerNum}_desktop_hd.webp`;
       const mobUrl = b.image_url_movil || bannerImg;
 
-      /* 🚀 Precarga proactiva en memoria */
-      if (bannerImg) {
+      /* 🚀 Precarga solo de la imagen que realmente verá este dispositivo */
+      if (idx === 0) {
         const imgPreload = new Image();
-        imgPreload.src = isMobile ? mobUrl : bannerImg;
+        imgPreload.src = (window.matchMedia && window.matchMedia(BANNER_MOBILE_MQ).matches) ? mobUrl : bannerImg;
       }
 
       const linkUrl = (b.link_url || '').trim();
@@ -3003,7 +3010,7 @@ body.is-fast-scrolling .card {
         <div class="carousel-slide">
           ${wrapOpen}
           <picture>
-            <source media="(max-width: 600px)" srcset="${mobUrl}" type="image/webp">
+            <source media="${BANNER_MOBILE_MQ}" srcset="${mobUrl}">
             <img class="carousel-banner-img"
                  src="${bannerImg}"
                  alt="${b.title || 'Banner Parley'}"

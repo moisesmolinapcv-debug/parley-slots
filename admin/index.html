@@ -442,6 +442,18 @@
       background: #161b22;
     }
 
+    /* Vistas previas con la proporción exacta del carrusel público */
+    .banner-previews { display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #161b22; }
+    .banner-preview-box { position: relative; width: 100%; border-radius: 8px; overflow: hidden; background: #0d1117; border: 1px dashed rgba(255,255,255,0.15); }
+    .banner-preview-box.pc { aspect-ratio: 32 / 9; }
+    .banner-preview-box.movil { aspect-ratio: 16 / 9; width: 62%; }
+    .banner-preview-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .banner-preview-label { position: absolute; left: 6px; bottom: 6px; background: rgba(0,0,0,0.75); color: #fff; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 5px; }
+    .banner-preview-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px; color: var(--text-muted); font-size: 11px; }
+    .banner-upload-row { display: flex; gap: 8px; }
+    .banner-upload-row .btn { flex: 1; font-size: 11.5px; background: #21262d; color: #fff; }
+    .banner-specs { color: var(--text-muted); font-size: 10.5px; line-height: 1.5; margin-top: 6px; }
+
     .banner-body {
       padding: 16px;
     }
@@ -1501,10 +1513,20 @@
       const safeLink  = (b.link_url || '').replace(/"/g, '&quot;');
       return `
         <div class="banner-card" id="banner-card-${b.position}">
-          <!-- Vista previa de imagen + overlay de carga -->
-          <div style="position:relative; background:#161b22;">
-            <img src="${resolvedUrl}" class="banner-img" id="bannerPreview_${b.position}"
-                 onerror="this.src='../BANNER/public.avif'">
+          <!-- Vistas previas PC (32:9) y Celular (16:9), recortadas igual que en la página -->
+          <div style="position:relative;">
+            <div class="banner-previews">
+              <div class="banner-preview-box pc">
+                ${b.image_url ? `<img src="${resolvedUrl}" id="bannerPreview_${b.position}" onerror="this.src='../BANNER/public.avif'">`
+                              : `<div class="banner-preview-empty">Sin imagen de PC</div>`}
+                <span class="banner-preview-label">🖥️ PC / Tablet · 32:9</span>
+              </div>
+              <div class="banner-preview-box movil">
+                ${b.image_url_movil ? `<img src="${resolveBannerUrl(b.image_url_movil)}" id="bannerPreviewMovil_${b.position}">`
+                                    : `<div class="banner-preview-empty">Sin imagen móvil:<br>en celular se recortará la de PC</div>`}
+                <span class="banner-preview-label">📱 Celular · 16:9</span>
+              </div>
+            </div>
             <div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.75);
                         border-radius:6px; padding:4px 10px; font-size:12px;
                         font-weight:700; color:var(--accent-gold);">
@@ -1515,9 +1537,11 @@
                 ${b.is_active ? '● Activo' : '○ Inactivo'}
               </span>
             </div>
-            <!-- Input oculto para subida de archivo -->
+            <!-- Inputs ocultos para subida de archivo (PC y Celular) -->
             <input type="file" id="bannerFile_${b.position}" accept="image/*,image/webp"
-                   style="display:none;" onchange="handleBannerFileUpload(${b.position}, this)">
+                   style="display:none;" onchange="handleBannerFileUpload(${b.position}, this, 'pc')">
+            <input type="file" id="bannerFileMovil_${b.position}" accept="image/*,image/webp"
+                   style="display:none;" onchange="handleBannerFileUpload(${b.position}, this, 'movil')">
           </div>
 
           <div class="banner-body">
@@ -1535,7 +1559,7 @@
               <input type="text" class="form-control" value="${safeLink}" id="bannerLink_${b.position}"
                      placeholder="https://parley.com.ve/promo o #slots">
               <small style="color:var(--text-muted); font-size:11px; display:block; margin-top:4px;">
-                Al hacer clic en el banner, el usuario irá a esta URL (nueva pestaña).
+                Si apunta a esta misma página de slots, filtra y baja al catálogo sin abrir otra pestaña; si es externa, se abre en una pestaña nueva.
               </small>
             </div>
 
@@ -1551,10 +1575,15 @@
 
             <!-- Acciones: Subir imagen, Guardar, Eliminar -->
             <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
-              <button class="btn" style="background:#21262d; color:#fff; font-size:12px;"
-                      onclick="document.getElementById('bannerFile_${b.position}').click()">
-                📤 Cambiar Imagen (Supabase Storage)
-              </button>
+              <div class="banner-upload-row">
+                <button class="btn" onclick="document.getElementById('bannerFile_${b.position}').click()">📤 Imagen PC</button>
+                <button class="btn" onclick="document.getElementById('bannerFileMovil_${b.position}').click()">📤 Imagen Celular</button>
+              </div>
+              <div class="banner-specs">
+                🖥️ PC: <b>2560×720 px</b> (32:9) · mínimo 1920×540<br>
+                📱 Celular: <b>1280×720 px</b> (16:9) · mínimo 1080×608<br>
+                Deja márgenes sin texto en los bordes. Se convierte a WebP automáticamente.
+              </div>
               <div style="display:flex; gap:8px;">
                 <button class="btn btn-gold" style="flex:1; font-size:12px;" onclick="saveBanner(${b.position})">
                   💾 Guardar Cambios
@@ -1614,9 +1643,41 @@
      * Optimiza y convierte automáticamente cualquier formato (PNG, JPG, JFIF, WEBP)
      * a WebP ultraligero antes de subirlo.
      */
-    async function handleBannerFileUpload(position, input) {
+    /* Especificaciones por tipo de imagen del banner hero */
+    const BANNER_SPECS = {
+      pc:    { label: 'PC',      ratio: 32 / 9, ratioTxt: '32:9', rec: [2560, 720], min: [1920, 540], maxWidth: 2560, column: 'image_url' },
+      movil: { label: 'Celular', ratio: 16 / 9, ratioTxt: '16:9', rec: [1280, 720], min: [1080, 608], maxWidth: 1440, column: 'image_url_movil' }
+    };
+
+    /** Lee ancho y alto reales de un archivo de imagen */
+    function readImageSize(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { resolve({ width: img.naturalWidth, height: img.naturalHeight }); URL.revokeObjectURL(url); };
+        img.onerror = () => { reject(new Error('Formato de imagen no compatible o archivo dañado')); URL.revokeObjectURL(url); };
+        img.src = url;
+      });
+    }
+
+    /** Revisa resolución y proporción; devuelve la lista de problemas encontrados */
+    function checkBannerImage(size, spec) {
+      const issues = [];
+      const ratio = size.width / size.height;
+      const diff = Math.abs(ratio - spec.ratio) / spec.ratio;
+      if (diff > 0.05) {
+        issues.push(`La proporción es ${ratio.toFixed(2)}:1 y el banner de ${spec.label} es ${spec.ratioTxt} (${spec.ratio.toFixed(2)}:1). Se recortará ${diff > 0.25 ? 'mucho ' : ''}por ${ratio > spec.ratio ? 'los lados' : 'arriba y abajo'}.`);
+      }
+      if (size.width < spec.min[0] || size.height < spec.min[1]) {
+        issues.push(`La imagen mide ${size.width}×${size.height} px; para que se vea nítida en ${spec.label} se necesita al menos ${spec.min[0]}×${spec.min[1]} px (ideal ${spec.rec[0]}×${spec.rec[1]}).`);
+      }
+      return issues;
+    }
+
+    async function handleBannerFileUpload(position, input, kind = 'pc') {
       const file = input.files[0];
       if (!file) return;
+      const spec = BANNER_SPECS[kind] || BANNER_SPECS.pc;
 
       // Validación preventiva de archivos corruptos o gigantes (>25MB)
       if (file.size > 25 * 1024 * 1024) {
@@ -1625,20 +1686,28 @@
         return;
       }
 
-      showToast('⏳ Optimizando y comprimiendo imagen a WebP...', 'loading', 0);
-
       try {
-        // 1. Compresión y conversión automática a WebP en el navegador
-        const webpBlob = await compressImageToWebP(file);
+        // 0. Control de calidad: resolución y proporción adecuadas para el dispositivo
+        const size = await readImageSize(file);
+        const issues = checkBannerImage(size, spec);
+        if (issues.length && !confirm(`⚠️ Imagen de ${spec.label} para el Banner #${position}:\n\n• ${issues.join('\n• ')}\n\n¿Subirla de todas formas?`)) {
+          showToast(`Subida cancelada. Usa una imagen de ${spec.rec[0]}×${spec.rec[1]} px.`, 'info', 4000);
+          return;
+        }
+
+        showToast('⏳ Optimizando imagen a WebP (alta calidad)...', 'loading', 0);
+
+        // 1. Conversión a WebP sin agrandar la imagen (agrandarla solo la volvería borrosa)
+        const webpBlob = await compressImageToWebP(file, spec.maxWidth, 0.9);
 
         showToast('⏳ Subiendo imagen optimizada a Supabase Storage...', 'loading', 0);
 
         // 2. Nombre único para evitar colisiones y bypass de caché
-        const fileName = `banner_pos${position}_${Date.now()}.webp`;
+        const fileName = `banner_pos${position}_${kind}_${Date.now()}.webp`;
 
         const { error: uploadError } = await supabaseClient.storage
           .from('banners')
-          .upload(fileName, webpBlob, { upsert: true, contentType: 'image/webp' });
+          .upload(fileName, webpBlob, { upsert: true, contentType: 'image/webp', cacheControl: '31536000' });
 
         if (uploadError) {
           if (uploadError.message && uploadError.message.includes('Bucket not found')) {
@@ -1650,18 +1719,22 @@
         // 3. Obtener URL pública del archivo subido
         const { data: { publicUrl } } = supabaseClient.storage.from('banners').getPublicUrl(fileName);
 
-        // 4. Actualizar preview visual inmediatamente
-        const preview = document.getElementById(`bannerPreview_${position}`);
-        if (preview) { preview.src = publicUrl + '?t=' + Date.now(); }
-
-        // 5. Guardar URL en Supabase DB automáticamente
+        // 4. Guardar URL en la columna correspondiente (image_url o image_url_movil)
         const { error: dbError } = await supabaseClient.from('banners')
-          .update({ image_url: publicUrl })
+          .update({ [spec.column]: publicUrl })
           .eq('position', position);
-        if (dbError) throw new Error('DB: ' + dbError.message);
+        if (dbError) {
+          if (kind === 'movil' && /image_url_movil/.test(dbError.message || '')) {
+            throw new Error('Falta la columna image_url_movil en Supabase. Ejecuta el script SUPABASE_BANNERS_IMAGEN_MOVIL.sql en el SQL Editor.');
+          }
+          throw new Error('DB: ' + dbError.message);
+        }
+
+        // 5. Refrescar las tarjetas con la nueva vista previa
+        await loadBanners();
 
         const sizeKb = Math.round(webpBlob.size / 1024);
-        showToast(`✅ Banner #${position} optimizado (${sizeKb} KB) y guardado con éxito`, 'success', 4500);
+        showToast(`✅ Imagen de ${spec.label} del Banner #${position} guardada (${sizeKb} KB)`, 'success', 4500);
       } catch (err) {
         showToast('❌ ' + err.message, 'error', 6500);
       } finally {
