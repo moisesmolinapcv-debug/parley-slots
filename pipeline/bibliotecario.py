@@ -657,6 +657,146 @@ def generate_static(site_config, supabase_providers):
     pipeline_stats['slots_total'] = len(all_slots)
     print(f"[5] Static files generated with {len(all_slots)} slots.")
 
+    # [6] Publicar el catálogo en Supabase Storage para que CUALQUIER servidor
+    #     (GitHub Pages, m.parley.la, etc.) lea siempre la versión más reciente.
+    #     Un fallo aquí NO detiene el pipeline: los archivos estáticos ya quedaron generados.
+    try:
+        publish_catalog_to_storage(all_slots)
+    except Exception as e:
+        print(f"[6][WARN] No se pudo publicar el catálogo en Storage: {e}")
+        send_telegram(
+            "⚠️ <b>EL BIBLIOTECARIO — Aviso</b>\n"
+            "No se pudo publicar el catálogo en Supabase Storage.\n"
+            f"Detalle: {str(e)[:300]}\n"
+            "La página seguirá usando el último catálogo publicado."
+        )
+
+
+# ══════════════════════════════════════════════════════════════════
+#  CATÁLOGO EN SUPABASE STORAGE
+#  bucket público 'catalog':
+#    manifest.json            → { version, file, count, generated_at } (caché corta)
+#    slots-<hash>.json.gz     → catálogo comprimido e inmutable (caché 1 año)
+#  El nombre cambia con el contenido, así ninguna caché (Cloudflare, navegador,
+#  service worker) puede servir datos viejos.
+# ══════════════════════════════════════════════════════════════════
+CATALOG_BUCKET = "catalog"
+CATALOG_KEEP_VERSIONS = 7
+
+
+def _storage_headers(extra: dict = None) -> dict:
+    h = {"apikey": SUPABASE_SERVICE_KEY, "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}"}
+    if extra:
+        h.update(extra)
+    return h
+
+
+def _ensure_catalog_bucket():
+    r = http_session.post(
+        f"{SUPABASE_URL}/storage/v1/bucket",
+        headers=_storage_headers({"Content-Type": "application/json"}),
+        json={"id": CATALOG_BUCKET, "name": CATALOG_BUCKET, "public": True},
+        timeout=30,
+    )
+    if r.status_code in (200, 201):
+        print(f"[6] Bucket '{CATALOG_BUCKET}' creado.")
+    elif r.status_code in (400, 409) and "exist" in r.text.lower():
+        pass  # ya existe
+    else:
+        r.raise_for_status()
+
+
+def _upload_storage_object(path: str, body: bytes, content_type: str, cache_seconds: int):
+    r = http_session.post(
+        f"{SUPABASE_URL}/storage/v1/object/{CATALOG_BUCKET}/{path}",
+        headers=_storage_headers({
+            "Content-Type": content_type,
+            "cache-control": f"max-age={cache_seconds}",
+            "x-upsert": "true",
+        }),
+        data=body,
+        timeout=120,
+    )
+    r.raise_for_status()
+
+
+def _get_current_manifest():
+    try:
+        r = http_session.get(
+            f"{SUPABASE_URL}/storage/v1/object/public/{CATALOG_BUCKET}/manifest.json",
+            params={"t": int(time.time())}, timeout=20,
+        )
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    return None
+
+
+def _cleanup_old_catalogs(current_file: str):
+    r = http_session.post(
+        f"{SUPABASE_URL}/storage/v1/object/list/{CATALOG_BUCKET}",
+        headers=_storage_headers({"Content-Type": "application/json"}),
+        json={"prefix": "", "limit": 200, "sortBy": {"column": "created_at", "order": "desc"}},
+        timeout=30,
+    )
+    r.raise_for_status()
+    files = [o["name"] for o in r.json() if o.get("name", "").startswith("slots-") and o["name"].endswith(".json.gz")]
+    old = [f for f in files[CATALOG_KEEP_VERSIONS:] if f != current_file]
+    if old:
+        d = http_session.delete(
+            f"{SUPABASE_URL}/storage/v1/object/{CATALOG_BUCKET}",
+            headers=_storage_headers({"Content-Type": "application/json"}),
+            json={"prefixes": old},
+            timeout=30,
+        )
+        d.raise_for_status()
+        print(f"[6] Limpieza: {len(old)} versiones antiguas eliminadas.")
+
+
+def publish_catalog_to_storage(all_slots: list):
+    import gzip
+    import hashlib
+
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        print("[6] Sin credenciales de Supabase: se omite la publicación en Storage.")
+        return
+    if not all_slots:
+        raise RuntimeError("Catálogo vacío: no se publica para no dejar la página sin slots.")
+
+    print("[6] Publicando catálogo en Supabase Storage...")
+    raw = json.dumps(all_slots, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    version = hashlib.sha256(raw).hexdigest()[:16]
+    file_name = f"slots-{version}.json.gz"
+
+    _ensure_catalog_bucket()
+
+    current = _get_current_manifest()
+    if current and current.get("file") == file_name:
+        print(f"[6] El catálogo no cambió (versión {version}). Nada que publicar.")
+        pipeline_stats['catalog_version'] = version
+        return
+
+    gz = gzip.compress(raw, compresslevel=9, mtime=0)
+    # 1) Primero el catálogo (inmutable)…
+    _upload_storage_object(file_name, gz, "application/gzip", 31536000)
+    # 2) …y solo después el manifest que apunta a él (así nunca apunta a un archivo inexistente)
+    manifest = {
+        "version": version,
+        "file": file_name,
+        "count": len(all_slots),
+        "bytes_gzip": len(gz),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    _upload_storage_object("manifest.json", json.dumps(manifest).encode("utf-8"), "application/json", 60)
+    pipeline_stats['catalog_version'] = version
+    print(f"[6] Catálogo publicado: {file_name} ({len(all_slots)} slots, {len(gz)/1e6:.2f} MB gzip).")
+
+    try:
+        _cleanup_old_catalogs(file_name)
+    except Exception as e:
+        print(f"[6][WARN] Limpieza de versiones antiguas falló (no crítico): {e}")
+
 
 def reactivate_all():
     """

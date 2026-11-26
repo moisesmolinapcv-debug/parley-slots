@@ -1,4 +1,4 @@
-const CACHE_NAME = 'parley-slots-v8-prod';
+const CACHE_NAME = 'parley-slots-v9-prod';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -45,6 +45,13 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = event.request.url;
+
+  // ⚡ 0. CATÁLOGO EN SUPABASE STORAGE -> sin intervención del SW.
+  //    manifest.json debe llegar siempre fresco y los slots-<hash>.json.gz son
+  //    inmutables (los guarda la caché HTTP del navegador).
+  if (url.includes('/storage/v1/object/public/catalog/')) {
+    return;
+  }
 
   // ⚡ 1. DATOS VIVOS DE SUPABASE API Y HTML -> Network-First con Timeout de 1.5s
   const isApiOrHtml = url.includes('/rest/v1/') || 

@@ -2462,7 +2462,8 @@ body.is-fast-scrolling .card {
 <!-- ══════════════════════════════════════════════════════════════
      SCRIPTS
      ══════════════════════════════════════════════════════════════ -->
-<script src="data/slots.js"></script>
+<!-- El catálogo ya no se carga aquí de forma bloqueante: lo trae loadCatalog()
+     desde Supabase Storage (siempre al día) con respaldo en data/slots.json. -->
 
 <script>
 /* ══════════════════════════════════════════════════════════════
@@ -2621,6 +2622,80 @@ body.is-fast-scrolling .card {
       };
     } catch (e) {
       return null;
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     📚 CARGA DEL CATÁLOGO — Supabase Storage (fuente viva) + respaldo local
+     El Bibliotecario publica cada día:
+       catalog/manifest.json         → indica la versión vigente (caché 60 s)
+       catalog/slots-<hash>.json.gz  → catálogo comprimido e inmutable
+     Así la página funciona igual en GitHub Pages o en m.parley.la, sin
+     depender de que alguien suba archivos al servidor.
+     ══════════════════════════════════════════════════════════════ */
+  const CATALOG_STORAGE_URL = SUPABASE_API_URL.replace('/rest/v1', '/storage/v1/object/public/catalog');
+
+  function fetchTimeout(url, options = {}, timeoutMs = 8000) {
+    if (typeof AbortController === 'undefined') return fetch(url, options);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+  }
+
+  async function bytesToText(buf) {
+    const bytes = new Uint8Array(buf);
+    const isGzip = bytes.length > 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+    if (!isGzip) return new TextDecoder('utf-8').decode(bytes);
+    if (typeof DecompressionStream === 'undefined') throw new Error('Navegador sin DecompressionStream');
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).text();
+  }
+
+  async function loadCatalogFromStorage() {
+    const minute = Math.floor(Date.now() / 60000);
+    const mRes = await fetchTimeout(`${CATALOG_STORAGE_URL}/manifest.json?t=${minute}`, { cache: 'no-store' }, 5000);
+    if (!mRes.ok) throw new Error('manifest HTTP ' + mRes.status);
+    const manifest = await mRes.json();
+    if (!manifest || !manifest.file) throw new Error('manifest inválido');
+    const dRes = await fetchTimeout(`${CATALOG_STORAGE_URL}/${encodeURIComponent(manifest.file)}`, {}, 25000);
+    if (!dRes.ok) throw new Error('catálogo HTTP ' + dRes.status);
+    const data = JSON.parse(await bytesToText(await dRes.arrayBuffer()));
+    if (!Array.isArray(data) || data.length === 0) throw new Error('catálogo vacío');
+    window.__catalogInfo = { source: 'storage', version: manifest.version, count: data.length, generated_at: manifest.generated_at };
+    return data;
+  }
+
+  async function loadCatalogFromLocal() {
+    try {
+      const r = await fetchTimeout('data/slots.json', {}, 30000);
+      if (r.ok) {
+        const data = await r.json();
+        if (Array.isArray(data) && data.length > 0) {
+          window.__catalogInfo = { source: 'local-json', count: data.length };
+          return data;
+        }
+      }
+    } catch (e) {}
+    // Último recurso: el archivo JS clásico
+    return await new Promise(resolve => {
+      const s = document.createElement('script');
+      s.src = 'data/slots.js';
+      s.onload = () => {
+        const data = (typeof SLOTS_DATA !== 'undefined') ? SLOTS_DATA : (window.SLOTS_DATA || []);
+        window.__catalogInfo = { source: 'local-js', count: data.length };
+        resolve(data);
+      };
+      s.onerror = () => resolve([]);
+      document.head.appendChild(s);
+    });
+  }
+
+  async function loadCatalog() {
+    try {
+      return await loadCatalogFromStorage();
+    } catch (e) {
+      console.warn('[Catálogo] Storage no disponible, usando respaldo local:', e && e.message);
+      return await loadCatalogFromLocal();
     }
   }
 
@@ -2995,13 +3070,8 @@ body.is-fast-scrolling .card {
     // ── 1. Lanzar Supabase en paralelo en segundo plano (SWR Revalidation) ────
     const overridesPromise = fetchLiveOverrides();
 
-    // ── 2. Usar datos locales inmediatamente (sin esperar red) ────
-    const localData = (typeof SLOTS_DATA !== 'undefined') ? SLOTS_DATA : (window.SLOTS_DATA || null);
-    let rawData = localData;
-
-    if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
-      try { const r = await fetch('data/slots.json'); if (r.ok) rawData = await r.json(); } catch(e) {}
-    }
+    // ── 2. Catálogo: Supabase Storage (siempre al día) con respaldo local ────
+    let rawData = await loadCatalog();
 
     function processSlots(data, overrides) {
       if (!data || !Array.isArray(data)) return [];
