@@ -2180,7 +2180,7 @@ body.is-fast-scrolling .card {
 </div>
 
 <!-- 🎵 Casino Ambient Sound Player Component -->
-<audio id="bgAmbientAudio" loop preload="auto" src="musica/Golden_Floor_Show.mp3"></audio>
+<audio id="bgAmbientAudio" loop preload="none" src="musica/Golden_Floor_Show.mp3"></audio>
 
 <div class="ambient-sound-widget" id="ambientWidget" onclick="App.toggleAmbientAudio()" title="Música ambiental Casino VIP">
   <div class="ambient-icon-wrap" id="ambientIconWrap">
@@ -2679,18 +2679,8 @@ body.is-fast-scrolling .card {
         }
       }
     } catch (e) {}
-    // Último recurso: el archivo JS clásico
-    return await new Promise(resolve => {
-      const s = document.createElement('script');
-      s.src = 'data/slots.js';
-      s.onload = () => {
-        const data = (typeof SLOTS_DATA !== 'undefined') ? SLOTS_DATA : (window.SLOTS_DATA || []);
-        window.__catalogInfo = { source: 'local-js', count: data.length };
-        resolve(data);
-      };
-      s.onerror = () => resolve([]);
-      document.head.appendChild(s);
-    });
+    window.__catalogInfo = { source: 'none', count: 0 };
+    return [];
   }
 
   async function loadCatalog() {

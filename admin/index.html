@@ -2507,12 +2507,21 @@
       // Claves que son fields numéricos
       const numberKeys = new Set(['initial_load_count','batch_size','slots_per_page','hot_threshold','new_threshold_days','banner_count','carousel_speed']);
 
+      // Claves guardadas en la base de datos que hoy NO tienen efecto (ni la página
+      // pública ni El Bibliotecario las leen). Se ocultan para no confundir; no se borran.
+      //  · pipeline_schedule: la hora real está fija en .github/workflows/bibliotecario.yml
+      //    (10:00 UTC = 6:00 a. m. de Venezuela).
+      //  · pipeline_telegram_enabled: Telegram se activa/desactiva con los secrets de GitHub.
+      const unusedKeys = new Set([
+        'accent_color', 'welcome_page_enabled', 'slots_per_page', 'default_sort', 'game_categories',
+        'banner_count', 'carousel_speed', 'banner_cta_text', 'pipeline_schedule', 'pipeline_telegram_enabled'
+      ]);
+
       // Agrupar keys por sección para ordenarlas visualmente
       const sectionGroups = {
-        '🎨 Apariencia del Sitio': ['site_title','site_description','accent_color','welcome_page_enabled','maintenance_mode'],
-        '📚 Catálogo de Slots': ['initial_load_count','batch_size','slots_per_page','default_sort','hot_threshold','new_threshold_days','game_categories','featured_slots_order'],
-        '🖼️ Banners y Carrusel': ['banner_count','carousel_speed','banner_cta_text'],
-        '🤖 Pipeline / Bibliotecario': ['pipeline_schedule','pipeline_telegram_enabled','github_pat'],
+        '🎨 Apariencia del Sitio': ['site_title','site_description','maintenance_mode'],
+        '📚 Catálogo de Slots': ['initial_load_count','batch_size','hot_threshold','new_threshold_days','featured_slots_order'],
+        '🤖 Pipeline / Bibliotecario': ['github_pat'],
       };
 
       // Construir un mapa de los datos actuales para acceso rápido
@@ -2521,12 +2530,15 @@
 
       // Claves de la DB que no están en grupos conocidos (mostrar al final)
       const knownKeys = new Set(Object.values(sectionGroups).flat());
-      const orphanKeys = data.filter(c => !knownKeys.has(c.key)).map(c => c.key);
+      const orphanKeys = data.filter(c => !knownKeys.has(c.key) && !unusedKeys.has(c.key)).map(c => c.key);
       if (orphanKeys.length > 0) {
         sectionGroups['🔧 Otras Configuraciones'] = orphanKeys;
       }
 
-      let html = '';
+      let html = `<div style="margin-bottom:20px; padding:12px 16px; border-radius:8px; background:rgba(253,216,53,0.06); border:1px solid rgba(253,216,53,0.25); color:var(--text-muted); font-size:12.5px; line-height:1.6;">
+          ⏰ <b style="color:var(--text-main);">El Bibliotecario</b> se ejecuta automáticamente todos los días a las <b style="color:var(--text-main);">6:00 a. m. (hora de Venezuela)</b>.
+          Para cambiar la hora hay que editar el archivo del workflow en GitHub.
+        </div>`;
 
       for (const [sectionName, keys] of Object.entries(sectionGroups)) {
         const sectionItems = keys.filter(k => dataMap[k] || !knownKeys.has(k));

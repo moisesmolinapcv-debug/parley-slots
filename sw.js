@@ -1,16 +1,10 @@
-const CACHE_NAME = 'parley-slots-v9-prod';
+const CACHE_NAME = 'parley-slots-v10-prod';
+// Solo lo imprescindible para abrir la página sin conexión.
+// (Banners y catálogo llegan desde Supabase; no se precargan aquí.)
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './css/styles.css',
-  './js/app.js',
-  './data/slots_initial.js',
-  './ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png',
-  './BANNER/public.avif',
-  './BANNER/banner_1_desktop_hd.webp',
-  './BANNER/banner_1_mobile_hd.webp',
-  './BANNER/banner_2_desktop_hd.webp',
-  './BANNER/banner_2_mobile_hd.webp'
+  './ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png'
 ];
 
 const SLOT_DATA_MAX_CACHE_AGE_MS = 10 * 60 * 1000; // 10 minutos de validez máxima para fallback rápido

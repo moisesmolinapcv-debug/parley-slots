@@ -169,9 +169,12 @@ def run_tests():
         print("  [FALLO] No detecto el proveedor nuevo.")
 
     # -------------------------------------------------------------------------
-    # TEST 5: Slot ausente en el Endpoint (Regla de Cuarentena 3 días)
+    # TEST 5: Slot ausente en el Endpoint
+    # REGLA VIGENTE (v2.0): El Bibliotecario NUNCA apaga slots por ausencia del API,
+    # sin importar cuántos días lleven ausentes. Solo los marca con
+    # missing_from_source=True (dato informativo). Apagar es decisión del Panel.
     # -------------------------------------------------------------------------
-    separator("5. Slots ausentes en el API (Cuarentena < 3 dias vs Desactivacion >= 3 dias)")
+    separator("5. Slots ausentes en el API (solo marca informativa, nunca se apagan)")
     
     # Caso A: Desapareció hace 1 día (< 3 días)
     slot_recent_missing = {
@@ -212,17 +215,20 @@ def run_tests():
     payload_a = next((p for p in deactivated if p['external_id'] == '99005_A'), None)
     payload_b = next((p for p in deactivated if p['external_id'] == '99005_B'), None)
     
-    case_a_ok = payload_a and payload_a.get('missing_from_source') is True and 'is_active' not in payload_a
-    case_b_ok = payload_b and payload_b.get('missing_from_source') is True and payload_b.get('is_active') is False
-    
+    def solo_marca(payload):
+        return bool(payload) and payload.get('missing_from_source') is True and 'is_active' not in payload
+
+    case_a_ok = solo_marca(payload_a)
+    case_b_ok = solo_marca(payload_b)
+
     if case_a_ok and case_b_ok:
-        print("  [OK] RESULTADO: Regla de Cuarentena cumplida al 100%:")
-        print("     -> Ausente < 3 dias (99005_A): missing_from_source=True, PERO is_active NO SE TOCA (Sigue visible).")
-        print("     -> Ausente >= 3 dias (99005_B): missing_from_source=True Y is_active=False (Desactivado).")
-        print("     -> NOTA DE SEGURIDAD: Se comprobo ademas que si el API cae mas del 20%, el FAILSAFE bloquea la desactivacion.")
+        print("  [OK] RESULTADO: Regla v2.0 cumplida:")
+        print("     -> Ausente 1 dia  (99005_A): missing_from_source=True, is_active NO se toca (sigue visible).")
+        print("     -> Ausente 5 dias (99005_B): missing_from_source=True, is_active NO se toca (sigue visible).")
+        print("     -> Apagar un slot ausente es decision exclusiva del Panel de Control.")
         total_passed += 1
     else:
-        print(f"  [FALLO] Cuarentena fallo. Case A: {case_a_ok}, Case B: {case_b_ok}")
+        print(f"  [FALLO] Slots ausentes. Case A: {case_a_ok}, Case B: {case_b_ok}")
 
     # -------------------------------------------------------------------------
     # TEST 6: Manejo de Fechas y Efectos (is_new Badge)
