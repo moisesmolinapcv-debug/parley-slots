@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Respaldos locales del Bibliotecario (se generan en cada ejecución)
+data/backups/
+
+# Configuración local y secretos
+.env
+.env.*
+.claude/
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

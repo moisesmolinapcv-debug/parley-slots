@@ -26,6 +26,11 @@ on:
         default: 'false'
         type: boolean
 
+# Nunca dos ejecuciones a la vez (cron + manual): la segunda espera a la primera
+concurrency:
+  group: bibliotecario
+  cancel-in-progress: false
+
 jobs:
   bibliotecario:
     name: Sincronización El Bibliotecario
@@ -88,7 +93,7 @@ jobs:
       - name: 🔍 Verificar cambios en archivos estáticos
         id: check_changes
         run: |
-          git diff --quiet data/slots.json data/slots.js data/slots_initial.js \
+          git diff --quiet data/slots.json \
             || echo "changed=true" >> $GITHUB_OUTPUT
 
       # ── PASO 6: Commit y push de archivos estáticos actualizados ──
@@ -97,10 +102,16 @@ jobs:
         run: |
           git config user.name  "El Bibliotecario — Parley Bot"
           git config user.email "bibliotecario@parley.com.ve"
-          git add data/slots.json data/slots.js data/slots_initial.js
+          git add data/slots.json
           MODO="${{ github.event_name == 'workflow_dispatch' && 'manual' || 'auto' }}"
           git commit -m "bibliotecario($MODO): actualización catálogo $(date +'%Y-%m-%d')"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          # Si alguien subió cambios a main durante la ejecución, integrarlos antes del push
+          REMOTE="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          for intento in 1 2 3; do
+            git pull --rebase "$REMOTE" main && git push "$REMOTE" HEAD:main && exit 0
+            echo "Push rechazado (intento $intento). Reintentando..."; sleep 10
+          done
+          echo "No se pudo subir el catálogo tras 3 intentos"; exit 1
 
       # ── PASO 7: Notificación de éxito (si hubo cambios) ──────────
       - name: ✅ Sin cambios detectados

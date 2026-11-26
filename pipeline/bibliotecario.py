@@ -21,9 +21,8 @@ from urllib3.util.retry import Retry
 # --- SETUP PATHS ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 BACKUP_DIR = BASE_DIR / "data" / "backups"
+# Respaldo local del catálogo (la fuente principal es Supabase Storage, ver [6])
 OUTPUT_JSON_PATH = BASE_DIR / "data" / "slots.json"
-OUTPUT_JS_PATH = BASE_DIR / "data" / "slots.js"
-OUTPUT_INITIAL_JS_PATH = BASE_DIR / "data" / "slots_initial.js"
 
 # --- SECRETS ---
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
@@ -640,20 +639,6 @@ def generate_static(site_config, supabase_providers):
     with open(OUTPUT_JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(all_slots, f, ensure_ascii=False, separators=(",", ":"))
 
-    js_header = f"// AUTO-GENERADO por El Bibliotecario — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-    with open(OUTPUT_JS_PATH, "w", encoding="utf-8") as f:
-        f.write(js_header)
-        f.write("var SLOTS_DATA = ")
-        json.dump(all_slots, f, ensure_ascii=False, separators=(",", ":"))
-        f.write(";\nif (typeof module !== 'undefined') module.exports = SLOTS_DATA;\n")
-
-    top_40 = all_slots[:40]
-    with open(OUTPUT_INITIAL_JS_PATH, "w", encoding="utf-8") as f:
-        f.write(js_header)
-        f.write("var SLOTS_INITIAL_DATA = ")
-        json.dump(top_40, f, ensure_ascii=False, separators=(",", ":"))
-        f.write(";\n")
-
     pipeline_stats['slots_total'] = len(all_slots)
     print(f"[5] Static files generated with {len(all_slots)} slots.")
 
@@ -857,7 +842,7 @@ def reactivate_all():
     # Regenerar archivos estáticos OBLIGATORIAMENTE.
     # Sin este paso, slots.js queda con el snapshot anterior a la reactivación
     # y la página pública muestra menos slots que Supabase.
-    print("[R4] Regenerando archivos estáticos (slots.js / slots.json / slots_initial.js)...")
+    print("[R4] Regenerando catálogo (slots.json + Supabase Storage)...")
     static_count = 0
     try:
         site_config = fetch_site_config()
