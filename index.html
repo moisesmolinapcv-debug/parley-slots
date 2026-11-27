@@ -2284,6 +2284,195 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
   [data-theme="light"] .top-nav { background: #ffffff; }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   FAVORITOS · JUGADOS RECIENTEMENTE · BOTÓN SUBIR
+   (se guardan en el propio dispositivo: sin cuentas ni servidores)
+   ══════════════════════════════════════════════════════════════ */
+/* ── Corazón en cada tarjeta ── */
+.card-fav {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  z-index: 6;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(5, 9, 22, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 160ms var(--ease-out-strong), background-color 160ms ease, border-color 160ms ease;
+}
+.card-fav::before { content: ''; position: absolute; inset: -7px; } /* zona táctil 44px */
+.card-fav svg {
+  width: 16px; height: 16px;
+  fill: transparent; stroke: #ffffff; stroke-width: 2.2; stroke-linejoin: round;
+  transition: fill 160ms ease, stroke 160ms ease;
+}
+.card-fav:active { transform: scale(0.88); }
+.card-fav.is-fav { background: rgba(229, 28, 35, 0.9); border-color: rgba(255, 255, 255, 0.5); }
+.card-fav.is-fav svg { fill: #ffffff; stroke: #ffffff; }
+.card-fav.pop svg { animation: favPop 320ms var(--ease-out-strong); }
+@keyframes favPop { 0% { transform: scale(0.6); } 55% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@media (hover: hover) and (pointer: fine) {
+  .card-fav:hover { background: rgba(229, 28, 35, 0.55); border-color: rgba(255, 255, 255, 0.45); }
+}
+@media (max-width: 599px) {
+  .card-fav { width: 26px; height: 26px; right: 4px; bottom: 4px; }
+  .card-fav svg { width: 14px; height: 14px; }
+  .card-fav::before { inset: -9px; }
+}
+
+/* ── Botón "Mis favoritos" en la barra de resultados ── */
+.fav-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(229, 28, 35, 0.45);
+  background: rgba(229, 28, 35, 0.08);
+  color: var(--text-1);
+  font: 700 0.8rem/1 'Outfit', system-ui, sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 160ms var(--ease-out-strong), background-color 160ms ease, border-color 160ms ease;
+}
+.fav-filter-btn svg { width: 15px; height: 15px; fill: transparent; stroke: #e51c23; stroke-width: 2.4; stroke-linejoin: round; }
+.fav-filter-count {
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(229, 28, 35, 0.18); color: #ff5a5f; font-size: 0.72rem;
+}
+.fav-filter-btn:active { transform: scale(0.96); }
+.fav-filter-btn[aria-pressed="true"] { background: #e51c23; border-color: #e51c23; color: #ffffff; }
+.fav-filter-btn[aria-pressed="true"] svg { fill: #ffffff; stroke: #ffffff; }
+.fav-filter-btn[aria-pressed="true"] .fav-filter-count { background: rgba(255, 255, 255, 0.25); color: #ffffff; }
+[data-theme="light"] .fav-filter-btn:not([aria-pressed="true"]) { color: #0a1b3a; background: rgba(229, 28, 35, 0.06); }
+@media (hover: hover) and (pointer: fine) {
+  .fav-filter-btn:not([aria-pressed="true"]):hover { background: rgba(229, 28, 35, 0.16); border-color: rgba(229, 28, 35, 0.7); }
+}
+.fav-filter-btn:focus-visible, .card-fav:focus-visible, .recent-clear:focus-visible, .fab-top:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ── Fila "Jugados recientemente" ── */
+.recent-section { max-width: var(--max-w); margin: 6px auto 4px; padding: 0 24px; }
+.recent-section[hidden] { display: none; }
+.recent-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.recent-title {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 800 0.82rem/1 'Cinzel', serif; letter-spacing: 1.5px; color: var(--gold);
+}
+.recent-title svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+[data-theme="light"] .recent-title { color: #b45309; }
+.recent-clear {
+  position: relative;
+  border: 0; background: none; padding: 6px 4px;
+  color: var(--text-3); font: 600 0.78rem/1 'Outfit', system-ui, sans-serif;
+  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transition: color 160ms ease;
+}
+.recent-clear::before { content: ''; position: absolute; inset: -8px; }
+@media (hover: hover) and (pointer: fine) { .recent-clear:hover { color: var(--text-1); } }
+.recent-track {
+  display: flex; gap: 10px;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity; scrollbar-width: none;
+  padding: 2px 2px 6px;
+  touch-action: pan-x pan-y;
+}
+.recent-track::-webkit-scrollbar { display: none; }
+.recent-card {
+  flex: 0 0 auto;
+  width: 104px;
+  scroll-snap-align: start;
+  display: flex; flex-direction: column; gap: 6px;
+  text-decoration: none; color: var(--text-1);
+  -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;
+  transition: transform 160ms var(--ease-out-strong);
+  animation: recentIn 260ms var(--ease-out-strong) both;
+}
+.recent-card:active { transform: scale(0.96); }
+@keyframes recentIn { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } }
+.recent-thumb {
+  position: relative; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden;
+  background: #090e1a; border: 1px solid rgba(253, 216, 53, 0.22);
+}
+[data-theme="light"] .recent-thumb { background: #e2e8f0; border-color: rgba(0, 56, 168, 0.18); }
+.recent-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.recent-play {
+  position: absolute; inset: auto 6px 6px auto;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--gold); color: #1a1200; font-size: 0.7rem; font-weight: 900;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+.recent-name {
+  font-size: 0.74rem; font-weight: 700; line-height: 1.2;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+@media (hover: hover) and (pointer: fine) {
+  .recent-card:hover .recent-thumb { border-color: rgba(253, 216, 53, 0.65); }
+}
+@media (min-width: 1024px) { .recent-card { width: 128px; } }
+@media (max-width: 768px) {
+  .recent-section { padding: 0 12px; }
+  /* Contador y "Mis favoritos" en la misma línea (el favorito a la derecha, lejos de
+     los widgets flotantes de la izquierda); los chips debajo a todo lo ancho */
+  .results-bar { flex-direction: row; align-items: center; justify-content: space-between; }
+  .results-bar .active-chips { flex: 1 1 100%; }
+  .results-bar .active-chips:empty { display: none; }
+}
+
+/* ── Botón Subir (abajo a la izquierda, lejos de Torneos/Suerte) ── */
+.fab-top {
+  position: fixed;
+  left: 20px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 997;
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(253, 216, 53, 0.45);
+  background: rgba(5, 9, 22, 0.78);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 0;
+  transform: translate3d(0, 12px, 0) scale(0.92);
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-out-strong), transform 200ms var(--ease-out-strong), background-color 160ms ease;
+}
+.fab-top svg { width: 22px; height: 22px; fill: none; stroke: var(--gold); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+body.show-fab-top .fab-top { opacity: 1; transform: none; pointer-events: auto; }
+body.show-fab-top .fab-top:active { transform: scale(0.94); }
+[data-theme="light"] .fab-top { background: rgba(255, 255, 255, 0.88); border-color: rgba(0, 56, 168, 0.3); box-shadow: 0 8px 24px rgba(10, 37, 64, 0.16); }
+[data-theme="light"] .fab-top svg { stroke: #0038a8; }
+@media (hover: hover) and (pointer: fine) {
+  .fab-top:hover { background: rgba(253, 216, 53, 0.16); }
+}
+@media (max-width: 768px) { .fab-top { left: 14px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); } }
+@media (prefers-reduced-motion: reduce) {
+  .card-fav.pop svg, .recent-card { animation: none; }
+  .fab-top { transform: none; transition: opacity 200ms ease; }
+  .card-fav:active, .fav-filter-btn:active, .recent-card:active, body.show-fab-top .fab-top:active { transform: none; }
+}
+
 
   </style>
 </head>
@@ -2401,6 +2590,20 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════
+     2.B JUGADOS RECIENTEMENTE — guardado en el dispositivo del usuario
+     ══════════════════════════════════════════════════════════════ -->
+<section class="recent-section" id="recentSection" aria-label="Jugados recientemente" hidden>
+  <div class="recent-header">
+    <h2 class="recent-title" style="margin:0">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      JUGADOS RECIENTEMENTE
+    </h2>
+    <button type="button" class="recent-clear" id="recentClearBtn">Borrar</button>
+  </div>
+  <div class="recent-track" id="recentTrack"></div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
      3. POOL UNIFICADO: BÚSQUEDA + BARRA DE FILTROS STICKY
      ══════════════════════════════════════════════════════════════ -->
 <div class="filter-bar-sticky-wrapper">
@@ -2474,6 +2677,10 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
      ══════════════════════════════════════════════════════════════ -->
 <div class="results-bar">
   <div class="result-count" id="resultCount">Cargando catálogo...</div>
+  <button type="button" class="fav-filter-btn" id="favFilterBtn" aria-pressed="false" aria-label="Mostrar solo mis favoritos">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.6 4.5 7.1 4.5c2 0 3.6 1.1 4.9 2.8 1.3-1.7 2.9-2.8 4.9-2.8 3.5 0 5.7 3.5 4.4 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>
+    Mis favoritos <span class="fav-filter-count" id="favFilterCount">0</span>
+  </button>
   <div class="active-chips" id="activeChips"></div>
 </div>
 
@@ -2517,6 +2724,10 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
      FABS — ATAJO TORNEOS & SELECTOR ALEATORIO
      ══════════════════════════════════════════════════════════════ -->
 <!-- 🏆 FAB — Acceso Rápido a Torneos & Especiales -->
+<button class="fab-top" id="fabTop" type="button" aria-label="Subir a la búsqueda y los filtros" title="Subir">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+</button>
+
 <button class="fab-tournament" id="fabTournament" onclick="App.quickTournamentFilter()" title="🏆 ¡TORNEOS Y ESPECIALES!" aria-label="Torneos y especiales">
   <span class="fab-emoji">🏆</span>
   <span class="fab-label">TORNEOS</span>
@@ -3289,6 +3500,7 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
     initFeaturedSlotsCarousel();
     preloadCatalogAndImages();
     initAmbientPlayer();
+    renderRecents();
     applyReturnState(true);
 
     // ── Revelación atómica: el layout está completamente listo ────
@@ -3336,6 +3548,7 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
           renderProvDropdown();
         }
         applyFilters();
+        renderRecents();
         if (typeof initFeaturedSlotsCarousel === 'function') {
           initFeaturedSlotsCarousel();
         }
@@ -3590,6 +3803,7 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
     // ── Filtrado principal ───────────────────────────────────────────────────
     const q=normalize(searchQuery),has=q.length>0;
     filtered=allSlots.filter(s=>{
+      if(favOnly&&!favs.has(slotKey(s)))return false;
       if(has&&!s._nameNorm.includes(q))return false;
       if(activeTheme&&!(s.themes&&s.themes.includes(activeTheme)))return false;
       if(activeCategory){
@@ -3615,6 +3829,12 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
       return true;
     });
     filtered.sort(SORT_FNS[sortMode]||SORT_FNS.popular);
+    // Mensaje del estado vacío: explicar cómo guardar favoritos
+    const emptyH = emptyState && emptyState.querySelector('h3'), emptyP = emptyState && emptyState.querySelector('p');
+    if (emptyH && emptyP) {
+      if (favOnly && favs.size === 0) { emptyH.textContent = 'Aún no tienes favoritos'; emptyP.textContent = 'Toca el ♥ de cualquier juego para guardarlo aquí'; }
+      else { emptyH.textContent = 'No encontramos slots con esos filtros'; emptyP.textContent = 'Intenta cambiar o limpiar los filtros activos'; }
+    }
     displayedCount=INITIAL_LOAD;
     renderCards(true);
     renderResultCount();
@@ -3759,10 +3979,11 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
             <span class="card-img-placeholder-icon">🎰</span>
             <span class="card-img-placeholder-title">${s.name}</span>
           </div>
+          ${favButtonHtml(s)}
         </div>
         <div class="card-body">
           <div class="card-name" title="${s.name}">${s.name}</div>
-          <a href="${url}" class="btn-play-always" ${playLinkAttrs()}>▶ JUGAR</a>
+          <a href="${url}" class="btn-play-always" data-key="${escAttr(slotKey(s))}" ${playLinkAttrs()}>▶ JUGAR</a>
         </div>`;
       frag.appendChild(card);
     });
@@ -3902,6 +4123,7 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
   /* ── Active Chips ───────────────────────────────────────────── */
   function renderActiveChips(){
     const chips=[];
+    if(favOnly)chips.push(mkChip('♥ Mis favoritos',()=>setFavOnly(false)));
     if(searchQuery)chips.push(mkChip(`"${searchQuery}"`,()=>{searchInput.value='';searchQuery='';applyFilters()}));
     if(activeTheme){const l=THEME_RULES.find(t=>t.id===activeTheme)?.label||activeTheme;chips.push(mkChip(l,()=>{activeTheme=null;syncTemaUI();applyFilters()}))}
     if(activeCategory)chips.push(mkChip(activeCategory,()=>{activeCategory=null;syncTipoUI();applyFilters()}));
@@ -4359,7 +4581,7 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
           <div class="featured-card-body">
             <div class="featured-card-title">${s.name}</div>
             <div class="featured-card-prov">${s._providerDisplay || s.provider || 'Parley'}</div>
-            <a href="${playUrl}" class="featured-play-btn" ${playLinkAttrs()} onclick="event.stopPropagation()">▶ JUGAR AHORA</a>
+            <a href="${playUrl}" class="featured-play-btn" data-key="${escAttr(slotKey(s))}" ${playLinkAttrs()} onclick="event.stopPropagation()">▶ JUGAR AHORA</a>
           </div>
         </div>
       `;
@@ -4907,6 +5129,7 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
     $('fortuneResultName').textContent=winner.name;
     $('fortuneResultProv').textContent=winner._providerDisplay;
     $('fortuneResultPlay').href=playUrl;
+    $('fortuneResultPlay').dataset.key=slotKey(winner);
     if (isMobileOrTabletDevice()) $('fortuneResultPlay').removeAttribute('target');
     else $('fortuneResultPlay').setAttribute('target', '_blank');
 
@@ -4942,8 +5165,8 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
   /* ══════════════════════════════════════════════════════════════
      CLEAR ALL & URL SYNC
      ══════════════════════════════════════════════════════════════ */
-  function clearAll(){searchInput.value='';searchQuery='';activeTheme=null;activeCategory=null;activeProviders.clear();activeTags.clear();sortMode='popular';syncTipoUI();syncTemaUI();syncProvUI();syncTagsUI();syncSortUI();applyFilters()}
-  function syncToURL(){const p=new URLSearchParams;if(searchQuery)p.set('q',searchQuery);if(activeTheme)p.set('tema',activeTheme);if(activeCategory)p.set('tipo',activeCategory);if(activeProviders.size>0)p.set('prov',[...activeProviders].join(','));if(sortMode!=='popular')p.set('sort',sortMode);if(activeTags.size>0)p.set('tags',[...activeTags].join(','));const qs=p.toString();history.replaceState(null,'',qs?`?${qs}`:location.pathname)}
+  function clearAll(){searchInput.value='';searchQuery='';activeTheme=null;activeCategory=null;activeProviders.clear();activeTags.clear();sortMode='popular';favOnly=false;updateFavFilterBtn();syncTipoUI();syncTemaUI();syncProvUI();syncTagsUI();syncSortUI();applyFilters()}
+  function syncToURL(){const p=new URLSearchParams;if(searchQuery)p.set('q',searchQuery);if(activeTheme)p.set('tema',activeTheme);if(activeCategory)p.set('tipo',activeCategory);if(activeProviders.size>0)p.set('prov',[...activeProviders].join(','));if(sortMode!=='popular')p.set('sort',sortMode);if(activeTags.size>0)p.set('tags',[...activeTags].join(','));if(favOnly)p.set('fav','1');const qs=p.toString();history.replaceState(null,'',qs?`?${qs}`:location.pathname)}
   /* ¿El enlace apunta a este mismo catálogo (mismo sitio y misma página)? */
   function isInternalCatalogLink(href){
     if(!href || href === '#') return false;
@@ -4959,7 +5182,7 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
     const u = new URL(href, location.href);
     // Partir de un estado limpio para que el enlace muestre exactamente lo que indica
     searchInput.value=''; searchQuery=''; activeTheme=null; activeCategory=null;
-    activeProviders.clear(); activeTags.clear(); sortMode='popular'; pendingUrlTags=[];
+    activeProviders.clear(); activeTags.clear(); sortMode='popular'; pendingUrlTags=[]; favOnly=false; updateFavFilterBtn();
     syncTipoUI(); syncTemaUI(); syncSortUI();
     restoreFromURL(u.searchParams, 'smooth');
     if(!(searchQuery||activeTheme||activeCategory||activeProviders.size||activeTags.size||sortMode!=='popular')) applyFilters();
@@ -5021,7 +5244,8 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
       pendingUrlTags = urlTags.filter(t => !activeTags.has(t));
     }
     syncTagsUI();
-    const hasUrlFilters = !!(searchQuery||activeTheme||activeCategory||activeProviders.size||activeTags.size||sortMode!=='popular');
+    if(p.get('fav')==='1'){favOnly=true;updateFavFilterBtn()}
+    const hasUrlFilters = !!(favOnly||searchQuery||activeTheme||activeCategory||activeProviders.size||activeTags.size||sortMode!=='popular');
     if(hasUrlFilters)applyFilters();
     // Si el enlace trae filtros, llevar al usuario directamente al catálogo
     if(hasUrlFilters || pendingUrlTags.length) scrollToCatalog(scrollBehavior ? 60 : 350, scrollBehavior);
@@ -5139,6 +5363,141 @@ body.nav-scrolled .top-nav { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
   }
 
   initTopNav();
+
+  /* ══════════════════════════════════════════════════════════════
+     FAVORITOS · JUGADOS RECIENTEMENTE · BOTÓN SUBIR
+     Todo se guarda en el propio dispositivo (localStorage): sin cuentas.
+     ══════════════════════════════════════════════════════════════ */
+  const FAV_KEY = 'parley_favs_v1', RECENT_KEY = 'parley_recent_v1', RECENT_MAX = 10;
+  const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.6 4.5 7.1 4.5c2 0 3.6 1.1 4.9 2.8 1.3-1.7 2.9-2.8 4.9-2.8 3.5 0 5.7 3.5 4.4 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>';
+  let favOnly = false;
+  const favs = new Set((() => { try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch(e) { return []; } })());
+
+  function slotKey(s){ return String(s.id || s.external_id || s.slot_product_id || s.name || ''); }
+  function escAttr(v){ return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+  function saveFavs(){ try { localStorage.setItem(FAV_KEY, JSON.stringify([...favs])); } catch(e) {} }
+  function favButtonHtml(s){
+    const k = slotKey(s), on = favs.has(k);
+    return `<button type="button" class="card-fav${on ? ' is-fav' : ''}" data-key="${escAttr(k)}" aria-pressed="${on}" aria-label="${on ? 'Quitar de favoritos' : 'Agregar a favoritos'}: ${escAttr(s.name || '')}">${HEART_SVG}</button>`;
+  }
+
+  let slotMapSrc = null, slotMap = new Map();
+  function getSlotByKey(k){
+    if (slotMapSrc !== allSlots) { slotMap = new Map(allSlots.map(s => [slotKey(s), s])); slotMapSrc = allSlots; }
+    return slotMap.get(k);
+  }
+  function playUrlFor(s){
+    return isMobile ? (s.slot_url_movil || s.slot_url_app || s.slot_desktop_movil || '#') : (s.slot_desktop_movil || '#');
+  }
+
+  function updateFavFilterBtn(){
+    const btn = $('favFilterBtn'); if (!btn) return;
+    $('favFilterCount').textContent = favs.size;
+    btn.setAttribute('aria-pressed', String(favOnly));
+  }
+
+  function toggleFav(btn){
+    const k = btn.dataset.key; if (!k) return;
+    const on = !favs.has(k);
+    if (on) favs.add(k); else favs.delete(k);
+    saveFavs();
+    // Sincronizar todos los corazones del mismo juego (grilla y recientes)
+    document.querySelectorAll('.card-fav').forEach(b => {
+      if (b.dataset.key !== k) return;
+      b.classList.toggle('is-fav', on);
+      b.setAttribute('aria-pressed', String(on));
+      b.setAttribute('aria-label', b.getAttribute('aria-label').replace(/^(Agregar a|Quitar de) favoritos/, on ? 'Quitar de favoritos' : 'Agregar a favoritos'));
+    });
+    if (on) { btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
+    updateFavFilterBtn();
+    if (favOnly && !on) {
+      // En la vista de favoritos, el juego quitado sale con un desvanecido corto
+      const card = btn.closest('.card');
+      if (card) {
+        card.style.transition = 'opacity 180ms ease, transform 180ms var(--ease-out-strong)';
+        card.style.opacity = '0'; card.style.transform = 'scale(0.96)';
+        setTimeout(() => { const y = window.scrollY; applyFilters(); window.scrollTo(0, y); }, 190);
+      } else applyFilters();
+    }
+  }
+
+  function setFavOnly(v){
+    favOnly = !!v;
+    updateFavFilterBtn();
+    applyFilters();
+    if (favOnly) scrollToCatalog(30, 'smooth');
+  }
+
+  /* ── Jugados recientemente ── */
+  function readRecents(){ try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch(e) { return []; } }
+  function recordRecent(k){
+    if (!k) return;
+    const list = readRecents().filter(r => r.k !== k);
+    list.unshift({ k, t: Date.now() });
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX))); } catch(e) {}
+  }
+  function renderRecents(){
+    const sec = $('recentSection'), track = $('recentTrack');
+    if (!sec || !track || !allSlots.length) return;
+    const items = readRecents().map(r => getSlotByKey(r.k)).filter(Boolean);
+    if (!items.length) { sec.hidden = true; track.innerHTML = ''; return; }
+    const attrs = playLinkAttrs();
+    track.innerHTML = items.map((s, i) => `
+      <a class="recent-card" href="${escAttr(playUrlFor(s))}" ${attrs} data-key="${escAttr(slotKey(s))}" style="animation-delay:${Math.min(i * 40, 240)}ms" aria-label="Jugar ${escAttr(s.name || '')}">
+        <div class="recent-thumb">
+          <img src="${escAttr(s.image_url || '')}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='ELEMENTO Y REFERENCIAS PARLEY/PARLEY LOGO.png';this.style.objectFit='contain'">
+          <span class="recent-play" aria-hidden="true">▶</span>
+        </div>
+        <span class="recent-name">${escAttr(s.name || '')}</span>
+      </a>`).join('');
+    track.scrollLeft = 0;
+    sec.hidden = false;
+  }
+
+  // Registrar cada juego abierto (grilla, destacados, Fortune o recientes)
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('.btn-play-always, .featured-play-btn, #fortuneResultPlay, .recent-card');
+    if (!a || !a.dataset.key) return;
+    recordRecent(a.dataset.key);
+    // Si el juego abrió en otra pestaña, la fila se actualiza al momento
+    if (a.target === '_blank') setTimeout(renderRecents, 300);
+  }, true);
+  // Al volver desde un juego con la página conservada en memoria (bfcache)
+  window.addEventListener('pageshow', e => { if (e.persisted) renderRecents(); });
+
+  document.addEventListener('click', e => {
+    const fb = e.target.closest && e.target.closest('.card-fav');
+    if (!fb) return;
+    e.preventDefault(); e.stopPropagation();
+    toggleFav(fb);
+  });
+
+  function initExtras(){
+    const fbtn = $('favFilterBtn');
+    if (fbtn) fbtn.addEventListener('click', () => setFavOnly(!favOnly));
+    const rc = $('recentClearBtn');
+    if (rc) rc.addEventListener('click', () => {
+      try { localStorage.removeItem(RECENT_KEY); } catch(e) {}
+      renderRecents();
+    });
+    const top = $('fabTop');
+    if (top) top.addEventListener('click', () => {
+      const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const el = document.querySelector('.filter-bar-sticky-wrapper') || grid;
+      const y = el.getBoundingClientRect().top + window.scrollY - 8;
+      window.scrollTo({ top: Math.max(0, y), behavior: reduce ? 'auto' : 'smooth' });
+    });
+    // Mostrar "Subir" cuando el usuario ya bajó bastante por la grilla
+    let ticking = false;
+    const upd = () => {
+      ticking = false;
+      const gridTop = grid.getBoundingClientRect().top + window.scrollY;
+      document.body.classList.toggle('show-fab-top', window.scrollY > gridTop + window.innerHeight * 0.8);
+    };
+    window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(upd); } }, { passive: true });
+    updateFavFilterBtn();
+  }
+  initExtras();
 
   /* Desplaza la vista hasta la barra de filtros / grilla del catálogo */
   /* Al llegar desde un enlace se usa salto instantáneo: el scroll "smooth" puede no
