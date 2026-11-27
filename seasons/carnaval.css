@@ -1,0 +1,102 @@
+/* ══════════════════════════════════════════════════════════════
+   MODO CARNAVAL — "Comparsa"
+   Paleta: fondo #120A24 · superficie #22133F · fucsia #FF2E93
+           turquesa #19D3C5 · amarillo #FFD23F · texto #FFFFFF · secundario #C4B5E8
+   ══════════════════════════════════════════════════════════════ */
+html[data-season="carnaval"] {
+  --bg-page: #120A24;
+  --dark: #120A24;
+  --card-bg: rgba(34, 19, 63, 0.9);
+  --season-accent: #FF2E93;
+  --season-accent-2: #FFD23F;
+  --season-surface: rgba(28, 16, 54, 0.96);
+  --season-text: #FFFFFF;
+  --season-muted: #C4B5E8;
+  --season-chip-bg: rgba(34, 19, 63, 0.85);
+  --season-chip-border: rgba(25, 211, 197, 0.55);
+}
+html[data-season="carnaval"][data-theme="light"],
+html[data-season="carnaval"] body[data-theme="light"] {
+  --bg-page: #FBF7FF;
+  --dark: #FBF7FF;
+  --card-bg: #FFFFFF;
+  --season-accent-2: #D81B78;
+  --season-surface: rgba(255, 255, 255, 0.96);
+  --season-text: #21123D;
+  --season-muted: #5E4E86;
+  --season-chip-bg: rgba(25, 211, 197, 0.08);
+  --season-chip-border: rgba(14, 158, 147, 0.45);
+}
+
+html[data-season="carnaval"] .nebula-sapphire {
+  background: radial-gradient(ellipse at center, rgba(25, 211, 197, 0.16) 0%, rgba(10, 120, 115, 0.07) 40%, rgba(18, 10, 36, 0) 70%);
+}
+html[data-season="carnaval"] .nebula-ruby {
+  background: radial-gradient(ellipse at center, rgba(255, 46, 147, 0.18) 0%, rgba(150, 20, 90, 0.07) 40%, rgba(18, 10, 36, 0) 70%);
+}
+html[data-season="carnaval"] .gold-sparkle {
+  background: #FFF2B8;
+  box-shadow: 0 0 6px #FFD23F, 0 0 14px rgba(255, 210, 63, 0.7);
+}
+html[data-season="carnaval"]:not([data-theme="light"]) .top-nav { background: rgba(18, 10, 36, 0.82); }
+html[data-season="carnaval"]:not([data-theme="light"]) .filter-bar-sticky-wrapper { background: rgba(18, 10, 36, 0.96); }
+
+/* Banderines */
+.cv-bunting {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 22px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cv-bunting svg { display: block; }
+.cv-bunting .flag { animation: cvFlag 2.4s ease-in-out infinite; }
+@keyframes cvFlag { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+
+/* Antifaz en la esquina del banner */
+html[data-season="carnaval"] .hero-carousel-wrap { position: relative; }
+.cv-mask {
+  position: absolute;
+  top: -16px;
+  right: 34px;
+  z-index: 6;
+  width: 44px;
+  height: 44px;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+  transform: rotate(12deg);
+}
+.cv-mask svg { display: block; }
+.cv-mask-ribbon {
+  position: absolute;
+  top: 22px;
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  transform-origin: top center;
+}
+.cv-mask-ribbon.r1 { left: 3px; background: #19D3C5; transform: rotate(18deg); }
+.cv-mask-ribbon.r2 { right: 3px; background: #FFD23F; transform: rotate(-18deg); }
+@media (max-width: 768px) {
+  .cv-mask { right: 20px; top: -6px; transform: rotate(12deg) scale(0.82); }
+}
+
+/* Título "SLOTS DESTACADOS" */
+html[data-season="carnaval"] .featured-badge-title {
+  background: linear-gradient(180deg, #2E1A55 0%, #1B0F36 100%);
+  border-color: #19D3C5;
+  color: #FFD23F;
+}
+html[data-season="carnaval"][data-theme="light"] .featured-badge-title {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F3EEFF 100%);
+  border-color: #0E9E93;
+  color: #21123D;
+  text-shadow: none;
+}
+html[data-season="carnaval"] .season-badge-emblem { display: inline-flex; }
+html[data-season="carnaval"] .season-badge-emblem svg { width: 14px; height: 14px; display: block; }
+
+html.season-fx-off .cv-bunting .flag { animation: none; }
+@media (prefers-reduced-motion: reduce) { .cv-bunting .flag { animation: none; } }

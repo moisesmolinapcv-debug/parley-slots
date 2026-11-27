@@ -1,0 +1,87 @@
+/* ══════════════════════════════════════════════════════════════
+   MODO SAN VALENTÍN — "Rosé"
+   Paleta: fondo #1A0710 · superficie #2E0F1D · rosa #FF3D7F
+           rosa claro #F7C6D4 · dorado #E8B85A · texto #FFF5F8 · secundario #D9A7B8
+   ══════════════════════════════════════════════════════════════ */
+html[data-season="san_valentin"] {
+  --bg-page: #1A0710;
+  --dark: #1A0710;
+  --card-bg: rgba(46, 15, 29, 0.9);
+  --season-accent: #FF3D7F;
+  --season-accent-2: #FF3D7F;
+  --season-surface: rgba(38, 12, 24, 0.96);
+  --season-text: #FFF5F8;
+  --season-muted: #D9A7B8;
+  --season-chip-bg: rgba(46, 15, 29, 0.85);
+  --season-chip-border: rgba(255, 61, 127, 0.5);
+}
+html[data-season="san_valentin"][data-theme="light"],
+html[data-season="san_valentin"] body[data-theme="light"] {
+  --bg-page: #FFF5F8;
+  --dark: #FFF5F8;
+  --card-bg: #FFFFFF;
+  --season-accent-2: #E0245E;
+  --season-surface: rgba(255, 255, 255, 0.96);
+  --season-text: #3A0F20;
+  --season-muted: #8A4A62;
+  --season-chip-bg: rgba(255, 61, 127, 0.07);
+  --season-chip-border: rgba(224, 36, 94, 0.4);
+}
+
+html[data-season="san_valentin"] .nebula-sapphire {
+  background: radial-gradient(ellipse at center, rgba(255, 61, 127, 0.18) 0%, rgba(140, 20, 70, 0.08) 40%, rgba(26, 7, 16, 0) 70%);
+}
+html[data-season="san_valentin"] .gold-sparkle {
+  background: #FFE3EC;
+  box-shadow: 0 0 6px #FF3D7F, 0 0 14px rgba(255, 61, 127, 0.7);
+}
+html[data-season="san_valentin"][data-theme="light"] .gold-sparkle {
+  background: #E0245E;
+  box-shadow: 0 0 6px rgba(224, 36, 94, 0.6);
+}
+html[data-season="san_valentin"]:not([data-theme="light"]) .top-nav { background: rgba(26, 7, 16, 0.82); }
+html[data-season="san_valentin"]:not([data-theme="light"]) .filter-bar-sticky-wrapper { background: rgba(26, 7, 16, 0.96); }
+
+/* Corazones colgantes */
+.sv-hangers {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -30px;
+  height: 30px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.sv-hangers svg { display: block; overflow: visible; }
+.sv-hangers .hanger { animation: svSwing 3s ease-in-out infinite; }
+@keyframes svSwing { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+
+/* Brillo rosado en las tarjetas */
+html[data-season="san_valentin"]:not([data-theme="light"]) .card,
+html[data-season="san_valentin"]:not([data-theme="light"]) .featured-card {
+  box-shadow: 0 0 0 1px rgba(255, 61, 127, 0.22), 0 8px 22px rgba(255, 61, 127, 0.1);
+}
+html[data-season="san_valentin"][data-theme="light"] .card,
+html[data-season="san_valentin"][data-theme="light"] .featured-card {
+  box-shadow: 0 0 0 1px rgba(224, 36, 94, 0.14), 0 6px 16px rgba(224, 36, 94, 0.08);
+}
+/* El corazón de favoritos, protagonista: rosa en vez de rojo */
+html[data-season="san_valentin"] .card-fav.is-fav { background: rgba(255, 61, 127, 0.95); }
+
+/* Título "SLOTS DESTACADOS" */
+html[data-season="san_valentin"] .featured-badge-title {
+  background: linear-gradient(180deg, #3A1426 0%, #250A17 100%);
+  border-color: #FF3D7F;
+  color: #F7C6D4;
+}
+html[data-season="san_valentin"][data-theme="light"] .featured-badge-title {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFEFF4 100%);
+  border-color: #E0245E;
+  color: #7A1A3E;
+  text-shadow: none;
+}
+html[data-season="san_valentin"] .season-badge-emblem { display: inline-flex; }
+html[data-season="san_valentin"] .season-badge-emblem svg { width: 12px; height: 12px; display: block; }
+
+html.season-fx-off .sv-hangers .hanger { animation: none; }
+@media (prefers-reduced-motion: reduce) { .sv-hangers .hanger { animation: none; } }

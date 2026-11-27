@@ -1,0 +1,99 @@
+/* ══════════════════════════════════════════════════════════════
+   MODO HALLOWEEN — "Casino embrujado elegante"
+   Paleta: fondo #0D0716 · superficie #1D1029 · naranja #FF7A1A
+           violeta #8B5CF6 · lima #B6F23C · texto #F7F2FF · secundario #B6A6CC
+   ══════════════════════════════════════════════════════════════ */
+html[data-season="halloween"] {
+  --bg-page: #0D0716;
+  --dark: #0D0716;
+  --card-bg: rgba(29, 16, 41, 0.9);
+  --season-accent: #FF7A1A;
+  --season-accent-2: #FF7A1A;
+  --season-surface: rgba(24, 13, 36, 0.96);
+  --season-text: #F7F2FF;
+  --season-muted: #B6A6CC;
+  --season-chip-bg: rgba(29, 16, 41, 0.85);
+  --season-chip-border: rgba(255, 122, 26, 0.5);
+}
+html[data-season="halloween"][data-theme="light"],
+html[data-season="halloween"] body[data-theme="light"] {
+  --bg-page: #FBF6EF;
+  --dark: #FBF6EF;
+  --card-bg: #FFFFFF;
+  --season-accent-2: #D65C0A;
+  --season-surface: rgba(255, 255, 255, 0.96);
+  --season-text: #24123A;
+  --season-muted: #5E4A78;
+  --season-chip-bg: rgba(255, 122, 26, 0.08);
+  --season-chip-border: rgba(214, 92, 10, 0.45);
+}
+
+html[data-season="halloween"] .nebula-sapphire {
+  background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.2) 0%, rgba(70, 40, 140, 0.08) 40%, rgba(13, 7, 22, 0) 70%);
+}
+html[data-season="halloween"] .nebula-ruby {
+  background: radial-gradient(ellipse at center, rgba(255, 122, 26, 0.14) 0%, rgba(150, 60, 10, 0.06) 40%, rgba(13, 7, 22, 0) 70%);
+}
+html[data-season="halloween"] .gold-sparkle {
+  background: #FFD9B0;
+  box-shadow: 0 0 6px #FF7A1A, 0 0 14px rgba(255, 122, 26, 0.7);
+}
+html[data-season="halloween"]:not([data-theme="light"]) .top-nav { background: rgba(13, 7, 22, 0.82); }
+html[data-season="halloween"]:not([data-theme="light"]) .filter-bar-sticky-wrapper { background: rgba(13, 7, 22, 0.96); }
+
+/* Telaraña y araña en la barra */
+.hw-navdeco { position: absolute; right: 0; top: 100%; width: 120px; height: 60px; pointer-events: none; }
+.hw-web { position: absolute; right: 0; top: 0; }
+.hw-web svg { display: block; }
+.hw-spider { position: absolute; right: 62px; top: 0; display: flex; flex-direction: column; align-items: center; animation: hwBob 4.2s ease-in-out infinite; }
+.hw-thread { display: block; width: 1px; height: 22px; background: rgba(182, 166, 204, 0.6); }
+.hw-spider svg { display: block; margin-top: -2px; }
+@keyframes hwBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(9px); } }
+@media (max-width: 768px) { .hw-spider { right: 54px; } }
+
+/* Luna llena en la esquina del banner */
+html[data-season="halloween"] .hero-carousel-wrap { position: relative; }
+.hw-moon { position: absolute; top: -24px; right: 26px; z-index: 6; width: 62px; height: 62px; pointer-events: none; }
+.hw-moon svg { display: block; }
+@media (max-width: 768px) { .hw-moon { right: 10px; top: -10px; transform: scale(0.78); transform-origin: top right; } }
+
+/* Niebla baja: dos capas que se deslizan despacio (solo transform) */
+.hw-fog { position: absolute; left: 0; right: 0; bottom: 0; height: 34vh; overflow: hidden; pointer-events: none; }
+.hw-fog i {
+  position: absolute;
+  bottom: -12vh;
+  width: 160%;
+  height: 34vh;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(182, 166, 204, 0.16) 0%, rgba(139, 92, 246, 0.07) 40%, rgba(13, 7, 22, 0) 70%);
+}
+.hw-fog .f1 { left: -30%; animation: hwFog 38s ease-in-out infinite alternate; }
+.hw-fog .f2 { left: -10%; bottom: -16vh; animation: hwFog 52s ease-in-out infinite alternate-reverse; opacity: 0.8; }
+@keyframes hwFog { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
+.hw-fog.is-entering { animation: hwFogIn 2s cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes hwFogIn { from { opacity: 0; transform: translateY(40%); } to { opacity: 1; transform: none; } }
+html[data-season="halloween"][data-theme="light"] .hw-fog i {
+  background: radial-gradient(ellipse at center, rgba(94, 74, 120, 0.12) 0%, rgba(94, 74, 120, 0.05) 40%, rgba(251, 246, 239, 0) 70%);
+}
+
+/* Título "SLOTS DESTACADOS" */
+html[data-season="halloween"] .featured-badge-title {
+  background: linear-gradient(180deg, #2A1640 0%, #170B26 100%);
+  border-color: #FF7A1A;
+  color: #FF9A4D;
+}
+html[data-season="halloween"][data-theme="light"] .featured-badge-title {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF1E4 100%);
+  border-color: #D65C0A;
+  color: #24123A;
+  text-shadow: none;
+}
+html[data-season="halloween"] .season-badge-emblem { display: inline-flex; }
+html[data-season="halloween"] .season-badge-emblem svg { width: 12px; height: 12px; display: block; }
+
+html.season-fx-off .hw-spider,
+html.season-fx-off .hw-fog i,
+html.season-fx-off .hw-fog.is-entering { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .hw-spider, .hw-fog i, .hw-fog.is-entering { animation: none; }
+}

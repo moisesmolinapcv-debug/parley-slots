@@ -1,0 +1,87 @@
+/* ══════════════════════════════════════════════════════════════
+   MODO VACACIONAL — "Atardecer tropical"
+   Paleta: fondo #081F2B · superficie #0F3443 · coral #FF7A59
+           turquesa #2FD5D0 · arena #F6D7A7 · texto #FFFFFF · secundario #A8D3DB
+   ══════════════════════════════════════════════════════════════ */
+html[data-season="vacacional"] {
+  --bg-page: #081F2B;
+  --dark: #081F2B;
+  --card-bg: rgba(15, 52, 67, 0.9);
+  --season-accent: #FF7A59;
+  --season-accent-2: #2FD5D0;
+  --season-surface: rgba(12, 42, 55, 0.96);
+  --season-text: #FFFFFF;
+  --season-muted: #A8D3DB;
+  --season-chip-bg: rgba(15, 52, 67, 0.85);
+  --season-chip-border: rgba(47, 213, 208, 0.5);
+}
+html[data-season="vacacional"][data-theme="light"],
+html[data-season="vacacional"] body[data-theme="light"] {
+  --bg-page: #F3FBFA;
+  --dark: #F3FBFA;
+  --card-bg: #FFFFFF;
+  --season-accent-2: #0F9E99;
+  --season-surface: rgba(255, 255, 255, 0.96);
+  --season-text: #0B2B36;
+  --season-muted: #3E6B76;
+  --season-chip-bg: rgba(47, 213, 208, 0.08);
+  --season-chip-border: rgba(15, 158, 153, 0.45);
+}
+
+html[data-season="vacacional"] .nebula-sapphire {
+  background: radial-gradient(ellipse at center, rgba(47, 213, 208, 0.16) 0%, rgba(15, 110, 120, 0.07) 40%, rgba(8, 31, 43, 0) 70%);
+}
+html[data-season="vacacional"] .nebula-ruby {
+  background: radial-gradient(ellipse at center, rgba(255, 122, 89, 0.2) 0%, rgba(170, 70, 50, 0.08) 40%, rgba(8, 31, 43, 0) 70%);
+}
+html[data-season="vacacional"] .gold-sparkle {
+  background: #FFF0D9;
+  box-shadow: 0 0 6px #F6D7A7, 0 0 14px rgba(255, 122, 89, 0.6);
+}
+html[data-season="vacacional"]:not([data-theme="light"]) .top-nav { background: rgba(8, 31, 43, 0.82); }
+html[data-season="vacacional"]:not([data-theme="light"]) .filter-bar-sticky-wrapper { background: rgba(8, 31, 43, 0.96); }
+
+/* Palmeras, sol y ola alrededor del banner */
+html[data-season="vacacional"] .hero-carousel-wrap { position: relative; margin-bottom: 10px; }
+.vc-palm { position: absolute; display: block; width: 64px; height: 64px; pointer-events: none; z-index: 6; }
+.vc-palm svg { display: block; }
+.vc-palm-l { top: -26px; left: 6px; transform-origin: 8px 58px; animation: vcSway 5s ease-in-out infinite; }
+.vc-corner { position: absolute; top: -24px; right: 16px; width: 76px; height: 64px; pointer-events: none; z-index: 6; }
+.vc-palm-r { top: -2px; right: -6px; transform-origin: 56px 58px; animation: vcSway 5.6s ease-in-out infinite reverse; }
+.vc-sun { position: absolute; top: 4px; left: 6px; filter: drop-shadow(0 0 1.5px rgba(8, 31, 43, 0.9)) drop-shadow(0 0 10px rgba(255, 122, 89, 0.65)); }
+.vc-sun svg { display: block; }
+@keyframes vcSway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+
+.vc-wave { position: absolute; bottom: -11px; height: 18px; overflow: hidden; z-index: 6; pointer-events: none; border-radius: 0 0 8px 8px; }
+.vc-wave-track { width: 200%; animation: vcWave 9s linear infinite; }
+.vc-wave-track svg { display: block; }
+@keyframes vcWave { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.vc-wave.is-entering { animation: vcWaveIn 2s cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes vcWaveIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 768px) {
+  .vc-palm-l { display: none; }                 /* ahí quedan los botones flotantes */
+  .vc-corner { right: 6px; top: -6px; transform: scale(0.8); transform-origin: top right; }
+}
+
+/* Título "SLOTS DESTACADOS" */
+html[data-season="vacacional"] .featured-badge-title {
+  background: linear-gradient(180deg, #11414F 0%, #0A2733 100%);
+  border-color: #2FD5D0;
+  color: #F6D7A7;
+}
+html[data-season="vacacional"][data-theme="light"] .featured-badge-title {
+  background: linear-gradient(180deg, #FFFFFF 0%, #ECFAF8 100%);
+  border-color: #0F9E99;
+  color: #0B2B36;
+  text-shadow: none;
+}
+html[data-season="vacacional"] .season-badge-emblem { display: inline-flex; }
+html[data-season="vacacional"] .season-badge-emblem svg { width: 14px; height: 14px; display: block; }
+
+html.season-fx-off .vc-palm,
+html.season-fx-off .vc-wave-track,
+html.season-fx-off .vc-wave.is-entering { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .vc-palm, .vc-wave-track, .vc-wave.is-entering { animation: none; }
+}
