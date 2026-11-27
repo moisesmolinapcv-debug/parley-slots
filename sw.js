@@ -1,4 +1,4 @@
-const CACHE_NAME = 'parley-slots-v10-prod';
+const CACHE_NAME = 'parley-slots-v11-prod';
 // Solo lo imprescindible para abrir la página sin conexión.
 // (Banners y catálogo llegan desde Supabase; no se precargan aquí.)
 const ASSETS_TO_CACHE = [
