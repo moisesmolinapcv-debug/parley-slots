@@ -1,0 +1,137 @@
+/* ══════════════════════════════════════════════════════════════
+   MODO AÑO NUEVO — "Medianoche de gala"
+   Paleta: fondo #060A1C · superficie #121A36 · champán #E8C77A
+           plata #C9CED8 · detalle #FF4FA3 · texto #FFFFFF · secundario #9AA3BF
+   ══════════════════════════════════════════════════════════════ */
+html[data-season="anio_nuevo"] {
+  --bg-page: #060A1C;
+  --dark: #060A1C;
+  --card-bg: rgba(18, 26, 54, 0.9);
+  --season-accent: #FF4FA3;
+  --season-accent-2: #E8C77A;
+  --season-surface: rgba(14, 20, 44, 0.96);
+  --season-text: #FFFFFF;
+  --season-muted: #9AA3BF;
+  --season-chip-bg: rgba(18, 26, 54, 0.85);
+  --season-chip-border: rgba(232, 199, 122, 0.5);
+}
+/* (la página también marca <body data-theme>, por eso se cubren ambos) */
+html[data-season="anio_nuevo"][data-theme="light"],
+html[data-season="anio_nuevo"] body[data-theme="light"] {
+  --bg-page: #F7F5EF;
+  --dark: #F7F5EF;
+  --card-bg: #FFFFFF;
+  --season-accent-2: #A9862F;
+  --season-surface: rgba(255, 255, 255, 0.96);
+  --season-text: #141A33;
+  --season-muted: #4F5878;
+  --season-chip-bg: rgba(169, 134, 47, 0.08);
+  --season-chip-border: rgba(169, 134, 47, 0.45);
+}
+
+/* Fondo ambiental: luces índigo y rosa; chispas color champán */
+html[data-season="anio_nuevo"] .nebula-sapphire {
+  background: radial-gradient(ellipse at center, rgba(86, 74, 210, 0.22) 0%, rgba(40, 36, 120, 0.10) 38%, rgba(6, 10, 28, 0) 70%);
+}
+html[data-season="anio_nuevo"] .nebula-ruby {
+  background: radial-gradient(ellipse at center, rgba(255, 79, 163, 0.14) 0%, rgba(150, 30, 100, 0.06) 40%, rgba(6, 10, 28, 0) 70%);
+}
+html[data-season="anio_nuevo"] .gold-sparkle {
+  background: #FFF3D6;
+  box-shadow: 0 0 6px #E8C77A, 0 0 14px rgba(232, 199, 122, 0.8);
+}
+html[data-season="anio_nuevo"][data-theme="light"] .gold-sparkle {
+  background: #A9862F;
+  box-shadow: 0 0 6px rgba(169, 134, 47, 0.7), 0 0 12px rgba(255, 79, 163, 0.3);
+}
+
+/* Barras con el azul medianoche (modo oscuro) */
+html[data-season="anio_nuevo"]:not([data-theme="light"]) .top-nav { background: rgba(6, 10, 28, 0.82); }
+html[data-season="anio_nuevo"]:not([data-theme="light"]) .filter-bar-sticky-wrapper { background: rgba(6, 10, 28, 0.96); }
+
+/* ── Luces bokeh bajo la barra superior ── */
+.ny-bokeh {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -9px;
+  height: 16px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ny-bokeh svg { display: block; }
+.ny-bokeh .bokeh { animation: nyBokeh 3.4s ease-in-out infinite; }
+@keyframes nyBokeh { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+html[data-season="anio_nuevo"][data-theme="light"] .ny-bokeh { opacity: 0.75; }
+
+/* ── Cuenta regresiva: píldora apoyada en el borde superior del banner ── */
+html[data-season="anio_nuevo"] .hero-carousel-wrap { position: relative; margin-top: 34px; }
+.ny-countdown {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: calc(100% - 48px);
+  padding: 7px 16px 7px 12px;
+  border-radius: 999px;
+  background: rgba(14, 20, 44, 0.94);
+  border: 1px solid rgba(232, 199, 122, 0.6);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  color: #FFFFFF;
+  font: 600 0.82rem/1 'Outfit', system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ny-cd-emblem { display: inline-flex; }
+.ny-cd-nums { display: inline-flex; align-items: baseline; gap: 2px; font-variant-numeric: tabular-nums; }
+.ny-cd-nums b { color: #E8C77A; font-weight: 700; font-size: 0.95rem; }
+.ny-cd-nums i { font-style: normal; color: #9AA3BF; margin: 0 1px; }
+.ny-cd-hny { color: #E8C77A; font-weight: 700; letter-spacing: 0.3px; }
+.ny-countdown.is-new-year { animation: nyHny 520ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes nyHny { from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+html[data-season="anio_nuevo"][data-theme="light"] .ny-countdown {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(169, 134, 47, 0.6);
+  box-shadow: 0 6px 16px rgba(20, 26, 51, 0.12);
+  color: #141A33;
+}
+html[data-season="anio_nuevo"][data-theme="light"] .ny-cd-nums b,
+html[data-season="anio_nuevo"][data-theme="light"] .ny-cd-hny { color: #8A6A1C; }
+html[data-season="anio_nuevo"][data-theme="light"] .ny-cd-nums i { color: #4F5878; }
+@media (max-width: 768px) {
+  html[data-season="anio_nuevo"] .hero-carousel-wrap { margin-top: 28px; }
+  .ny-countdown { font-size: 0.76rem; padding: 6px 13px 6px 10px; gap: 6px; }
+  .ny-cd-nums b { font-size: 0.88rem; }
+}
+/* Celulares: versión compacta para no chocar con los botones flotantes de la izquierda */
+@media (max-width: 430px) {
+  .ny-cd-lead { display: none; }
+  .ny-countdown { max-width: calc(100% - 120px); padding: 6px 11px 6px 9px; gap: 5px; font-size: 0.72rem; }
+}
+
+/* ── Título "SLOTS DESTACADOS" ── */
+html[data-season="anio_nuevo"] .featured-badge-title {
+  background: linear-gradient(180deg, #1A2448 0%, #0E1530 100%);
+  border-color: #E8C77A;
+  color: #E8C77A;
+}
+html[data-season="anio_nuevo"][data-theme="light"] .featured-badge-title {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F6F1E4 100%);
+  border-color: #A9862F;
+  color: #3A2F10;
+  text-shadow: none;
+}
+html[data-season="anio_nuevo"] .season-badge-emblem { display: inline-flex; }
+html[data-season="anio_nuevo"] .season-badge-emblem svg { width: 13px; height: 13px; display: block; }
+html[data-season="anio_nuevo"][data-theme="light"] .season-badge-emblem path { fill: #A9862F; }
+
+/* Efectos apagados o movimiento reducido: luces quietas, sin animaciones */
+html.season-fx-off .ny-bokeh .bokeh,
+html.season-fx-off .ny-countdown.is-new-year { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ny-bokeh .bokeh, .ny-countdown.is-new-year { animation: none; }
+}

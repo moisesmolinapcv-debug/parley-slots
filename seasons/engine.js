@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════
-   PARLEY SLOTS — MOTOR DE MODOS VISUALES DE TEMPORADA (v1)
+   PARLEY SLOTS — MOTOR DE MODOS VISUALES DE TEMPORADA (v2)
    ──────────────────────────────────────────────────────────────
    · Solo se descarga cuando hay un modo activo (lo carga index.html).
    · Partículas en un único <canvas> detrás del contenido, sin bloquear toques.
@@ -14,6 +14,7 @@
   var mqReduce = W.matchMedia ? W.matchMedia('(prefers-reduced-motion: reduce)') : null;
   var FX_KEY = 'parley_season_fx';
   var INTENSITY = { sutil: 0.55, normal: 1, festivo: 1.5 };
+  var MAX_PARTS = 360;
 
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -48,6 +49,11 @@
     cleanup: function (fn) { cleanups.push(fn); },
     el: function (html) { var t = D.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; },
     debounce: function (fn, ms) { var id; return function () { clearTimeout(id); id = setTimeout(fn, ms); }; },
+    /* Partícula temporal creada por el tema (p. ej. chispas de un fuego artificial).
+       Tope de seguridad para que nunca se acumulen demasiadas. */
+    emit: function (p) { if (running && p && parts.length < MAX_PARTS) { p.temp = true; parts.push(p); } },
+    size: function () { return { w: vw, h: vh }; },
+    running: function () { return running; },
     burst: function (n) {
       if (!theme || !theme.particles || !canvas || !running) return;
       for (var i = 0; i < n; i++) parts.push(theme.particles.spawn(vw, vh, false, { burst: true, index: i }));
@@ -101,6 +107,7 @@
     var t = (now - t0) / 1000;
     if (!D.body.classList.contains('is-fast-scrolling')) {
       var P = theme.particles, dark = isDark();
+      if (P.tick) P.tick(dt, t, vw, vh, api);           // el tema programa sus eventos (fuegos, etc.)
       ctx.clearRect(0, 0, vw, vh);
       for (var i = parts.length - 1; i >= 0; i--) {
         var p = parts[i];
@@ -111,6 +118,7 @@
         P.draw(ctx, p, t, dark);
       }
       ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
     }
     raf = requestAnimationFrame(frame);
   }
