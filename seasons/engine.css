@@ -1,0 +1,149 @@
+/* ══════════════════════════════════════════════════════════════
+   PARLEY SLOTS — ESTILOS COMUNES DE LOS MODOS DE TEMPORADA (v1)
+   Cada tema define sus colores con estas variables:
+   --season-accent, --season-accent-2, --season-surface, --season-text,
+   --season-muted, --season-chip-bg, --season-chip-border
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --season-accent: #fdd835;
+  --season-accent-2: #fdd835;
+  --season-surface: rgba(13, 20, 38, 0.96);
+  --season-text: #ffffff;
+  --season-muted: rgba(248, 250, 252, 0.7);
+  --season-chip-bg: rgba(253, 216, 53, 0.12);
+  --season-chip-border: rgba(253, 216, 53, 0.45);
+  --season-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Lienzo de partículas: detrás del contenido, nunca recibe toques */
+.season-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ── Botón de efectos (columna de widgets flotantes, bajo el de tema) ── */
+.season-fx-toggle {
+  position: fixed;
+  left: 16px;
+  top: calc(var(--topnav-total, 56px) + 96px);
+  z-index: 99999;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--season-chip-border);
+  background: var(--season-surface);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 160ms var(--season-ease-out), opacity 160ms ease;
+}
+.season-fx-toggle::before { content: ''; position: absolute; inset: -5px; }
+.season-fx-toggle svg { width: 17px; height: 17px; overflow: visible; }
+.season-fx-toggle .s1, .season-fx-toggle .s2 { fill: var(--season-accent-2); transition: opacity 160ms ease; }
+.season-fx-toggle .slash { stroke: var(--season-text); stroke-width: 2; stroke-linecap: round; opacity: 0; transition: opacity 160ms ease; }
+.season-fx-toggle[aria-pressed="false"] .s1, .season-fx-toggle[aria-pressed="false"] .s2 { opacity: 0.45; }
+.season-fx-toggle[aria-pressed="false"] .slash { opacity: 0.9; }
+.season-fx-toggle:active { transform: scale(0.94); }
+.season-fx-toggle:focus-visible { outline: 2px solid var(--season-accent-2); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  .season-fx-toggle:hover { border-color: var(--season-accent-2); }
+}
+@media (max-width: 600px) {
+  /* Junto al botón de tema (no sobre la flecha del banner) */
+  .season-fx-toggle { left: 54px; top: calc(var(--topnav-total, 56px) + 48px); width: 36px; height: 36px; }
+}
+
+/* ── Saludo de temporada ── */
+.season-greeting {
+  max-width: var(--max-w, 1400px);
+  margin: 14px auto 2px;
+  padding: 0 24px;
+  display: flex;
+  justify-content: center;
+  animation: seasonIn 320ms var(--season-ease-out) both;
+}
+.season-greeting.is-leaving { opacity: 0; transform: translateY(-4px); transition: opacity 180ms ease, transform 180ms ease; }
+.season-greeting-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  padding: 9px 8px 9px 14px;
+  border-radius: 14px;
+  background: var(--season-chip-bg);
+  border: 1px solid var(--season-chip-border);
+  color: var(--season-text);
+  font: 600 0.86rem/1.3 'Outfit', system-ui, sans-serif;
+}
+.season-greeting-emblem { display: inline-flex; flex: none; }
+.season-greeting-emblem svg { width: 18px; height: 18px; }
+.season-greeting-text { text-wrap: balance; }
+.season-greeting-close {
+  position: relative;
+  flex: none;
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 160ms ease;
+}
+.season-greeting-close::before { content: ''; position: absolute; inset: -8px; }
+.season-greeting-close svg { width: 14px; height: 14px; stroke: var(--season-muted); stroke-width: 2.2; stroke-linecap: round; }
+@media (hover: hover) and (pointer: fine) { .season-greeting-close:hover { background: rgba(255, 255, 255, 0.1); } }
+@media (max-width: 768px) { .season-greeting { padding: 0 12px; margin-top: 12px; } .season-greeting-chip { font-size: 0.8rem; } }
+
+/* ── Aviso de vista previa ── */
+.season-preview-pill {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 999px;
+  background: rgba(10, 12, 20, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  color: #ffffff;
+  font: 500 0.82rem/1 'Outfit', system-ui, sans-serif;
+  white-space: nowrap;
+}
+.season-preview-pill a {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0a0c14;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* ── Reacciones (pequeños elementos que salen de un botón) ── */
+.season-pop {
+  position: fixed;
+  z-index: 1001;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  pointer-events: none;
+}
+.season-pop svg { width: 100%; height: 100%; display: block; }
+
+@keyframes seasonIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Movimiento reducido o efectos apagados: nada se mueve, se conservan colores y adornos */
+@media (prefers-reduced-motion: reduce) {
+  .season-greeting { animation: none; }
+  .season-fx-toggle:active { transform: none; }
+}

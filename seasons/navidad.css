@@ -1,0 +1,95 @@
+/* ══════════════════════════════════════════════════════════════
+   MODO NAVIDAD — "Noche dorada nevada"
+   Paleta: fondo #07140F · superficie #0F2A20 · rojo Parley #E51C23
+           dorado #F2C14E · nieve #FFFFFF · secundario #A9C7B8
+   ══════════════════════════════════════════════════════════════ */
+html[data-season="navidad"] {
+  --bg-page: #07140F;
+  --dark: #07140F;
+  --card-bg: rgba(12, 34, 25, 0.9);
+  --season-accent: #E51C23;
+  --season-accent-2: #F2C14E;
+  --season-surface: rgba(10, 30, 22, 0.96);
+  --season-text: #FFFFFF;
+  --season-muted: #A9C7B8;
+  --season-chip-bg: rgba(229, 28, 35, 0.16);
+  --season-chip-border: rgba(242, 193, 78, 0.5);
+}
+/* (la página también marca <body data-theme>, por eso se cubren ambos) */
+html[data-season="navidad"][data-theme="light"],
+html[data-season="navidad"] body[data-theme="light"] {
+  --bg-page: #F4F8F2;
+  --dark: #F4F8F2;
+  --card-bg: #FFFFFF;
+  --season-surface: rgba(255, 255, 255, 0.96);
+  --season-text: #0B2A1E;
+  --season-muted: #3F6B58;
+  --season-chip-bg: rgba(229, 28, 35, 0.08);
+  --season-chip-border: rgba(31, 122, 82, 0.4);
+}
+
+/* Fondo ambiental: una de las luces pasa a verde pino; las chispas, a oro y nieve */
+html[data-season="navidad"] .nebula-sapphire {
+  background: radial-gradient(ellipse at center, rgba(46, 150, 100, 0.22) 0%, rgba(20, 90, 60, 0.10) 38%, rgba(7, 20, 15, 0) 70%);
+}
+html[data-season="navidad"] .gold-sparkle {
+  background: #FFF4D2;
+  box-shadow: 0 0 6px #F2C14E, 0 0 14px rgba(242, 193, 78, 0.8);
+}
+html[data-season="navidad"][data-theme="light"] .gold-sparkle {
+  background: #1F7A52;
+  box-shadow: 0 0 6px rgba(31, 122, 82, 0.8), 0 0 12px rgba(229, 28, 35, 0.35);
+}
+
+/* Barras con el verde de la temporada (modo oscuro) */
+html[data-season="navidad"]:not([data-theme="light"]) .top-nav { background: rgba(7, 20, 15, 0.8); }
+html[data-season="navidad"]:not([data-theme="light"]) .filter-bar-sticky-wrapper { background: rgba(7, 20, 15, 0.96); }
+
+/* ── Guirnalda de luces (cuelga del borde inferior de la barra superior) ── */
+.season-garland {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -17px;
+  height: 26px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.season-garland svg { display: block; }
+.season-garland .bulb { animation: xmasTwinkle 2.6s ease-in-out infinite; }
+@keyframes xmasTwinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.38; } }
+
+/* ── Nieve acumulada sobre el banner ── */
+html[data-season="navidad"] .hero-carousel-wrap { position: relative; }
+.season-snowcap {
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  height: 18px;
+  z-index: 5;
+  pointer-events: none;
+  filter: drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, 0.3));
+}
+.season-snowcap svg { display: block; }
+
+/* ── Título "SLOTS DESTACADOS" ── */
+html[data-season="navidad"] .featured-badge-title {
+  background: linear-gradient(180deg, #14432F 0%, #0A2318 100%);
+  border-color: #F2C14E;
+  color: #F2C14E;
+}
+html[data-season="navidad"][data-theme="light"] .featured-badge-title {
+  background: linear-gradient(180deg, #FFFFFF 0%, #EEF6EF 100%);
+  border-color: #1F7A52;
+  color: #14432F;
+  text-shadow: none;
+}
+.season-badge-emblem { display: inline-flex; }
+.season-badge-emblem svg { width: 12px; height: 12px; display: block; }
+html[data-season="navidad"][data-theme="light"] .season-badge-emblem svg g { stroke: #1F7A52; }
+
+/* Efectos apagados o movimiento reducido: las luces quedan encendidas, sin titilar */
+html.season-fx-off .season-garland .bulb { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .season-garland .bulb { animation: none; }
+}

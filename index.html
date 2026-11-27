@@ -27,6 +27,84 @@
     })();
   </script>
 
+  <!-- 🎭 Modos visuales de temporada: cargador liviano.
+       Los archivos del modo (seasons/) solo se descargan si hay uno activo.
+       Configuración: site_config.visual_theme (se edita en Admin → Modos visuales).
+       Vista previa solo para quien la abre: ?modo=navidad  ·  salir: ?modo=off -->
+  <script>
+    (function () {
+      var V = '1';                                   // subir al cambiar archivos de seasons/
+      var AVAILABLE = { navidad: 'Navidad' };        // modos ya construidos
+      var CFG_KEY = 'parley_season_cfg_v1', PREV_KEY = 'parley_season_preview';
+      var current = null, loaded = {};
+      function todayVET() {
+        try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
+        catch (e) { return new Date().toISOString().slice(0, 10); }
+      }
+      function parse(raw) { if (!raw) return null; if (typeof raw === 'object') return raw; try { return JSON.parse(raw); } catch (e) { return null; } }
+      function resolve(cfg) {
+        if (!cfg) return null;
+        var mode = cfg.mode || 'auto', id = null;
+        if (mode === 'off') return null;
+        if (mode !== 'auto') id = mode;
+        else {
+          var d = todayVET(), s = cfg.schedule || {};
+          for (var k in s) { var r = s[k]; if (r && r.start && r.end && d >= r.start && d <= r.end) { id = k; break; } }
+        }
+        if (!id || !AVAILABLE[id]) return null;
+        return {
+          id: id,
+          intensity: /^(sutil|normal|festivo)$/.test(cfg.intensity) ? cfg.intensity : 'normal',
+          greeting: cfg.showGreeting === false ? '' : (typeof cfg.greeting === 'string' && cfg.greeting.trim() ? cfg.greeting.trim().slice(0, 80) : null)
+        };
+      }
+      function load(url, css) {
+        if (!loaded[url]) loaded[url] = new Promise(function (ok, fail) {
+          var el = document.createElement(css ? 'link' : 'script');
+          if (css) { el.rel = 'stylesheet'; el.href = url; } else { el.src = url; el.async = true; }
+          el.onload = ok; el.onerror = function () { delete loaded[url]; fail(new Error(url)); };
+          document.head.appendChild(el);
+        });
+        return loaded[url];
+      }
+      function apply(st) {
+        var key = st ? JSON.stringify(st) : '';
+        if (key === current) return;
+        current = key;
+        if (!st) { if (window.ParleySeasonEngine) window.ParleySeasonEngine.unmount(); return; }
+        var root = document.documentElement, b = 'seasons/';
+        root.setAttribute('data-season', st.id);
+        Promise.all([load(b + 'engine.css?v=' + V, 1), load(b + st.id + '.css?v=' + V, 1), load(b + 'engine.js?v=' + V)])
+          .then(function () { return load(b + st.id + '.js?v=' + V); })
+          .then(function () {
+            if (current !== key) return;
+            var th = window.ParleySeasonThemes && window.ParleySeasonThemes[st.id];
+            if (th && window.ParleySeasonEngine) window.ParleySeasonEngine.mount(th, st);
+          })
+          .catch(function (e) { if (current === key) root.removeAttribute('data-season'); if (window.console) console.warn('[temporada]', e); });
+      }
+      var preview = null;
+      try {
+        var q = new URLSearchParams(location.search).get('modo');
+        if (q === 'off' || q === 'salir') sessionStorage.removeItem(PREV_KEY);
+        else if (q && AVAILABLE[q]) sessionStorage.setItem(PREV_KEY, q);
+        preview = sessionStorage.getItem(PREV_KEY);
+        if (preview && !AVAILABLE[preview]) preview = null;
+      } catch (e) {}
+      window.ParleySeasons = {
+        applyConfig: function (raw) {
+          var cfg = parse(raw);
+          try { if (cfg) localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); else localStorage.removeItem(CFG_KEY); } catch (e) {}
+          if (!preview) apply(resolve(cfg));
+        },
+        resolve: resolve
+      };
+      // Inicio inmediato con la última configuración conocida (sin esperar a Supabase)
+      if (preview) apply({ id: preview, intensity: 'normal', greeting: null, preview: true });
+      else { try { apply(resolve(parse(localStorage.getItem(CFG_KEY)))); } catch (e) {} }
+    })();
+  </script>
+
   <!-- ⚡ Revelación Atómica Suave (Anti-Parpadeo FOUC & Cero Saltos) -->
   <script>
     (function() {
@@ -3267,6 +3345,8 @@ body.show-fab-top .fab-top:active { transform: scale(0.94); }
   }
 
   function applyLiveSiteConfig(configMap) {
+    // 🎭 Modo visual de temporada (encender / apagar / programado desde el admin)
+    try { if (window.ParleySeasons) window.ParleySeasons.applyConfig(configMap.visual_theme); } catch (e) {}
     if (configMap.site_title) {
       document.title = configMap.site_title;
     }

@@ -525,6 +525,59 @@
       background: #58a6ff;
       animation: pulse 1.5s infinite;
     }
+    /* ── MODOS VISUALES DE TEMPORADA ── */
+    .sz-status { display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:12px; background:var(--bg-card); border:1px solid var(--border-color); margin-bottom:20px; }
+    .sz-status-dot { width:10px; height:10px; border-radius:50%; background:#484f58; flex:none; }
+    .sz-status.is-on .sz-status-dot { background:var(--success); box-shadow:0 0 0 4px var(--success-glow); }
+    .sz-status b { color:var(--text-main); }
+    .sz-status small { display:block; color:var(--text-muted); font-size:12px; margin-top:2px; }
+    .sz-h { font-family:'Outfit',sans-serif; font-size:15px; font-weight:700; color:var(--text-main); margin:0 0 4px; }
+    .sz-sub { color:var(--text-muted); font-size:12.5px; margin:0 0 14px; line-height:1.5; }
+    .sz-modes { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; }
+    .sz-choice { position:relative; display:flex; gap:12px; align-items:flex-start; padding:14px; border-radius:10px; border:1px solid var(--border-color); background:#0d1117; cursor:pointer; transition:border-color .16s ease, background-color .16s ease; }
+    .sz-choice input { position:absolute; opacity:0; pointer-events:none; }
+    .sz-choice .sz-radio { width:18px; height:18px; border-radius:50%; border:2px solid #484f58; flex:none; margin-top:1px; transition:border-color .16s ease, box-shadow .16s ease; }
+    .sz-choice:has(input:checked) { border-color:var(--accent-gold); background:rgba(245,196,49,0.06); }
+    .sz-choice:has(input:checked) .sz-radio { border-color:var(--accent-gold); box-shadow:inset 0 0 0 4px #0d1117, inset 0 0 0 9px var(--accent-gold); }
+    .sz-choice:has(input:focus-visible) { outline:2px solid var(--accent-gold); outline-offset:2px; }
+    .sz-choice b { display:block; color:var(--text-main); font-size:14px; }
+    .sz-choice span.sz-desc { display:block; color:var(--text-muted); font-size:12px; margin-top:3px; line-height:1.45; }
+    .sz-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px; }
+    .sz-card { border:1px solid var(--border-color); border-radius:12px; background:#0d1117; overflow:hidden; transition:border-color .16s ease; }
+    .sz-card.is-live { border-color:var(--success); }
+    .sz-card.is-soon { opacity:.72; }
+    .sz-card-top { display:flex; align-items:center; gap:12px; padding:14px 14px 12px; }
+    .sz-card-emoji { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:21px; flex:none; }
+    .sz-card-name { font-weight:700; color:var(--text-main); font-size:14.5px; }
+    .sz-card-tag { display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; padding:2px 7px; border-radius:6px; margin-top:4px; }
+    .sz-tag-ready { background:rgba(35,134,54,.2); color:#3fb950; }
+    .sz-tag-soon { background:rgba(139,148,158,.16); color:var(--text-muted); }
+    .sz-tag-live { background:var(--success); color:#fff; }
+    .sz-swatches { display:flex; height:6px; }
+    .sz-swatches i { flex:1; }
+    .sz-card-body { padding:12px 14px 14px; display:grid; gap:10px; }
+    .sz-dates { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .sz-dates label { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.4px; }
+    .sz-dates input { width:100%; margin-top:4px; padding:8px 10px; background:#090c10; border:1px solid var(--border-color); border-radius:7px; color:var(--text-main); font:inherit; font-size:13px; color-scheme:dark; }
+    .sz-dates input:focus { outline:none; border-color:var(--accent-gold); }
+    .sz-dates input.is-bad { border-color:var(--danger); }
+    .sz-card-actions { display:flex; gap:8px; }
+    .sz-btn { flex:1; padding:9px 10px; border-radius:7px; border:1px solid var(--border-color); background:#161b22; color:var(--text-main); font:600 12.5px 'Inter',sans-serif; cursor:pointer; transition:background-color .16s ease, transform .12s ease; }
+    .sz-btn:active { transform:scale(0.97); }
+    .sz-btn:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+    @media (hover:hover) and (pointer:fine) { .sz-btn:not(:disabled):hover { background:#21262d; } }
+    .sz-seg { display:inline-flex; padding:3px; border-radius:9px; background:#0d1117; border:1px solid var(--border-color); gap:2px; }
+    .sz-seg label { position:relative; }
+    .sz-seg input { position:absolute; opacity:0; pointer-events:none; }
+    .sz-seg span { display:block; padding:8px 16px; border-radius:7px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:background-color .16s ease, color .16s ease; }
+    .sz-seg input:checked + span { background:var(--accent-gold); color:#000; }
+    .sz-seg input:focus-visible + span { outline:2px solid var(--accent-gold); outline-offset:2px; }
+    .sz-row { display:flex; flex-wrap:wrap; gap:28px; }
+    .sz-row > div { flex:1 1 280px; }
+    .sz-err { display:none; margin-top:14px; padding:10px 14px; border-radius:8px; background:rgba(218,54,51,.12); border:1px solid rgba(218,54,51,.4); color:#f85149; font-size:13px; }
+    .sz-savebar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+    .sz-savebar .btn-gold { width:auto; margin-top:0; }
+    .sz-savebar small { color:var(--text-muted); font-size:12px; }
   </style>
 </head>
 <body>
@@ -582,6 +635,9 @@
         </li>
         <li class="menu-item" onclick="switchTab('specials', this)">
           <span>🏷️</span> <span>Especiales</span>
+        </li>
+        <li class="menu-item" onclick="switchTab('seasons', this)">
+          <span>🎭</span> <span>Modos visuales</span>
         </li>
         <li class="menu-item" onclick="switchTab('config', this)">
           <span>⚙️</span> <span>Configuracion</span>
@@ -881,6 +937,65 @@
         </div>
       </section>
 
+      <!-- TAB: MODOS VISUALES DE TEMPORADA -->
+      <section id="tab-seasons" class="tab-content">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">🎭 Modos visuales de temporada</h1>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">
+              Cambia la decoración del catálogo según la época del año. Los juegos, banners y botones siguen funcionando igual; solo cambia el ambiente.
+            </p>
+          </div>
+        </div>
+
+        <div class="sz-status" id="szStatus"><span class="sz-status-dot"></span><div><b>Cargando…</b></div></div>
+
+        <div class="card-panel">
+          <h2 class="sz-h">1 · ¿Cómo debe funcionar?</h2>
+          <p class="sz-sub">En automático, cada modo se enciende y se apaga solo en sus fechas (hora de Venezuela).</p>
+          <div class="sz-modes" id="szModeChoices">
+            <label class="sz-choice"><input type="radio" name="szMode" value="auto"><span class="sz-radio"></span><span><b>Automático por fechas</b><span class="sz-desc">Recomendado. Usa el calendario de abajo.</span></span></label>
+            <label class="sz-choice"><input type="radio" name="szMode" value="off"><span class="sz-radio"></span><span><b>Apagado</b><span class="sz-desc">El catálogo se ve como siempre, sin decoración.</span></span></label>
+            <label class="sz-choice"><input type="radio" name="szMode" value="force"><span class="sz-radio"></span><span><b>Forzar un modo ahora</b><span class="sz-desc">Ignora las fechas. <select id="szForce" class="form-control" style="margin-top:8px; padding:8px 10px; font-size:13px;"></select></span></span></label>
+          </div>
+        </div>
+
+        <div class="card-panel">
+          <h2 class="sz-h">2 · Calendario de modos</h2>
+          <p class="sz-sub">Las fechas incluyen el primer y el último día. Usa <b>Vista previa</b> para ver un modo en una pestaña nueva; solo lo ves tú, los usuarios no.</p>
+          <div class="sz-grid" id="szGrid"></div>
+        </div>
+
+        <div class="card-panel">
+          <div class="sz-row">
+            <div>
+              <h2 class="sz-h">3 · Intensidad</h2>
+              <p class="sz-sub">Cuánta decoración en movimiento se muestra (nieve, chispas…).</p>
+              <div class="sz-seg" role="radiogroup" aria-label="Intensidad">
+                <label><input type="radio" name="szIntensity" value="sutil"><span>Sutil</span></label>
+                <label><input type="radio" name="szIntensity" value="normal"><span>Normal</span></label>
+                <label><input type="radio" name="szIntensity" value="festivo"><span>Festivo</span></label>
+              </div>
+            </div>
+            <div>
+              <h2 class="sz-h">4 · Mensaje de temporada</h2>
+              <p class="sz-sub">Aparece bajo los slots destacados. El usuario puede cerrarlo.</p>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <label class="switch"><input type="checkbox" id="szShowGreeting"><span class="slider"></span></label>
+                <span style="font-size:13px; color:var(--text-main);">Mostrar mensaje</span>
+              </div>
+              <input type="text" id="szGreeting" class="form-control" maxlength="80" placeholder="Vacío = mensaje propio de cada modo">
+            </div>
+          </div>
+        </div>
+
+        <div class="sz-savebar">
+          <button type="button" class="btn btn-gold" id="szSaveBtn" onclick="saveSeasonsAdmin()">💾 Guardar modos visuales</button>
+          <small>Los usuarios lo ven al recargar el catálogo.</small>
+        </div>
+        <div class="sz-err" id="szErr" role="alert"></div>
+      </section>
+
       <!-- TAB 6: EL BIBLIOTECARIO -->
       <section id="tab-pipeline" class="tab-content">
         <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
@@ -1020,7 +1135,194 @@
         loadFeaturedSlotsAdmin();
       } else if (tabId === 'specials') {
         loadSpecialsAdmin();
+      } else if (tabId === 'seasons') {
+        loadSeasonsAdmin();
       }
+    }
+
+    // ════════════ 🎭 MODOS VISUALES DE TEMPORADA ════════════
+    // Se guarda en site_config.visual_theme como JSON:
+    // { mode:'auto'|'off'|<id>, intensity, showGreeting, greeting, schedule:{ <id>:{start,end} } }
+    // La página pública solo enciende modos que ya están construidos (lista READY).
+    const SEASON_MODES = [
+      { id:'navidad',      name:'Navidad',          emoji:'🎄', ready:true,  colors:['#07140F','#0F2A20','#E51C23','#F2C14E','#FFFFFF'], start:'2026-12-01', end:'2026-12-26' },
+      { id:'anio_nuevo',   name:'Año Nuevo',        emoji:'🎆', ready:false, colors:['#060A1C','#121A36','#E8C77A','#C9CED8','#FF4FA3'], start:'2026-12-27', end:'2027-01-02' },
+      { id:'carnaval',     name:'Carnaval',         emoji:'🎭', ready:false, colors:['#120A24','#22133F','#FF2E93','#19D3C5','#FFD23F'], start:'2027-02-05', end:'2027-02-10' },
+      { id:'san_valentin', name:'San Valentín',     emoji:'💘', ready:false, colors:['#1A0710','#2E0F1D','#FF3D7F','#F7C6D4','#E8B85A'], start:'2027-02-11', end:'2027-02-15' },
+      { id:'vacacional',   name:'Vacacional',       emoji:'🌴', ready:false, colors:['#081F2B','#0F3443','#FF7A59','#2FD5D0','#F6D7A7'], start:'2027-03-21', end:'2027-03-28' },
+      { id:'halloween',    name:'Halloween',        emoji:'🎃', ready:false, colors:['#0D0716','#1D1029','#FF7A1A','#8B5CF6','#B6F23C'], start:'2027-10-24', end:'2027-10-31' },
+    ];
+    const SEASON_BY_ID = Object.fromEntries(SEASON_MODES.map(m => [m.id, m]));
+    let seasonsCfg = null, seasonsSaved = '';
+
+    function seasonTodayVET() {
+      return new Intl.DateTimeFormat('en-CA', { timeZone:'America/Caracas', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
+    }
+    function seasonFmt(d) {
+      if (!d) return '—';
+      const [y, m, dd] = d.split('-').map(Number);
+      return new Date(y, m - 1, dd).toLocaleDateString('es-VE', { day:'numeric', month:'short', year:'numeric' });
+    }
+    function seasonDefaults() {
+      const schedule = {};
+      SEASON_MODES.forEach(m => { schedule[m.id] = { start:m.start, end:m.end }; });
+      return { mode:'auto', intensity:'normal', showGreeting:true, greeting:'', schedule };
+    }
+    // Mismo criterio que la página pública
+    function seasonResolve(cfg) {
+      if (!cfg || cfg.mode === 'off') return null;
+      if (cfg.mode && cfg.mode !== 'auto') return cfg.mode;
+      const d = seasonTodayVET(), s = cfg.schedule || {};
+      for (const k in s) { const r = s[k]; if (r && r.start && r.end && d >= r.start && d <= r.end) return k; }
+      return null;
+    }
+    function seasonNext(cfg) {
+      const d = seasonTodayVET(), s = cfg.schedule || {};
+      return Object.entries(s).filter(([k, r]) => r && r.start > d && SEASON_BY_ID[k]?.ready)
+        .sort((a, b) => a[1].start.localeCompare(b[1].start))[0];
+    }
+
+    async function loadSeasonsAdmin() {
+      let cfg = seasonDefaults();
+      try {
+        const { data } = await supabaseClient.from('site_config').select('value').eq('key', 'visual_theme').maybeSingle();
+        if (data && data.value) {
+          const saved = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+          cfg = { ...cfg, ...saved, schedule: { ...cfg.schedule, ...(saved.schedule || {}) } };
+        }
+      } catch (e) { showToast('No se pudo leer la configuración de modos: ' + e.message, 'error'); }
+      seasonsCfg = cfg;
+      seasonsSaved = JSON.stringify(cfg);
+      renderSeasonsAdmin();
+    }
+
+    function renderSeasonsAdmin() {
+      const cfg = seasonsCfg;
+      const force = document.getElementById('szForce');
+      force.innerHTML = SEASON_MODES.map(m => `<option value="${m.id}" ${m.ready ? '' : 'disabled'}>${m.emoji} ${m.name}${m.ready ? '' : ' (próximamente)'}</option>`).join('');
+      const forced = cfg.mode !== 'auto' && cfg.mode !== 'off' ? cfg.mode : null;
+      force.value = forced && SEASON_BY_ID[forced]?.ready ? forced : 'navidad';
+      document.querySelector(`input[name="szMode"][value="${forced ? 'force' : cfg.mode}"]`).checked = true;
+      document.querySelector(`input[name="szIntensity"][value="${cfg.intensity || 'normal'}"]`).checked = true;
+      document.getElementById('szShowGreeting').checked = cfg.showGreeting !== false;
+      document.getElementById('szGreeting').value = cfg.greeting || '';
+
+      const live = seasonResolve(cfg);
+      document.getElementById('szGrid').innerHTML = SEASON_MODES.map(m => {
+        const r = cfg.schedule[m.id] || {};
+        const isLive = live === m.id && m.ready;
+        const tag = isLive ? '<span class="sz-card-tag sz-tag-live">● Activo ahora</span>'
+          : m.ready ? '<span class="sz-card-tag sz-tag-ready">Listo</span>' : '<span class="sz-card-tag sz-tag-soon">Próximamente</span>';
+        return `<div class="sz-card ${isLive ? 'is-live' : ''} ${m.ready ? '' : 'is-soon'}" data-id="${m.id}">
+          <div class="sz-swatches">${m.colors.map(c => `<i style="background:${c}"></i>`).join('')}</div>
+          <div class="sz-card-top">
+            <div class="sz-card-emoji" style="background:${m.colors[1]}; border:1px solid ${m.colors[3]}55;">${m.emoji}</div>
+            <div><div class="sz-card-name">${m.name}</div>${tag}</div>
+          </div>
+          <div class="sz-card-body">
+            <div class="sz-dates">
+              <label>Desde<input type="date" data-k="start" value="${r.start || ''}"></label>
+              <label>Hasta<input type="date" data-k="end" value="${r.end || ''}"></label>
+            </div>
+            <div class="sz-card-actions">
+              <button type="button" class="sz-btn" ${m.ready ? '' : 'disabled title="Este modo aún se está construyendo"'} onclick="previewSeason('${m.id}')">👁️ Vista previa</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+      document.querySelectorAll('#szGrid input[type="date"]').forEach(i => i.addEventListener('change', () => { readSeasonsForm(); renderSeasonStatus(); }));
+      if (!renderSeasonsAdmin.bound) {   // controles fijos: se conectan una sola vez
+        renderSeasonsAdmin.bound = true;
+        document.querySelectorAll('#tab-seasons input[name="szMode"], #szForce').forEach(i => i.addEventListener('change', () => { readSeasonsForm(); renderSeasonStatus(); }));
+        ['szShowGreeting', 'szGreeting'].forEach(id => document.getElementById(id).addEventListener('input', () => { readSeasonsForm(); renderSeasonStatus(); }));
+        document.querySelectorAll('#tab-seasons input[name="szIntensity"]').forEach(i => i.addEventListener('change', () => { readSeasonsForm(); renderSeasonStatus(); }));
+        document.getElementById('szForce').addEventListener('focus', () => { document.querySelector('input[name="szMode"][value="force"]').checked = true; });
+      }
+      renderSeasonStatus();
+    }
+
+    function renderSeasonStatus() {
+      const cfg = seasonsCfg, live = seasonResolve(cfg), box = document.getElementById('szStatus');
+      const m = live && SEASON_BY_ID[live];
+      let title, detail;
+      if (m && m.ready) {
+        const r = cfg.schedule[m.id];
+        title = `En la página ahora: ${m.emoji} ${m.name}`;
+        detail = cfg.mode === 'auto' ? `Por fechas, hasta el ${seasonFmt(r.end)}.` : 'Forzado manualmente (no depende de las fechas).';
+      } else {
+        title = cfg.mode === 'off' ? 'Modos visuales apagados' : 'Sin modo visual activo hoy';
+        const nx = cfg.mode === 'auto' && seasonNext(cfg);
+        detail = m && !m.ready ? `${m.name} está en fecha pero aún no está listo; el catálogo se ve normal.`
+          : nx ? `Próximo: ${SEASON_BY_ID[nx[0]].emoji} ${SEASON_BY_ID[nx[0]].name}, desde el ${seasonFmt(nx[1].start)}.` : 'El catálogo se ve como siempre.';
+      }
+      box.classList.toggle('is-on', !!(m && m.ready));
+      // Tarjetas: resaltar la que queda activa y limpiar errores ya corregidos
+      document.querySelectorAll('#szGrid .sz-card').forEach(card => {
+        const mm = SEASON_BY_ID[card.dataset.id], on = mm.ready && live === mm.id;
+        card.classList.toggle('is-live', on);
+        const tag = card.querySelector('.sz-card-tag');
+        tag.className = 'sz-card-tag ' + (on ? 'sz-tag-live' : mm.ready ? 'sz-tag-ready' : 'sz-tag-soon');
+        tag.textContent = on ? '● Activo ahora' : mm.ready ? 'Listo' : 'Próximamente';
+      });
+      document.querySelectorAll('#szGrid .is-bad').forEach(i => i.classList.remove('is-bad'));
+      document.getElementById('szErr').style.display = 'none';
+      box.innerHTML = `<span class="sz-status-dot"></span><div><b>${title}</b><small>${detail}${JSON.stringify(cfg) !== seasonsSaved ? ' · <span style="color:var(--warning);">Hay cambios sin guardar.</span>' : ''}</small></div>`;
+    }
+
+    function readSeasonsForm() {
+      const cfg = seasonsCfg;
+      const mode = document.querySelector('input[name="szMode"]:checked')?.value || 'auto';
+      cfg.mode = mode === 'force' ? document.getElementById('szForce').value : mode;
+      cfg.intensity = document.querySelector('input[name="szIntensity"]:checked')?.value || 'normal';
+      cfg.showGreeting = document.getElementById('szShowGreeting').checked;
+      cfg.greeting = document.getElementById('szGreeting').value.trim().slice(0, 80);
+      document.querySelectorAll('#szGrid .sz-card').forEach(card => {
+        const id = card.dataset.id, s = card.querySelector('[data-k="start"]').value, e = card.querySelector('[data-k="end"]').value;
+        cfg.schedule[id] = { start:s, end:e };
+      });
+      return cfg;
+    }
+
+    function validateSeasons(cfg) {
+      const errs = [];
+      document.querySelectorAll('#szGrid input[type="date"]').forEach(i => i.classList.remove('is-bad'));
+      const bad = (id) => document.querySelectorAll(`#szGrid .sz-card[data-id="${id}"] input`).forEach(i => i.classList.add('is-bad'));
+      const ranges = [];
+      for (const m of SEASON_MODES) {
+        const r = cfg.schedule[m.id] || {};
+        if (!r.start && !r.end) continue;
+        if (!r.start || !r.end) { errs.push(`${m.name}: falta una de las dos fechas.`); bad(m.id); continue; }
+        if (r.start > r.end) { errs.push(`${m.name}: la fecha "Desde" es posterior a "Hasta".`); bad(m.id); continue; }
+        ranges.push({ m, ...r });
+      }
+      ranges.sort((a, b) => a.start.localeCompare(b.start));
+      for (let i = 1; i < ranges.length; i++) {
+        if (ranges[i].start <= ranges[i - 1].end) {
+          errs.push(`${ranges[i - 1].m.name} y ${ranges[i].m.name} se cruzan en fechas.`);
+          bad(ranges[i].m.id); bad(ranges[i - 1].m.id);
+        }
+      }
+      return errs;
+    }
+
+    async function saveSeasonsAdmin() {
+      const cfg = readSeasonsForm();
+      const errs = validateSeasons(cfg), box = document.getElementById('szErr');
+      if (errs.length) { box.innerHTML = '⚠️ ' + errs.join('<br>⚠️ '); box.style.display = 'block'; return; }
+      box.style.display = 'none';
+      const btn = document.getElementById('szSaveBtn');
+      btn.disabled = true;
+      const { error } = await supabaseClient.from('site_config').upsert({ key:'visual_theme', value: JSON.stringify(cfg) }, { onConflict:'key' });
+      btn.disabled = false;
+      if (error) { showToast('Error al guardar: ' + error.message, 'error'); return; }
+      seasonsSaved = JSON.stringify(cfg);
+      showToast('Modos visuales guardados', 'success');
+      renderSeasonsAdmin();
+    }
+
+    function previewSeason(id) {
+      if (!SEASON_BY_ID[id]?.ready) return;
+      window.open(`../?modo=${encodeURIComponent(id)}`, '_blank', 'noopener');
     }
 
     // ─── NOTIFICACIÓN TOAST VISUAL ───
@@ -2514,7 +2816,8 @@
       //  · pipeline_telegram_enabled: Telegram se activa/desactiva con los secrets de GitHub.
       const unusedKeys = new Set([
         'accent_color', 'welcome_page_enabled', 'slots_per_page', 'default_sort', 'game_categories',
-        'banner_count', 'carousel_speed', 'banner_cta_text', 'pipeline_schedule', 'pipeline_telegram_enabled'
+        'banner_count', 'carousel_speed', 'banner_cta_text', 'pipeline_schedule', 'pipeline_telegram_enabled',
+        'visual_theme' // se gestiona en la pestaña "Modos visuales"
       ]);
 
       // Agrupar keys por sección para ordenarlas visualmente
