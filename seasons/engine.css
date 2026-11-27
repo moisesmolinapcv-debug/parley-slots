@@ -54,9 +54,28 @@
 @media (hover: hover) and (pointer: fine) {
   .season-fx-toggle:hover { border-color: var(--season-accent-2); }
 }
+/* ── Columna de widgets flotantes: música · tema · efectos ──
+   Misma columna, mismo eje y misma separación (6px en celular, 8px en escritorio).
+   Escritorio: música +10 · tema +52 · efectos +96 (ya alineados).
+   Celular:    música +8 (34px) · tema +48 (36px) · efectos +90 (36px). */
+html[data-season] .ambient-sound-widget { left: 17px; }   /* 34px → mismo eje que los de 36px */
 @media (max-width: 600px) {
-  /* Junto al botón de tema (no sobre la flecha del banner) */
-  .season-fx-toggle { left: 54px; top: calc(var(--topnav-total, 56px) + 48px); width: 36px; height: 36px; }
+  .season-fx-toggle { left: 12px; top: calc(var(--topnav-total, 56px) + 90px); width: 36px; height: 36px; }
+  /* el botón de música mide 34px: se corre 1px para compartir el eje con los de 36px */
+  html[data-season] .ambient-sound-widget { left: 13px; }
+}
+
+/* Flechas del banner a las esquinas inferiores (celular y tableta) para no quedar
+   bajo la columna de widgets; en pantallas grandes siguen centradas. */
+@media (max-width: 1100px) {
+  html[data-season] .carousel-arrow { top: auto; bottom: 12px; transform: none; transition: opacity 160ms ease, background-color 160ms ease, transform 120ms ease; }
+  html[data-season] .carousel-arrow.prev { left: 12px; }
+  html[data-season] .carousel-arrow.next { right: 12px; }
+  html[data-season] .carousel-arrow:hover { transform: none; }
+  html[data-season] .carousel-arrow:active { transform: scale(0.94); }
+}
+@media (max-width: 600px) {
+  html[data-season] .carousel-arrow { width: 34px; height: 34px; font-size: 1rem; }
 }
 
 /* ── Saludo de temporada ── */
